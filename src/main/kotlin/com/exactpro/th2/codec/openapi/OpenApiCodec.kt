@@ -2,7 +2,8 @@ package com.exactpro.th2.codec.openapi
 
 import com.exactpro.th2.codec.api.IPipelineCodec
 import com.exactpro.th2.codec.openapi.OpenApiCodecFactory.Companion.PROTOCOL
-import com.exactpro.th2.codec.openapi.visitors.JsonVisitor
+import com.exactpro.th2.codec.openapi.visitors.JsonArrayVisitor
+import com.exactpro.th2.codec.openapi.visitors.JsonObjectVisitor
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.common.grpc.MessageGroup
 import com.exactpro.th2.common.grpc.RawMessage
@@ -24,17 +25,15 @@ class OpenApiCodec(
             pathsValue.getMethods().forEach { (methodKey, methodValue) ->
                 // Request
                 methodValue.requestBody?.content?.forEach { (typeKey, typeValue) ->
-                    messagesToSchema[combineName(listOf(pathKey, methodKey, typeKey))] = typeValue.schema.apply {
+                    messagesToSchema[combineName(listOf(pathKey, methodKey, typeKey))] = dictionary.getEndPoint(typeValue.schema).apply {
                         format = typeKey
                     }
                 }
 
-
                 // Response
                 methodValue.responses?.forEach { (responseKey, responseValue) ->
                     responseValue.content?.forEach { (typeKey, typeValue) ->
-
-                        messagesToSchema[combineName(listOf(pathKey, methodKey, responseKey, typeKey))] = typeValue.schema.apply {
+                        messagesToSchema[combineName(listOf(pathKey, methodKey, responseKey, typeKey))] = dictionary.getEndPoint(typeValue.schema).apply {
                             format = typeKey
                         }
                     }
@@ -81,10 +80,13 @@ class OpenApiCodec(
 
             when (MessageFormat.getFormat(messageSchema.format) ?: error("Unsupported format of message ${messageSchema.format}")) {
                 MessageFormat.JSON -> {
-                    val visitor = JsonVisitor()
-                    SchemaWriter(dictionary).traverse(visitor, messageSchema, parsedMessage)
+                    val visitor = when (JsonSchemaTypes.getType(messageSchema.type) ?: error("Unsupported type of json schema ${messageSchema.type}")) {
+                        JsonSchemaTypes.ARRAY -> JsonArrayVisitor(parsedMessage)
+                        JsonSchemaTypes.OBJECT -> JsonObjectVisitor(parsedMessage)
+                    }
+                    SchemaWriter(dictionary).traverse(visitor, messageSchema)
                     builder += RawMessage.newBuilder().apply {
-                        body = ByteString.copyFrom(visitor.rootNode.toPrettyString().toByteArray())
+                        body = ByteString.copyFrom(visitor.getResult().toByteArray())
                         parentEventId = parsedMessage.parentEventId
                         metadataBuilder.apply {
                             putAllProperties(metadata.propertiesMap)
@@ -99,8 +101,6 @@ class OpenApiCodec(
 
         return builder.build()
     }
-
-
 
     companion object {
         private val LOGGER = KotlinLogging.logger { }

@@ -39,6 +39,14 @@ fun OpenAPI.findByRef(ref: String) : Schema<*>? {
 
 }
 
+fun OpenAPI.getEndPoint(schema: Schema<*>): Schema<*> {
+    return if (schema.`$ref` != null) {
+        findByRef(schema.`$ref`) ?: error("Unsupported schema, no reference was found: ${schema.`$ref`}")
+    } else {
+        schema
+    }
+}
+
 enum class MessageFormat(val format: String) {
     JSON("application/json");
 
@@ -46,6 +54,19 @@ enum class MessageFormat(val format: String) {
         fun getFormat(format: String) : MessageFormat? {
             values().forEach {
                 if (it.format == format) return it
+            }
+            return null
+        }
+    }
+}
+
+enum class JsonSchemaTypes(val type: String) {
+    ARRAY("array"), OBJECT("object");
+
+    companion object {
+        fun getType(type: String) : JsonSchemaTypes? {
+            values().forEach {
+                if (it.type == type) return it
             }
             return null
         }

@@ -38,6 +38,30 @@ class CodecTests {
         }
     }
 
+    @Test
+    fun `simple test array json encode`() {
+        val codec = OpenApiCodec(openAPI, settings)
+        val json = message("StoreGet200ApplicationJson").apply {
+            metadataBuilder.protocol = "openapi"
+            addField("array", listOf("test1", "test2", "test3"))
+        }.build()
+
+        val messageGroup = MessageGroup.newBuilder()
+        messageGroup += json
+
+        val result = codec.encode(messageGroup.build())
+
+        Assertions.assertEquals(1, result.messagesList.size)
+        Assertions.assertTrue(result.messagesList[0].hasRawMessage())
+        val jsonString = result.messagesList[0].rawMessage.body.toStringUtf8()
+
+        mapper.readTree(jsonString).let { json ->
+            Assertions.assertEquals("1234567", json.get("publicKey").asText())
+            Assertions.assertTrue(json.get("testEnabled").asBoolean())
+            Assertions.assertEquals("FAILED", json.get("testStatus").asText())
+        }
+    }
+
     companion object {
         val settings = OpenApiCodecSettings()
         val dictionary = requireNotNull(CodecTests::class.java.getResource("valid-dictionary.yml")) {"Dictionary from resources required"}.toURI().path.drop(1)

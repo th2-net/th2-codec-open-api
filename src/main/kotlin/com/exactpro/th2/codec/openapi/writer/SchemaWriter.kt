@@ -1,12 +1,7 @@
 package com.exactpro.th2.codec.openapi.writer
 
-import com.exactpro.th2.codec.openapi.findByRef
+import com.exactpro.th2.codec.openapi.getEndPoint
 import com.exactpro.th2.codec.openapi.visitors.ISchemaVisitor
-import com.exactpro.th2.common.grpc.Message
-import com.exactpro.th2.common.message.getDouble
-import com.exactpro.th2.common.message.getField
-import com.exactpro.th2.common.message.getInt
-import com.exactpro.th2.common.message.getLong
 import com.exactpro.th2.common.message.getString
 import com.exactpro.th2.common.value.getString
 import io.swagger.v3.oas.models.OpenAPI
@@ -22,44 +17,47 @@ class SchemaWriter(val openApi: OpenAPI) {
 
     fun traverse(
         schemaVisitor: ISchemaVisitor,
-        msgStructure: Schema<*>,
-        message: Message
+        msgStructure: Schema<*>
     ) {
-        if (msgStructure.`$ref` != null) {
-            val schema = openApi.findByRef(msgStructure.`$ref` ) ?: error("Schema by ref ${msgStructure.`$ref`} wasn't found")
-            traverse(schemaVisitor, schema, message)
-        } else {
-            msgStructure.properties.forEach { (name, property) ->
-                if (msgStructure.required.contains(name)) {
-                    requireNotNull(message.getField(name)) {"Message doesn't contain required field: $name"}
+        val schema = openApi.getEndPoint(msgStructure)
+
+        when (schema.type) {
+            ARRAY_TYPE -> {
+                processProperty(schema, schemaVisitor, ARRAY_TYPE)
+            }
+            OBJECT_TYPE -> {
+                requireNotNull(schema.properties) {"Properties in object are required: $schema"}
+                schema.properties.forEach { (name, property) ->
+                    processProperty(openApi.getEndPoint(property), schemaVisitor, name)
                 }
-                processProperty(property, schemaVisitor, name, message)
             }
         }
-
     }
 
-    private fun processProperty(property: Schema<*>, visitor: ISchemaVisitor, name: String, message: Message) {
+    private fun processProperty(property: Schema<*>, visitor: ISchemaVisitor, name: String) {
         when(property.type) {
+            ARRAY_TYPE -> {
+                error("Unsupported type right now")
+            }
             INTEGER_TYPE -> {
-                visitor.visit(name, message.getInt(name), property)
+                visitor.visit(name, property.default as? Int, property)
             }
             BOOLEAN_TYPE -> {
-                visitor.visit(name, message.getString(name)?.toBoolean(), property)
+                visitor.visit(name, property.default as? Boolean, property)
             }
             NUMBER_TYPE -> {
                 when (property.format) {
                     "float" -> {
-                        visitor.visit(name, message.getField(name)?.getString()?.toFloat(), property)
+                        visitor.visit(name, property.default as? Float, property)
                     }
                     "int64" -> {
-                        visitor.visit(name, message.getLong(name), property)
+                        visitor.visit(name, property.default as? Long, property)
                     }
                     "double" -> {
-                        visitor.visit(name, message.getDouble(name), property)
+                        visitor.visit(name, property.default as? Double, property)
                     }
                     null, "", "int32" -> {
-                        visitor.visit(name, message.getInt(name), property)
+                        visitor.visit(name, property.default as? Int, property)
                     }
                     else -> {
                         error("Unsupported format of property $name: ${property.format}")
@@ -67,25 +65,16 @@ class SchemaWriter(val openApi: OpenAPI) {
                 }
             }
             STRING_TYPE -> {
-                message.getString(name).let { value ->
-                    visitor.visit(name, value, property)
-                    checkEnum(property, value, name)
-                }
+                visitor.visit(name, property.default as? String, property)
             }
             OBJECT_TYPE -> {
-
+                visitor.visit(name, property.default as? Schema<*>, property, openApi)
             }
-            null -> {
-                val ref = property.`$ref` ?: error("Unsupported type of property $name: null")
-                val propertyFromRef = openApi.findByRef(ref) ?: error("Schema by ref $ref wasn't found")
-                processProperty(propertyFromRef, visitor, name, message)
-            }
+            null -> error("Unsupported type of property $name: null")
         }
     }
 
-    private fun <T>checkEnum(property: Schema<*>, value: T, name: String) {
-        if (property.enum != null && property.enum.size > 0 && !(property.enum).contains(value)) {
-            error("Enum list of property $name doesn't contain $value")
-        }
+    companion object {
+        const val ARRAY_TYPE = "array"
     }
 }
