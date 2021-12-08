@@ -5,6 +5,7 @@ import com.exactpro.th2.common.message.addField
 import com.exactpro.th2.common.message.message
 import com.exactpro.th2.common.message.plusAssign
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ArrayNode
 import io.swagger.parser.OpenAPIParser
 import mu.KotlinLogging
 import org.junit.jupiter.api.Assertions
@@ -32,6 +33,7 @@ class CodecTests {
         val jsonString = result.messagesList[0].rawMessage.body.toStringUtf8()
 
         mapper.readTree(jsonString).let { json ->
+            Assertions.assertEquals(3, json.size())
             Assertions.assertEquals("1234567", json.get("publicKey").asText())
             Assertions.assertTrue(json.get("testEnabled").asBoolean())
             Assertions.assertEquals("FAILED", json.get("testStatus").asText())
@@ -43,7 +45,7 @@ class CodecTests {
         val codec = OpenApiCodec(openAPI, settings)
         val json = message("StoreGet200ApplicationJson").apply {
             metadataBuilder.protocol = "openapi"
-            addField("array", listOf("test1", "test2", "test3"))
+            addField("array", listOf("test0", "test1", "test2"))
         }.build()
 
         val messageGroup = MessageGroup.newBuilder()
@@ -56,9 +58,12 @@ class CodecTests {
         val jsonString = result.messagesList[0].rawMessage.body.toStringUtf8()
 
         mapper.readTree(jsonString).let { json ->
-            Assertions.assertEquals("1234567", json.get("publicKey").asText())
-            Assertions.assertTrue(json.get("testEnabled").asBoolean())
-            Assertions.assertEquals("FAILED", json.get("testStatus").asText())
+            Assertions.assertTrue(json.isArray) {"Result of encode must be array"}
+            val arrayJson = (json as ArrayNode)
+            Assertions.assertEquals(3, arrayJson.count())
+            for (i in 0..2) {
+                Assertions.assertEquals("test$i", arrayJson.get(i).asText())
+            }
         }
     }
 

@@ -2,6 +2,10 @@ package com.exactpro.th2.codec.openapi
 
 import com.exactpro.th2.codec.api.IPipelineCodec
 import com.exactpro.th2.codec.openapi.OpenApiCodecFactory.Companion.PROTOCOL
+import com.exactpro.th2.codec.openapi.utils.JsonSchemaTypes
+import com.exactpro.th2.codec.openapi.utils.MessageFormat
+import com.exactpro.th2.codec.openapi.utils.getEndPoint
+import com.exactpro.th2.codec.openapi.utils.getMethods
 import com.exactpro.th2.codec.openapi.visitors.JsonArrayVisitor
 import com.exactpro.th2.codec.openapi.visitors.JsonObjectVisitor
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter

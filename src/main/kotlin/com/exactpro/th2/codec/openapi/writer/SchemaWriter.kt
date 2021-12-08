@@ -1,10 +1,9 @@
 package com.exactpro.th2.codec.openapi.writer
 
-import com.exactpro.th2.codec.openapi.getEndPoint
+import com.exactpro.th2.codec.openapi.utils.getEndPoint
 import com.exactpro.th2.codec.openapi.visitors.ISchemaVisitor
-import com.exactpro.th2.common.message.getString
-import com.exactpro.th2.common.value.getString
 import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.parser.util.SchemaTypeUtil.INTEGER_TYPE
 import io.swagger.v3.parser.util.SchemaTypeUtil.BOOLEAN_TYPE
@@ -28,36 +27,36 @@ class SchemaWriter(val openApi: OpenAPI) {
             OBJECT_TYPE -> {
                 requireNotNull(schema.properties) {"Properties in object are required: $schema"}
                 schema.properties.forEach { (name, property) ->
-                    processProperty(openApi.getEndPoint(property), schemaVisitor, name)
+                    processProperty(openApi.getEndPoint(property), schemaVisitor, name, schema.required.contains(name))
                 }
             }
         }
     }
 
-    private fun processProperty(property: Schema<*>, visitor: ISchemaVisitor, name: String) {
+    private fun processProperty(property: Schema<*>, visitor: ISchemaVisitor, name: String, required: Boolean = false) {
         when(property.type) {
             ARRAY_TYPE -> {
-                error("Unsupported type right now")
+                processArrayProperty(property as ArraySchema, visitor, name, required)
             }
             INTEGER_TYPE -> {
-                visitor.visit(name, property.default as? Int, property)
+                visitor.visit(name, property.default as? Int, property, required)
             }
             BOOLEAN_TYPE -> {
-                visitor.visit(name, property.default as? Boolean, property)
+                visitor.visit(name, property.default as? Boolean, property, required)
             }
             NUMBER_TYPE -> {
                 when (property.format) {
                     "float" -> {
-                        visitor.visit(name, property.default as? Float, property)
+                        visitor.visit(name, property.default as? Float, property, required)
                     }
                     "int64" -> {
-                        visitor.visit(name, property.default as? Long, property)
+                        visitor.visit(name, property.default as? Long, property, required)
                     }
                     "double" -> {
-                        visitor.visit(name, property.default as? Double, property)
+                        visitor.visit(name, property.default as? Double, property, required)
                     }
                     null, "", "int32" -> {
-                        visitor.visit(name, property.default as? Int, property)
+                        visitor.visit(name, property.default as? Int, property, required)
                     }
                     else -> {
                         error("Unsupported format of property $name: ${property.format}")
@@ -65,12 +64,46 @@ class SchemaWriter(val openApi: OpenAPI) {
                 }
             }
             STRING_TYPE -> {
-                visitor.visit(name, property.default as? String, property)
+                visitor.visit(name, property.default as? String, property, required)
             }
             OBJECT_TYPE -> {
-                visitor.visit(name, property.default as? Schema<*>, property, openApi)
+                visitor.visit(name, property.default as? Schema<*>, property, openApi, required)
             }
-            null -> error("Unsupported type of property $name: null")
+            else -> error("Unsupported type of property $name: null")
+        }
+    }
+
+    private fun processArrayProperty(property: ArraySchema, visitor: ISchemaVisitor, name: String, required: Boolean = false) {
+        when(property.items.type) {
+            INTEGER_TYPE -> {
+                visitor.visitIntegerCollection(name, property.default as? List<Int>, property, required)
+            }
+            BOOLEAN_TYPE -> {
+                visitor.visitBooleanCollection(name, property.default as? List<Boolean>, property, required)
+            }
+            NUMBER_TYPE -> {
+                when (property.items.format) {
+                    "float" -> {
+                        visitor.visitFloatCollection(name, property.default as? List<Float>, property, required)
+                    }
+                    "int64" -> {
+                        visitor.visitLongCollection(name, property.default as? List<Long>, property, required)
+                    }
+                    "double" -> {
+                        visitor.visitDoubleCollection(name, property.default as? List<Double>, property, required)
+                    }
+                    null, "", "int32" -> {
+                        visitor.visitIntegerCollection(name, property.default as? List<Int>, property, required)
+                    }
+                    else -> {
+                        error("Unsupported format of property $name: ${property.format}")
+                    }
+                }
+            }
+            STRING_TYPE -> {
+                visitor.visitStringCollection(name, property.default as? List<String>, property, required)
+            }
+            else -> error("Unsupported type of property $name: null")
         }
     }
 

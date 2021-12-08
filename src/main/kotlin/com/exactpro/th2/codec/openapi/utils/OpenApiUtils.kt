@@ -1,4 +1,4 @@
-package com.exactpro.th2.codec.openapi
+package com.exactpro.th2.codec.openapi.utils
 
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.Operation
