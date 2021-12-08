@@ -1,0 +1,127 @@
+openapi: 3.0.0
+info:
+  title: Test API
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:12345
+
+
+paths:
+  /store:
+    get:
+      tags:
+        - store
+      summary: Get list of stored objects
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                example:
+                  - /store/params/bank/item_1
+                  - /store/params/bank/item_2
+                  - /store/params/bank/item_3
+
+  /store/{path}:
+    get:
+      tags:
+        - store
+      summary: Get an object from store
+      parameters:
+        - name: path
+          description: Path of the stored object.
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+    delete:
+      tags:
+        - store
+      summary: Remove an object from store
+      parameters:
+        - name: path
+          description: Path of the stored object.
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: OK
+
+    put:
+      tags:
+        - store
+      summary: Store an object
+      parameters:
+        - name: path
+          description: Path of the object to store.
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "201":
+          description: OK
+
+  /test/object:
+    get:
+      tags:
+        - test
+      summary: Returns the test object
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestObject"
+
+components:
+  schemas:
+    TestObject:
+      type: object
+      description: |
+        Defines the test object.
+      required:
+        - publicKey
+        - testEnabled
+      properties:
+        publicKey:
+          type: string
+          example: "123qwer...12"
+        testEnabled:
+          type: boolean
+          example: false
+        testStatus:
+          $ref: "#/components/schemas/TestStatus"
+    TestStatus:
+      type: string
+      description: |
+        Test status of a test object.
+        The possible values for a status state are:
+        - `PASSED`: passed test.
+        - `FAILED`: failed test.
+      enum:
+        - PASSED
+        - FAILED

@@ -1,3 +1,10 @@
+build/
+shared/
+.gradle/
+.idea/
+logs/
+out/
+
 # Compiled class file
 *.class
 

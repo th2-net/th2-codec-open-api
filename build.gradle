@@ -1,0 +1,129 @@
+plugins {
+    id 'com.palantir.docker' version '0.25.0' apply false
+    id 'org.jetbrains.kotlin.jvm' version "${kotlin_version}"
+    id 'com.github.harbby.gradle.serviceloader' version '1.1.8'
+    id 'java-test-fixtures'
+}
+
+apply plugin: 'kotlin'
+apply plugin: 'application'
+apply plugin: 'com.palantir.docker'
+
+ext {
+    sharedDir = file("${project.rootDir}/shared")
+    sailfishVersion = '3.2.1752'
+}
+
+group = 'com.exactpro.th2'
+version = release_version
+
+sourceCompatibility = 11
+targetCompatibility = 11
+
+repositories {
+    maven {
+        name 'MavenLocal'
+        url sharedDir
+    }
+
+    mavenCentral()
+
+    maven {
+        name 'Sonatype_snapshots'
+        url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+    }
+
+    maven {
+        name 'Sonatype_releases'
+        url 'https://s01.oss.sonatype.org/content/repositories/releases/'
+    }
+
+    mavenLocal()
+
+    configurations.all {
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+        resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
+    }
+}
+
+jar {
+    manifest {
+        attributes(
+                'Created-By': "${System.getProperty('java.version')} (${System.getProperty('java.vendor')})",
+                'Specification-Title': '',
+                'Specification-Vendor': 'Exactpro Systems LLC',
+                'Implementation-Title': project.archivesBaseName,
+                'Implementation-Vendor': 'Exactpro Systems LLC',
+                'Implementation-Vendor-Id': 'com.exactpro',
+                'Implementation-Version': project.version
+        )
+    }
+}
+
+dependencies {
+    api platform('com.exactpro.th2:bom:3.0.0')
+
+    implementation 'com.exactpro.th2:common:3.31.1'
+    implementation 'com.exactpro.th2:codec:4.2.0'
+    implementation 'com.exactpro.th2:sailfish-utils:3.11.0'
+
+    implementation "com.exactpro.sf:sailfish-core:${sailfishVersion}"
+    implementation "com.exactpro.sf:service-http:${sailfishVersion}"
+
+    implementation 'org.slf4j:slf4j-log4j12'
+    implementation 'org.slf4j:slf4j-api'
+
+    implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jdk8', version: kotlin_version
+    implementation group: 'org.jetbrains.kotlin', name: 'kotlin-reflect', version: kotlin_version
+    implementation group: 'io.github.microutils', name: 'kotlin-logging', version: '2.0.10'
+    implementation group: 'io.swagger.core.v3', name: 'swagger-jaxrs2', version: '2.1.10'
+    implementation group: 'io.swagger.parser.v3', name: 'swagger-parser', version: '2.0.28'
+    implementation group: 'org.openapitools', name: 'openapi-generator', version: '5.3.0'
+
+//    implementation group: 'org.openapitools', name: 'openapi-generator-maven-plugin', version: '5.3.0'
+
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
+    testImplementation group: 'org.jetbrains.kotlin', name: 'kotlin-test-junit5', version: kotlin_version
+
+    testImplementation testFixtures('com.exactpro.th2:common:3.31.1')
+
+}
+
+test {
+    useJUnitPlatform()
+}
+
+application {
+    mainClassName 'com.exactpro.th2.codec.MainKt'
+}
+
+applicationName = 'service'
+
+distTar {
+    archiveName "${applicationName}.tar"
+}
+
+dockerPrepare {
+    dependsOn distTar
+}
+
+docker {
+    copySpec.from(tarTree("$buildDir/distributions/${applicationName}.tar"))
+}
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+}
+
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+}
+
+serviceLoader {
+    serviceInterface 'com.exactpro.th2.codec.api.IPipelineCodecFactory'
+}
