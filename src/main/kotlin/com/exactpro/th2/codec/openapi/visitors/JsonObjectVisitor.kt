@@ -16,24 +16,21 @@
 
 package com.exactpro.th2.codec.openapi.visitors
 
+import com.exactpro.th2.codec.openapi.utils.getRequiredField
 import com.exactpro.th2.codec.openapi.utils.putAll
 import com.exactpro.th2.common.grpc.Message
-import com.exactpro.th2.common.grpc.Value
-import com.exactpro.th2.common.message.getField
-import com.exactpro.th2.common.message.messageType
 import com.exactpro.th2.common.value.getDouble
 import com.exactpro.th2.common.value.getInt
 import com.exactpro.th2.common.value.getList
 import com.exactpro.th2.common.value.getLong
 import com.exactpro.th2.common.value.getString
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.Schema
 
 
-class JsonObjectVisitor(val message: Message) : ISchemaVisitor {
+class JsonObjectVisitor(private val message: Message) : ISchemaVisitor {
     private val rootNode: ObjectNode = mapper.createObjectNode()
 
     override fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, references: OpenAPI, required: Boolean) {
@@ -145,13 +142,6 @@ class JsonObjectVisitor(val message: Message) : ISchemaVisitor {
         if (value != null && enum != null && enum.size > 0 && !enum.contains(value)) {
             error("Enum list of property $name doesn't contain $value")
         }
-    }
-
-    private fun Message.getRequiredField(fieldName: String, required: Boolean): Value? {
-        val result = getField(fieldName)
-        return if (required) {
-            checkNotNull(result) {"Field [$fieldName] is required for message [$messageType]"}
-        } else result
     }
 
     companion object {

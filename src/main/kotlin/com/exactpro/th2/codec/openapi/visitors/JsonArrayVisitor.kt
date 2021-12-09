@@ -16,18 +16,16 @@
 
 package com.exactpro.th2.codec.openapi.visitors
 
+import com.exactpro.th2.codec.openapi.utils.getRequiredField
+import com.exactpro.th2.codec.openapi.utils.putAll
 import com.exactpro.th2.common.grpc.Message
-import com.exactpro.th2.common.message.getList
-import com.exactpro.th2.common.value.getDouble
-import com.exactpro.th2.common.value.getInt
-import com.exactpro.th2.common.value.getLong
-import com.exactpro.th2.common.value.getString
+import com.exactpro.th2.common.value.getList
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.Schema
 
-class JsonArrayVisitor(val message: Message) : ISchemaVisitor {
+class JsonArrayVisitor(private val message: Message) : ISchemaVisitor {
     private val rootNode: ArrayNode = mapper.createArrayNode()
 
     companion object {
@@ -74,10 +72,8 @@ class JsonArrayVisitor(val message: Message) : ISchemaVisitor {
         fldStruct: Schema<*>,
         required: Boolean
     ) {
-        message.getList(fieldName)?.forEach {
-            rootNode.add(it.getString().toBoolean())
-        } ?: defaultValue?.forEach {
-            rootNode.add(it)
+        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
+            rootNode.putAll<Boolean>(values)
         }
     }
 
@@ -87,10 +83,8 @@ class JsonArrayVisitor(val message: Message) : ISchemaVisitor {
         fldStruct: Schema<*>,
         required: Boolean
     ) {
-        message.getList(fieldName)?.forEach {
-            rootNode.add(it.getInt())
-        } ?: defaultValue?.forEach {
-            rootNode.add(it)
+        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
+            rootNode.putAll<Int>(values)
         }
     }
 
@@ -100,10 +94,8 @@ class JsonArrayVisitor(val message: Message) : ISchemaVisitor {
         fldStruct: Schema<*>,
         required: Boolean
     ) {
-        message.getList(fieldName)?.forEach {
-            rootNode.add(it.getString())
-        } ?: defaultValue?.forEach {
-            rootNode.add(it)
+        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
+            rootNode.putAll<String>(values)
         }
     }
 
@@ -113,10 +105,8 @@ class JsonArrayVisitor(val message: Message) : ISchemaVisitor {
         fldStruct: Schema<*>,
         required: Boolean
     ) {
-        message.getList(fieldName)?.forEach {
-            rootNode.add(it.getDouble())
-        } ?: defaultValue?.forEach {
-            rootNode.add(it)
+        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
+            rootNode.putAll<Double>(values)
         }
     }
 
@@ -126,10 +116,8 @@ class JsonArrayVisitor(val message: Message) : ISchemaVisitor {
         fldStruct: Schema<*>,
         required: Boolean
     ) {
-        message.getList(fieldName)?.forEach {
-            rootNode.add(it.getString()?.toFloat())
-        } ?: defaultValue?.forEach {
-            rootNode.add(it)
+        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
+            rootNode.putAll<Float>(values)
         }
     }
 
@@ -139,10 +127,8 @@ class JsonArrayVisitor(val message: Message) : ISchemaVisitor {
         fldStruct: Schema<*>,
         required: Boolean
     ) {
-        message.getList(fieldName)?.forEach {
-            rootNode.add(it.getLong())
-        } ?: defaultValue?.forEach {
-            rootNode.add(it)
+        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
+            rootNode.putAll<Long>(values)
         }
     }
 
