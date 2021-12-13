@@ -15,6 +15,9 @@
  */
 
 import com.exactpro.th2.codec.openapi.OpenApiCodec
+import com.exactpro.th2.codec.openapi.OpenApiCodec.Companion.CODE_FIELD
+import com.exactpro.th2.codec.openapi.OpenApiCodec.Companion.METHOD_FIELD
+import com.exactpro.th2.codec.openapi.OpenApiCodec.Companion.URI_FIELD
 import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
 import com.exactpro.th2.common.grpc.MessageGroup
 import com.exactpro.th2.common.message.addField
@@ -45,7 +48,12 @@ class CodecTests {
 
         Assertions.assertEquals(1, result.messagesList.size)
         Assertions.assertTrue(result.messagesList[0].hasRawMessage())
+        val rawMessage = result.messagesList[0].rawMessage
         val jsonString = result.messagesList[0].rawMessage.body.toStringUtf8()
+
+        Assertions.assertEquals("200", rawMessage.metadata.propertiesMap[CODE_FIELD])
+        Assertions.assertEquals("get", rawMessage.metadata.propertiesMap[METHOD_FIELD])
+        Assertions.assertEquals("/test/object", rawMessage.metadata.propertiesMap[URI_FIELD])
 
         mapper.readTree(jsonString).let { json ->
             Assertions.assertEquals(3, json.size())

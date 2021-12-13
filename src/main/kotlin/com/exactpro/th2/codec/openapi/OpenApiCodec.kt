@@ -18,6 +18,9 @@ package com.exactpro.th2.codec.openapi
 
 import com.exactpro.th2.codec.api.IPipelineCodec
 import com.exactpro.th2.codec.openapi.OpenApiCodecFactory.Companion.PROTOCOL
+import com.exactpro.th2.codec.openapi.http.HttpContainer
+import com.exactpro.th2.codec.openapi.http.RequestContainer
+import com.exactpro.th2.codec.openapi.http.ResponseContainer
 import com.exactpro.th2.codec.openapi.utils.JsonSchemaTypes
 import com.exactpro.th2.codec.openapi.utils.MessageFormat
 import com.exactpro.th2.codec.openapi.utils.getEndPoint
@@ -38,24 +41,36 @@ class OpenApiCodec(
     private val settings: OpenApiCodecSettings
 ) : IPipelineCodec {
 
-    private val messagesToSchema = mutableMapOf<String, Schema<*>>()
+    private val messagesToSchema = mutableMapOf<String, HttpContainer>()
 
     init {
         dictionary.paths.forEach { pathKey, pathsValue ->
             pathsValue.getMethods().forEach { (methodKey, methodValue) ->
                 // Request
                 methodValue.requestBody?.content?.forEach { (typeKey, typeValue) ->
-                    messagesToSchema[combineName(listOf(pathKey, methodKey, typeKey))] = dictionary.getEndPoint(typeValue.schema).apply {
+                    val schema = dictionary.getEndPoint(typeValue.schema).apply {
                         format = typeKey
                     }
+
+                    messagesToSchema[combineName(listOf(pathKey, methodKey, typeKey))] =
+                        RequestContainer(pathKey, methodKey, methodValue.parameters, schema)
+                } ?: run {
+                    messagesToSchema[combineName(listOf(pathKey, methodKey))] =
+                        RequestContainer(pathKey, methodKey, methodValue.parameters, null)
                 }
+
 
                 // Response
                 methodValue.responses?.forEach { (responseKey, responseValue) ->
                     responseValue.content?.forEach { (typeKey, typeValue) ->
-                        messagesToSchema[combineName(listOf(pathKey, methodKey, responseKey, typeKey))] = dictionary.getEndPoint(typeValue.schema).apply {
+                        val schema = dictionary.getEndPoint(typeValue.schema).apply {
                             format = typeKey
                         }
+                        messagesToSchema[combineName(listOf(pathKey, methodKey, responseKey, typeKey))] =
+                            ResponseContainer(pathKey, methodKey, responseKey, schema)
+                    } ?: run {
+                        messagesToSchema[combineName(listOf(pathKey, methodKey, responseKey))] =
+                            ResponseContainer(pathKey, methodKey, responseKey, null)
                     }
                 }
             }
@@ -63,7 +78,7 @@ class OpenApiCodec(
         LOGGER.info { "Messages to encode: ${messagesToSchema.keys.joinToString(", ") { it }}" }
     }
 
-    private fun combineName(steps: List<String>) : String {
+    private fun combineName(steps: List<String>): String {
         return buildString {
             for (step in steps) {
                 step.split("{", "}", "-", "/", "_").forEach { word ->
@@ -96,27 +111,51 @@ class OpenApiCodec(
             val metadata = parsedMessage.metadata
             val messageType = metadata.messageType
 
-            val messageSchema = checkNotNull(messagesToSchema[messageType]) {"There no message $messageType in dictionary"}
+            val container =
+                checkNotNull(messagesToSchema[messageType]) { "There no message $messageType in dictionary" }
 
-            when (MessageFormat.getFormat(messageSchema.format) ?: error("Unsupported format of message ${messageSchema.format}")) {
-                MessageFormat.JSON -> {
-                    val visitor = when (JsonSchemaTypes.getType(messageSchema.type) ?: error("Unsupported type of json schema ${messageSchema.type}")) {
-                        JsonSchemaTypes.ARRAY -> JsonArrayVisitor(parsedMessage)
-                        JsonSchemaTypes.OBJECT -> JsonObjectVisitor(parsedMessage)
-                    }
-                    SchemaWriter(dictionary).traverse(visitor, messageSchema)
-                    builder += RawMessage.newBuilder().apply {
-                        body = ByteString.copyFrom(visitor.getResult().toByteArray())
-                        parentEventId = parsedMessage.parentEventId
-                        metadataBuilder.apply {
-                            putAllProperties(metadata.propertiesMap)
-                            this.id = metadata.id
-                            this.timestamp = metadata.timestamp
-                            this.protocol = PROTOCOL
+            val rawMessage = RawMessage.newBuilder().apply {
+                parentEventId = parsedMessage.parentEventId
+                metadataBuilder.apply {
+                    putAllProperties(metadata.propertiesMap)
+                    this.id = metadata.id
+                    this.timestamp = metadata.timestamp
+                    this.protocol = PROTOCOL
+                }
+            }
+
+            container.body?.let { messageSchema ->
+                when (MessageFormat.getFormat(messageSchema.format)
+                    ?: error("Unsupported format of message ${messageSchema.format}")) {
+                    MessageFormat.JSON -> {
+                        val visitor = when (JsonSchemaTypes.getType(messageSchema.type)
+                            ?: error("Unsupported type of json schema ${messageSchema.type}")) {
+                            JsonSchemaTypes.ARRAY -> JsonArrayVisitor(parsedMessage)
+                            JsonSchemaTypes.OBJECT -> JsonObjectVisitor(parsedMessage)
                         }
+                        SchemaWriter(dictionary).traverse(visitor, messageSchema)
+                        rawMessage.body = ByteString.copyFrom(visitor.getResult().toByteArray())
                     }
                 }
             }
+
+            when (container) {
+                is ResponseContainer -> {
+                    rawMessage.metadataBuilder.apply {
+                        putProperties(METHOD_FIELD,  container.method)
+                        putProperties(URI_FIELD, container.path)
+                        putProperties(CODE_FIELD, container.code)
+                    }
+                }
+                is RequestContainer -> {
+                    rawMessage.metadataBuilder.apply {
+                        putProperties(METHOD_FIELD,  container.method)
+                        putProperties(URI_FIELD, container.path)
+                    }
+                }
+            }
+
+            builder += rawMessage
         }
 
         return builder.build()
@@ -127,6 +166,7 @@ class OpenApiCodec(
         const val RESPONSE_MESSAGE = "Response"
         const val METHOD_FIELD = "method"
         const val URI_FIELD = "uri"
+        const val CODE_FIELD = "code"
         const val STATUS_CODE_FIELD = "statusCode"
         const val REASON_FIELD = "reason"
         private const val HTTP_PROTOCOL = "http"
