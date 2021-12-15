@@ -27,6 +27,20 @@ paths:
                   - /store/params/bank/item_2
                   - /store/params/bank/item_3
 
+    put:
+      tags:
+        - store
+      summary: Store an object
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "201":
+          description: OK
+
   /store/{path}:
     get:
       tags:

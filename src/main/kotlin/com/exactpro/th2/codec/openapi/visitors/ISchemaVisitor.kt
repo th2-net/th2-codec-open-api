@@ -19,7 +19,7 @@ package com.exactpro.th2.codec.openapi.visitors
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.Schema
 
-interface ISchemaVisitor {
+interface ISchemaVisitor<T> {
     fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, references: OpenAPI, required: Boolean = false)
     fun visit(fieldName: String, defaultValue: String?, fldStruct: Schema<*>, required: Boolean = false)
     fun visit(fieldName: String, defaultValue: Boolean?, fldStruct: Schema<*>, required: Boolean = false)
@@ -34,6 +34,6 @@ interface ISchemaVisitor {
     fun visitFloatCollection(fieldName: String, defaultValue: List<Float>?, fldStruct: Schema<*>, required: Boolean = false)
     fun visitLongCollection(fieldName: String, defaultValue: List<Long>?, fldStruct: Schema<*>, required: Boolean = false)
 
-    fun getResult(): String
+    fun getResult(): T
 
 }

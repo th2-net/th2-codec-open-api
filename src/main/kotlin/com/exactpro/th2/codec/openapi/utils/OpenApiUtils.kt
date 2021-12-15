@@ -88,3 +88,9 @@ enum class JsonSchemaTypes(val type: String) {
         }
     }
 }
+
+fun <T>Schema<*>.checkEnum(value: T?, name: String) {
+    if (value != null && enum != null && enum.size > 0 && !enum.contains(value)) {
+        error("Enum list of property $name doesn't contain $value")
+    }
+}

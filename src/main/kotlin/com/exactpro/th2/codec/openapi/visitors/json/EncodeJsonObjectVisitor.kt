@@ -14,66 +14,70 @@
  * limitations under the License.
  */
 
-package com.exactpro.th2.codec.openapi.visitors
+package com.exactpro.th2.codec.openapi.visitors.json
 
+import com.exactpro.th2.codec.openapi.utils.checkEnum
 import com.exactpro.th2.codec.openapi.utils.getRequiredField
 import com.exactpro.th2.codec.openapi.utils.putAll
+import com.exactpro.th2.codec.openapi.visitors.ISchemaVisitor
 import com.exactpro.th2.common.grpc.Message
+import com.exactpro.th2.common.value.getDouble
+import com.exactpro.th2.common.value.getInt
 import com.exactpro.th2.common.value.getList
+import com.exactpro.th2.common.value.getLong
+import com.exactpro.th2.common.value.getString
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.ObjectNode
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.Schema
 
-class JsonArrayVisitor(private val message: Message) : ISchemaVisitor {
-    private val rootNode: ArrayNode = mapper.createArrayNode()
 
-    companion object {
-        private var mapper = ObjectMapper()
-    }
+class EncodeJsonObjectVisitor(private val message: Message) : ISchemaVisitor<String> {
+    private val rootNode: ObjectNode = mapper.createObjectNode()
 
-    override fun visit(
-        fieldName: String,
-        defaultValue: Schema<*>?,
-        fldStruct: Schema<*>,
-        references: OpenAPI,
-        required: Boolean
-    ) {
-        throw UnsupportedOperationException("Array visitor supports only collections")
+    override fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, references: OpenAPI, required: Boolean) {
+        TODO("Not yet implemented")
     }
 
     override fun visit(fieldName: String, defaultValue: String?, fldStruct: Schema<*>, required: Boolean) {
-        throw UnsupportedOperationException("Array visitor supports only collections")
+        val value = message.getRequiredField(fieldName, required)?.getString()
+        fldStruct.checkEnum(value, fieldName)
+        rootNode.put(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Boolean?, fldStruct: Schema<*>, required: Boolean) {
-        throw UnsupportedOperationException("Array visitor supports only collections")
+        val value = message.getRequiredField(fieldName, required)?.getString()?.toBoolean()
+        fldStruct.checkEnum(value, fieldName)
+        rootNode.put(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Int?, fldStruct: Schema<*>, required: Boolean) {
-        throw UnsupportedOperationException("Array visitor supports only collections")
+        val value = message.getRequiredField(fieldName, required)?.getInt()
+        fldStruct.checkEnum(value, fieldName)
+        rootNode.put(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Float?, fldStruct: Schema<*>, required: Boolean) {
-        throw UnsupportedOperationException("Array visitor supports only collections")
+        val value = message.getRequiredField(fieldName, required)?.getString()?.toFloat()
+        fldStruct.checkEnum(value, fieldName)
+        rootNode.put(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Double?, fldStruct: Schema<*>, required: Boolean) {
-        throw UnsupportedOperationException("Array visitor supports only collections")
+        val value = message.getRequiredField(fieldName, required)?.getDouble()
+        fldStruct.checkEnum(value, fieldName)
+        rootNode.put(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Long?, fldStruct: Schema<*>, required: Boolean) {
-        throw UnsupportedOperationException("Array visitor supports only collections")
+        val value = message.getRequiredField(fieldName, required)?.getLong()
+        fldStruct.checkEnum(value, fieldName)
+        rootNode.put(fieldName, value ?: defaultValue)
     }
 
-    override fun visitBooleanCollection(
-        fieldName: String,
-        defaultValue: List<Boolean>?,
-        fldStruct: Schema<*>,
-        required: Boolean
-    ) {
+    override fun visitBooleanCollection(fieldName: String, defaultValue: List<Boolean>?, fldStruct: Schema<*>, required: Boolean) {
         message.getRequiredField(fieldName, required)?.getList()?.let { values ->
-            rootNode.putAll<Boolean>(values)
+            rootNode.putArray(fieldName).putAll<Boolean>(values)
         }
     }
 
@@ -84,7 +88,7 @@ class JsonArrayVisitor(private val message: Message) : ISchemaVisitor {
         required: Boolean
     ) {
         message.getRequiredField(fieldName, required)?.getList()?.let { values ->
-            rootNode.putAll<Int>(values)
+            rootNode.putArray(fieldName).putAll<Int>(values)
         }
     }
 
@@ -95,7 +99,7 @@ class JsonArrayVisitor(private val message: Message) : ISchemaVisitor {
         required: Boolean
     ) {
         message.getRequiredField(fieldName, required)?.getList()?.let { values ->
-            rootNode.putAll<String>(values)
+            rootNode.putArray(fieldName).putAll<String>(values)
         }
     }
 
@@ -106,7 +110,7 @@ class JsonArrayVisitor(private val message: Message) : ISchemaVisitor {
         required: Boolean
     ) {
         message.getRequiredField(fieldName, required)?.getList()?.let { values ->
-            rootNode.putAll<Double>(values)
+            rootNode.putArray(fieldName).putAll<Double>(values)
         }
     }
 
@@ -117,7 +121,7 @@ class JsonArrayVisitor(private val message: Message) : ISchemaVisitor {
         required: Boolean
     ) {
         message.getRequiredField(fieldName, required)?.getList()?.let { values ->
-            rootNode.putAll<Float>(values)
+            rootNode.putArray(fieldName).putAll<Float>(values)
         }
     }
 
@@ -128,11 +132,13 @@ class JsonArrayVisitor(private val message: Message) : ISchemaVisitor {
         required: Boolean
     ) {
         message.getRequiredField(fieldName, required)?.getList()?.let { values ->
-            rootNode.putAll<Long>(values)
+            rootNode.putArray(fieldName).putAll<Long>(values)
         }
     }
 
-    override fun getResult(): String {
-        return rootNode.toPrettyString()
+    override fun getResult(): String = rootNode.toPrettyString()
+
+    private companion object {
+        val mapper = ObjectMapper()
     }
 }
