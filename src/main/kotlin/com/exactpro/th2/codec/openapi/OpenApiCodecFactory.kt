@@ -20,7 +20,6 @@ import com.exactpro.th2.codec.api.IPipelineCodec
 import com.exactpro.th2.codec.api.IPipelineCodecContext
 import com.exactpro.th2.codec.api.IPipelineCodecFactory
 import com.exactpro.th2.codec.api.IPipelineCodecSettings
-import com.exactpro.th2.codec.openapi.dictionary.OpenApiValidator
 import com.exactpro.th2.common.schema.dictionary.DictionaryType
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.parser.core.models.SwaggerParseResult

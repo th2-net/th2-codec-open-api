@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.exactpro.th2.codec.openapi.dictionary
+package com.exactpro.th2.codec.openapi
 
+import com.exactpro.th2.codec.openapi.throwable.DictionaryException
 import io.swagger.v3.parser.core.models.SwaggerParseResult
 import mu.KotlinLogging
 import org.openapitools.codegen.validations.oas.OpenApiEvaluator

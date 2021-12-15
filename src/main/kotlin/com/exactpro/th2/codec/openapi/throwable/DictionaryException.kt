@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.exactpro.th2.codec.openapi.dictionary
+package com.exactpro.th2.codec.openapi.throwable
 
 import com.exactpro.th2.codec.CodecException
 import org.openapitools.codegen.validation.Invalid

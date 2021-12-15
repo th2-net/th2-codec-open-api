@@ -16,8 +16,8 @@
 
 import com.exactpro.th2.codec.openapi.OpenApiCodecFactory
 import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
-import com.exactpro.th2.codec.openapi.dictionary.DictionaryException
-import com.exactpro.th2.codec.openapi.dictionary.OpenApiValidator
+import com.exactpro.th2.codec.openapi.throwable.DictionaryException
+import com.exactpro.th2.codec.openapi.OpenApiValidator
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.parser.core.models.ParseOptions
