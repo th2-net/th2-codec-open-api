@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
-package com.exactpro.th2.codec.openapi.visitors.json
+package com.exactpro.th2.codec.openapi.writer.visitors.json
 
 import com.exactpro.th2.codec.openapi.utils.checkEnum
 import com.exactpro.th2.codec.openapi.utils.getRequiredField
 import com.exactpro.th2.codec.openapi.utils.putAll
-import com.exactpro.th2.codec.openapi.visitors.ISchemaVisitor
+import com.exactpro.th2.codec.openapi.writer.SchemaWriter
+import com.exactpro.th2.codec.openapi.writer.visitors.ISchemaVisitor
 import com.exactpro.th2.common.grpc.Message
+import com.exactpro.th2.common.message.getMessage
+import com.exactpro.th2.common.message.message
 import com.exactpro.th2.common.value.getDouble
 import com.exactpro.th2.common.value.getInt
 import com.exactpro.th2.common.value.getList
 import com.exactpro.th2.common.value.getLong
+import com.exactpro.th2.common.value.getMessage
 import com.exactpro.th2.common.value.getString
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -36,7 +40,11 @@ class EncodeJsonObjectVisitor(private val message: Message) : ISchemaVisitor<Str
     private val rootNode: ObjectNode = mapper.createObjectNode()
 
     override fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, references: OpenAPI, required: Boolean) {
-        TODO("Not yet implemented")
+        message.getRequiredField(fieldName, required)?.getMessage()?.let { nextMessage ->
+            val visitor = EncodeJsonObjectVisitor(nextMessage)
+            SchemaWriter(references).traverse(visitor, fldStruct)
+            rootNode.put(fieldName, visitor.rootNode)
+        }
     }
 
     override fun visit(fieldName: String, defaultValue: String?, fldStruct: Schema<*>, required: Boolean) {

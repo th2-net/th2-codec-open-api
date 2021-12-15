@@ -1,22 +1,24 @@
-package com.exactpro.th2.codec.openapi.visitors.json
+package com.exactpro.th2.codec.openapi.writer.visitors.json
 
 import com.exactpro.th2.codec.openapi.utils.checkEnum
 import com.exactpro.th2.codec.openapi.utils.getArray
 import com.exactpro.th2.codec.openapi.utils.getRequiredField
-import com.exactpro.th2.codec.openapi.utils.putAll
-import com.exactpro.th2.codec.openapi.visitors.ISchemaVisitor
+import com.exactpro.th2.codec.openapi.writer.SchemaWriter
+import com.exactpro.th2.codec.openapi.writer.visitors.ISchemaVisitor
 import com.exactpro.th2.common.grpc.Message
 import com.exactpro.th2.common.message.addField
 import com.exactpro.th2.common.message.addFields
 import com.exactpro.th2.common.message.message
-import com.exactpro.th2.common.value.getList
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.Schema
 
-class DecodeJsonObjectVisitor(jsonString: String) : ISchemaVisitor<Message> {
+class DecodeJsonObjectVisitor(val json: JsonNode) : ISchemaVisitor<Message> {
     private val rootMessage = message()
-    private val json = mapper.readTree(jsonString)
+
+    constructor(jsonString: String) : this(mapper.readTree(jsonString))
+
 
     override fun visit(
         fieldName: String,
@@ -25,7 +27,11 @@ class DecodeJsonObjectVisitor(jsonString: String) : ISchemaVisitor<Message> {
         references: OpenAPI,
         required: Boolean
     ) {
-        TODO("Not yet implemented")
+        json.getRequiredField(fieldName, required)?.let {
+            val visitor = DecodeJsonObjectVisitor(it)
+            SchemaWriter(references).traverse(visitor, fldStruct)
+            rootMessage.addFields(fieldName, visitor.rootMessage.build())
+        }
     }
 
     override fun visit(fieldName: String, defaultValue: String?, fldStruct: Schema<*>, required: Boolean) {

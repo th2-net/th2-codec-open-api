@@ -1,37 +1,17 @@
-/*
- * Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+package com.exactpro.th2.codec.openapi.writer.visitors.json
 
-package com.exactpro.th2.codec.openapi.visitors.json
-
-import com.exactpro.th2.codec.openapi.utils.getRequiredField
-import com.exactpro.th2.codec.openapi.utils.putAll
-import com.exactpro.th2.codec.openapi.visitors.ISchemaVisitor
+import com.exactpro.th2.codec.openapi.writer.visitors.ISchemaVisitor
 import com.exactpro.th2.common.grpc.Message
-import com.exactpro.th2.common.value.getList
+import com.exactpro.th2.common.message.addField
+import com.exactpro.th2.common.message.message
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.Schema
 
-class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<String> {
-    private val rootNode: ArrayNode = mapper.createArrayNode()
-
-    companion object {
-        private var mapper = ObjectMapper()
-    }
+class DecodeJsonArrayVisitor(jsonString: String) : ISchemaVisitor<Message> {
+    private val rootMessage = message()
+    private val json = mapper.readTree(jsonString) as ArrayNode
 
     override fun visit(
         fieldName: String,
@@ -73,9 +53,7 @@ class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<Stri
         fldStruct: Schema<*>,
         required: Boolean
     ) {
-        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
-            rootNode.putAll<Boolean>(values)
-        }
+        rootMessage.addField(fieldName, json.map { it.asBoolean() })
     }
 
     override fun visitIntegerCollection(
@@ -84,9 +62,7 @@ class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<Stri
         fldStruct: Schema<*>,
         required: Boolean
     ) {
-        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
-            rootNode.putAll<Int>(values)
-        }
+        rootMessage.addField(fieldName, json.map { it.asInt() })
     }
 
     override fun visitStringCollection(
@@ -95,9 +71,7 @@ class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<Stri
         fldStruct: Schema<*>,
         required: Boolean
     ) {
-        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
-            rootNode.putAll<String>(values)
-        }
+        rootMessage.addField(fieldName, json.map { it.asText() })
     }
 
     override fun visitDoubleCollection(
@@ -106,9 +80,7 @@ class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<Stri
         fldStruct: Schema<*>,
         required: Boolean
     ) {
-        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
-            rootNode.putAll<Double>(values)
-        }
+        rootMessage.addField(fieldName, json.map { it.asDouble() })
     }
 
     override fun visitFloatCollection(
@@ -117,9 +89,7 @@ class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<Stri
         fldStruct: Schema<*>,
         required: Boolean
     ) {
-        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
-            rootNode.putAll<Float>(values)
-        }
+        rootMessage.addField(fieldName, json.map { it.asText().toFloat() })
     }
 
     override fun visitLongCollection(
@@ -128,10 +98,12 @@ class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<Stri
         fldStruct: Schema<*>,
         required: Boolean
     ) {
-        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
-            rootNode.putAll<Long>(values)
-        }
+        rootMessage.addField(fieldName, json.map { it.asLong() })
     }
 
-    override fun getResult(): String = rootNode.toPrettyString()
+    override fun getResult(): Message = rootMessage.build()
+
+    private companion object {
+        val mapper = ObjectMapper()
+    }
 }

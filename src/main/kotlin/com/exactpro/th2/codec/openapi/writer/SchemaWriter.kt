@@ -17,8 +17,7 @@
 package com.exactpro.th2.codec.openapi.writer
 
 import com.exactpro.th2.codec.openapi.utils.getEndPoint
-import com.exactpro.th2.codec.openapi.visitors.ISchemaVisitor
-import com.fasterxml.jackson.core.JsonParseException
+import com.exactpro.th2.codec.openapi.writer.visitors.ISchemaVisitor
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
@@ -29,7 +28,7 @@ import io.swagger.v3.parser.util.SchemaTypeUtil.OBJECT_TYPE
 import io.swagger.v3.parser.util.SchemaTypeUtil.STRING_TYPE
 
 
-class SchemaWriter(val openApi: OpenAPI) {
+class SchemaWriter(private val openApi: OpenAPI) {
 
     fun traverse(
         schemaVisitor: ISchemaVisitor<*>,

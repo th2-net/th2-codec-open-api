@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.exactpro.th2.codec.openapi.visitors
+package com.exactpro.th2.codec.openapi.writer.visitors
 
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.Schema

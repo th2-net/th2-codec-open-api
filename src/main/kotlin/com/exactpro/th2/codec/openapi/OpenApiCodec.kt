@@ -18,19 +18,19 @@ package com.exactpro.th2.codec.openapi
 
 import com.exactpro.th2.codec.api.IPipelineCodec
 import com.exactpro.th2.codec.openapi.OpenApiCodecFactory.Companion.PROTOCOL
-import com.exactpro.th2.codec.openapi.http.HttpContainer
-import com.exactpro.th2.codec.openapi.http.RequestContainer
-import com.exactpro.th2.codec.openapi.http.ResponseContainer
+import com.exactpro.th2.codec.openapi.schemacontainer.HttpContainer
+import com.exactpro.th2.codec.openapi.schemacontainer.RequestContainer
+import com.exactpro.th2.codec.openapi.schemacontainer.ResponseContainer
 import com.exactpro.th2.codec.openapi.throwable.DecodeException
 import com.exactpro.th2.codec.openapi.throwable.EncodeException
 import com.exactpro.th2.codec.openapi.utils.JsonSchemaTypes
 import com.exactpro.th2.codec.openapi.utils.MessageFormat
 import com.exactpro.th2.codec.openapi.utils.getEndPoint
 import com.exactpro.th2.codec.openapi.utils.getMethods
-import com.exactpro.th2.codec.openapi.visitors.json.DecodeJsonArrayVisitor
-import com.exactpro.th2.codec.openapi.visitors.json.DecodeJsonObjectVisitor
-import com.exactpro.th2.codec.openapi.visitors.json.EncodeJsonArrayVisitor
-import com.exactpro.th2.codec.openapi.visitors.json.EncodeJsonObjectVisitor
+import com.exactpro.th2.codec.openapi.writer.visitors.json.DecodeJsonArrayVisitor
+import com.exactpro.th2.codec.openapi.writer.visitors.json.DecodeJsonObjectVisitor
+import com.exactpro.th2.codec.openapi.writer.visitors.json.EncodeJsonArrayVisitor
+import com.exactpro.th2.codec.openapi.writer.visitors.json.EncodeJsonObjectVisitor
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.common.grpc.MessageGroup
 import com.exactpro.th2.common.grpc.RawMessage
