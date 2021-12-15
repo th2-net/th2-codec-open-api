@@ -7,6 +7,7 @@ import com.exactpro.th2.common.message.message
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 
 class DecodeJsonArrayVisitor(jsonString: String) : ISchemaVisitor<Message> {
@@ -50,7 +51,7 @@ class DecodeJsonArrayVisitor(jsonString: String) : ISchemaVisitor<Message> {
     override fun visitBooleanCollection(
         fieldName: String,
         defaultValue: List<Boolean>?,
-        fldStruct: Schema<*>,
+        fldStruct: ArraySchema,
         required: Boolean
     ) {
         rootMessage.addField(fieldName, json.map { it.asBoolean() })
@@ -59,7 +60,7 @@ class DecodeJsonArrayVisitor(jsonString: String) : ISchemaVisitor<Message> {
     override fun visitIntegerCollection(
         fieldName: String,
         defaultValue: List<Int>?,
-        fldStruct: Schema<*>,
+        fldStruct: ArraySchema,
         required: Boolean
     ) {
         rootMessage.addField(fieldName, json.map { it.asInt() })
@@ -68,7 +69,7 @@ class DecodeJsonArrayVisitor(jsonString: String) : ISchemaVisitor<Message> {
     override fun visitStringCollection(
         fieldName: String,
         defaultValue: List<String>?,
-        fldStruct: Schema<*>,
+        fldStruct: ArraySchema,
         required: Boolean
     ) {
         rootMessage.addField(fieldName, json.map { it.asText() })
@@ -77,7 +78,7 @@ class DecodeJsonArrayVisitor(jsonString: String) : ISchemaVisitor<Message> {
     override fun visitDoubleCollection(
         fieldName: String,
         defaultValue: List<Double>?,
-        fldStruct: Schema<*>,
+        fldStruct: ArraySchema,
         required: Boolean
     ) {
         rootMessage.addField(fieldName, json.map { it.asDouble() })
@@ -86,7 +87,7 @@ class DecodeJsonArrayVisitor(jsonString: String) : ISchemaVisitor<Message> {
     override fun visitFloatCollection(
         fieldName: String,
         defaultValue: List<Float>?,
-        fldStruct: Schema<*>,
+        fldStruct: ArraySchema,
         required: Boolean
     ) {
         rootMessage.addField(fieldName, json.map { it.asText().toFloat() })
@@ -95,7 +96,7 @@ class DecodeJsonArrayVisitor(jsonString: String) : ISchemaVisitor<Message> {
     override fun visitLongCollection(
         fieldName: String,
         defaultValue: List<Long>?,
-        fldStruct: Schema<*>,
+        fldStruct: ArraySchema,
         required: Boolean
     ) {
         rootMessage.addField(fieldName, json.map { it.asLong() })

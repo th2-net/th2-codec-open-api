@@ -22,8 +22,6 @@ import com.exactpro.th2.codec.openapi.utils.putAll
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.codec.openapi.writer.visitors.ISchemaVisitor
 import com.exactpro.th2.common.grpc.Message
-import com.exactpro.th2.common.message.getMessage
-import com.exactpro.th2.common.message.message
 import com.exactpro.th2.common.value.getDouble
 import com.exactpro.th2.common.value.getInt
 import com.exactpro.th2.common.value.getList
@@ -33,13 +31,20 @@ import com.exactpro.th2.common.value.getString
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 
 
 class EncodeJsonObjectVisitor(private val message: Message) : ISchemaVisitor<String> {
     private val rootNode: ObjectNode = mapper.createObjectNode()
 
-    override fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, references: OpenAPI, required: Boolean) {
+    override fun visit(
+        fieldName: String,
+        defaultValue: Schema<*>?,
+        fldStruct: Schema<*>,
+        references: OpenAPI,
+        required: Boolean
+    ) {
         message.getRequiredField(fieldName, required)?.getMessage()?.let { nextMessage ->
             val visitor = EncodeJsonObjectVisitor(nextMessage)
             SchemaWriter(references).traverse(visitor, fldStruct)
@@ -83,7 +88,12 @@ class EncodeJsonObjectVisitor(private val message: Message) : ISchemaVisitor<Str
         rootNode.put(fieldName, value ?: defaultValue)
     }
 
-    override fun visitBooleanCollection(fieldName: String, defaultValue: List<Boolean>?, fldStruct: Schema<*>, required: Boolean) {
+    override fun visitBooleanCollection(
+        fieldName: String,
+        defaultValue: List<Boolean>?,
+        fldStruct: ArraySchema,
+        required: Boolean
+    ) {
         message.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putArray(fieldName).putAll<Boolean>(values)
         }
@@ -92,7 +102,7 @@ class EncodeJsonObjectVisitor(private val message: Message) : ISchemaVisitor<Str
     override fun visitIntegerCollection(
         fieldName: String,
         defaultValue: List<Int>?,
-        fldStruct: Schema<*>,
+        fldStruct: ArraySchema,
         required: Boolean
     ) {
         message.getRequiredField(fieldName, required)?.getList()?.let { values ->
@@ -103,7 +113,7 @@ class EncodeJsonObjectVisitor(private val message: Message) : ISchemaVisitor<Str
     override fun visitStringCollection(
         fieldName: String,
         defaultValue: List<String>?,
-        fldStruct: Schema<*>,
+        fldStruct: ArraySchema,
         required: Boolean
     ) {
         message.getRequiredField(fieldName, required)?.getList()?.let { values ->
@@ -114,7 +124,7 @@ class EncodeJsonObjectVisitor(private val message: Message) : ISchemaVisitor<Str
     override fun visitDoubleCollection(
         fieldName: String,
         defaultValue: List<Double>?,
-        fldStruct: Schema<*>,
+        fldStruct: ArraySchema,
         required: Boolean
     ) {
         message.getRequiredField(fieldName, required)?.getList()?.let { values ->
@@ -125,7 +135,7 @@ class EncodeJsonObjectVisitor(private val message: Message) : ISchemaVisitor<Str
     override fun visitFloatCollection(
         fieldName: String,
         defaultValue: List<Float>?,
-        fldStruct: Schema<*>,
+        fldStruct: ArraySchema,
         required: Boolean
     ) {
         message.getRequiredField(fieldName, required)?.getList()?.let { values ->
@@ -136,7 +146,7 @@ class EncodeJsonObjectVisitor(private val message: Message) : ISchemaVisitor<Str
     override fun visitLongCollection(
         fieldName: String,
         defaultValue: List<Long>?,
-        fldStruct: Schema<*>,
+        fldStruct: ArraySchema,
         required: Boolean
     ) {
         message.getRequiredField(fieldName, required)?.getList()?.let { values ->

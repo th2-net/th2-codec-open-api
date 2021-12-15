@@ -24,6 +24,7 @@ import com.exactpro.th2.common.value.getList
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 
 class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<String> {
@@ -70,7 +71,7 @@ class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<Stri
     override fun visitBooleanCollection(
         fieldName: String,
         defaultValue: List<Boolean>?,
-        fldStruct: Schema<*>,
+        fldStruct: ArraySchema,
         required: Boolean
     ) {
         message.getRequiredField(fieldName, required)?.getList()?.let { values ->
@@ -81,7 +82,7 @@ class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<Stri
     override fun visitIntegerCollection(
         fieldName: String,
         defaultValue: List<Int>?,
-        fldStruct: Schema<*>,
+        fldStruct: ArraySchema,
         required: Boolean
     ) {
         message.getRequiredField(fieldName, required)?.getList()?.let { values ->
@@ -92,7 +93,7 @@ class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<Stri
     override fun visitStringCollection(
         fieldName: String,
         defaultValue: List<String>?,
-        fldStruct: Schema<*>,
+        fldStruct: ArraySchema,
         required: Boolean
     ) {
         message.getRequiredField(fieldName, required)?.getList()?.let { values ->
@@ -103,7 +104,7 @@ class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<Stri
     override fun visitDoubleCollection(
         fieldName: String,
         defaultValue: List<Double>?,
-        fldStruct: Schema<*>,
+        fldStruct: ArraySchema,
         required: Boolean
     ) {
         message.getRequiredField(fieldName, required)?.getList()?.let { values ->
@@ -114,7 +115,7 @@ class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<Stri
     override fun visitFloatCollection(
         fieldName: String,
         defaultValue: List<Float>?,
-        fldStruct: Schema<*>,
+        fldStruct: ArraySchema,
         required: Boolean
     ) {
         message.getRequiredField(fieldName, required)?.getList()?.let { values ->
@@ -125,7 +126,7 @@ class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<Stri
     override fun visitLongCollection(
         fieldName: String,
         defaultValue: List<Long>?,
-        fldStruct: Schema<*>,
+        fldStruct: ArraySchema,
         required: Boolean
     ) {
         message.getRequiredField(fieldName, required)?.getList()?.let { values ->

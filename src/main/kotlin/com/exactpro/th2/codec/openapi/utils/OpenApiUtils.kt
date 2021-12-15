@@ -21,6 +21,8 @@ import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.parser.models.RefType
+import org.apache.poi.ss.formula.functions.T
+import kotlin.reflect.KClass
 
 private fun PathItem.getByMethod(method: String) : Operation? {
     when (method.lowercase()) {

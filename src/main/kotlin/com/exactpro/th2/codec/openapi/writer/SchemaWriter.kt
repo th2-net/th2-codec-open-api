@@ -20,7 +20,10 @@ import com.exactpro.th2.codec.openapi.utils.getEndPoint
 import com.exactpro.th2.codec.openapi.writer.visitors.ISchemaVisitor
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
+import io.swagger.v3.oas.models.media.BooleanSchema
+import io.swagger.v3.oas.models.media.NumberSchema
 import io.swagger.v3.oas.models.media.Schema
+import io.swagger.v3.oas.models.media.StringSchema
 import io.swagger.v3.parser.util.SchemaTypeUtil.BOOLEAN_TYPE
 import io.swagger.v3.parser.util.SchemaTypeUtil.INTEGER_TYPE
 import io.swagger.v3.parser.util.SchemaTypeUtil.NUMBER_TYPE
@@ -56,7 +59,17 @@ class SchemaWriter(private val openApi: OpenAPI) {
                     processArrayProperty(property as ArraySchema, visitor, name, required)
                 }
                 INTEGER_TYPE -> {
-                    visitor.visit(name, property.default as? Int, property, required)
+                    when (property.format) {
+                        "int64" -> {
+                            visitor.visit(name, property.default as? Long, property, required)
+                        }
+                        null, "", "int32" -> {
+                            visitor.visit(name, property.default as? Int, property, required)
+                        }
+                        else -> {
+                            error("Unsupported format of '$INTEGER_TYPE' property $name: ${property.format}")
+                        }
+                    }
                 }
                 BOOLEAN_TYPE -> {
                     visitor.visit(name, property.default as? Boolean, property, required)
@@ -66,17 +79,14 @@ class SchemaWriter(private val openApi: OpenAPI) {
                         "float" -> {
                             visitor.visit(name, property.default as? Float, property, required)
                         }
-                        "int64" -> {
-                            visitor.visit(name, property.default as? Long, property, required)
-                        }
                         "double" -> {
                             visitor.visit(name, property.default as? Double, property, required)
                         }
-                        null, "", "int32" -> {
-                            visitor.visit(name, property.default as? Int, property, required)
+                        null, "" -> {
+                            visitor.visit(name, property.default as? String, property, required)
                         }
                         else -> {
-                            error("Unsupported format of property $name: ${property.format}")
+                            error("Unsupported format of '$NUMBER_TYPE' property $name: ${property.format}")
                         }
                     }
                 }

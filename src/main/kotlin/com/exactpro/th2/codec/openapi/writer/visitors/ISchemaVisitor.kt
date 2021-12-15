@@ -17,7 +17,12 @@
 package com.exactpro.th2.codec.openapi.writer.visitors
 
 import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.media.ArraySchema
+import io.swagger.v3.oas.models.media.BooleanSchema
+import io.swagger.v3.oas.models.media.NumberSchema
 import io.swagger.v3.oas.models.media.Schema
+import io.swagger.v3.oas.models.media.StringSchema
+import java.math.BigDecimal
 
 interface ISchemaVisitor<T> {
     fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, references: OpenAPI, required: Boolean = false)
@@ -27,12 +32,12 @@ interface ISchemaVisitor<T> {
     fun visit(fieldName: String, defaultValue: Float?, fldStruct: Schema<*>, required: Boolean = false)
     fun visit(fieldName: String, defaultValue: Double?, fldStruct: Schema<*>, required: Boolean = false)
     fun visit(fieldName: String, defaultValue: Long?, fldStruct: Schema<*>, required: Boolean = false)
-    fun visitBooleanCollection(fieldName: String, defaultValue: List<Boolean>?, fldStruct: Schema<*>, required: Boolean = false)
-    fun visitIntegerCollection(fieldName: String, defaultValue: List<Int>?, fldStruct: Schema<*>, required: Boolean = false)
-    fun visitStringCollection(fieldName: String, defaultValue: List<String>?, fldStruct: Schema<*>, required: Boolean = false)
-    fun visitDoubleCollection(fieldName: String, defaultValue: List<Double>?, fldStruct: Schema<*>, required: Boolean = false)
-    fun visitFloatCollection(fieldName: String, defaultValue: List<Float>?, fldStruct: Schema<*>, required: Boolean = false)
-    fun visitLongCollection(fieldName: String, defaultValue: List<Long>?, fldStruct: Schema<*>, required: Boolean = false)
+    fun visitBooleanCollection(fieldName: String, defaultValue: List<Boolean>?, fldStruct: ArraySchema, required: Boolean = false)
+    fun visitIntegerCollection(fieldName: String, defaultValue: List<Int>?, fldStruct: ArraySchema, required: Boolean = false)
+    fun visitStringCollection(fieldName: String, defaultValue: List<String>?, fldStruct: ArraySchema, required: Boolean = false)
+    fun visitDoubleCollection(fieldName: String, defaultValue: List<Double>?, fldStruct: ArraySchema, required: Boolean = false)
+    fun visitFloatCollection(fieldName: String, defaultValue: List<Float>?, fldStruct: ArraySchema, required: Boolean = false)
+    fun visitLongCollection(fieldName: String, defaultValue: List<Long>?, fldStruct: ArraySchema, required: Boolean = false)
 
     fun getResult(): T
 

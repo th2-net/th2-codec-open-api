@@ -6,6 +6,7 @@ import com.exactpro.th2.common.message.message
 import com.exactpro.th2.common.message.plusAssign
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.parser.OpenAPIParser
+import io.swagger.v3.oas.models.OpenAPI
 import mu.KotlinLogging
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -45,14 +46,14 @@ class JsonObjectEncodeTests {
         }
     }
 
-    companion object {
-        private val LOGGER = KotlinLogging.logger { }
-        private val settings = OpenApiCodecSettings()
-        private val dictionary =
+    private companion object {
+        val LOGGER = KotlinLogging.logger { }
+        val settings = OpenApiCodecSettings()
+        val dictionary =
             requireNotNull(JsonObjectDecodeTests::class.java.getResource("valid-dictionary.yml")) { "Dictionary from resources required" }.toURI().path.drop(
                 1
             )
-        private val openAPI = OpenAPIParser().readLocation(dictionary, null, settings.dictionaryParseOption).openAPI
-        private val mapper = ObjectMapper()
+        val openAPI: OpenAPI = OpenAPIParser().readLocation(dictionary, null, settings.dictionaryParseOption).openAPI
+        val mapper = ObjectMapper()
     }
 }

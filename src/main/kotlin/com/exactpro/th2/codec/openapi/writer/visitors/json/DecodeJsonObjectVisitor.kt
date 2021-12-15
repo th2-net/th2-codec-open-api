@@ -12,6 +12,7 @@ import com.exactpro.th2.common.message.message
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 
 class DecodeJsonObjectVisitor(val json: JsonNode) : ISchemaVisitor<Message> {
@@ -73,7 +74,7 @@ class DecodeJsonObjectVisitor(val json: JsonNode) : ISchemaVisitor<Message> {
     override fun visitBooleanCollection(
         fieldName: String,
         defaultValue: List<Boolean>?,
-        fldStruct: Schema<*>,
+        fldStruct: ArraySchema,
         required: Boolean
     ) {
         json.getArray(fieldName, required)?.map { it.asBoolean() }?.let {
@@ -84,7 +85,7 @@ class DecodeJsonObjectVisitor(val json: JsonNode) : ISchemaVisitor<Message> {
     override fun visitIntegerCollection(
         fieldName: String,
         defaultValue: List<Int>?,
-        fldStruct: Schema<*>,
+        fldStruct: ArraySchema,
         required: Boolean
     ) {
         json.getArray(fieldName, required)?.map { it.asInt() }?.let {
@@ -95,7 +96,7 @@ class DecodeJsonObjectVisitor(val json: JsonNode) : ISchemaVisitor<Message> {
     override fun visitStringCollection(
         fieldName: String,
         defaultValue: List<String>?,
-        fldStruct: Schema<*>,
+        fldStruct: ArraySchema,
         required: Boolean
     ) {
         json.getArray(fieldName, required)?.map { it.asText() }?.let {
@@ -106,7 +107,7 @@ class DecodeJsonObjectVisitor(val json: JsonNode) : ISchemaVisitor<Message> {
     override fun visitDoubleCollection(
         fieldName: String,
         defaultValue: List<Double>?,
-        fldStruct: Schema<*>,
+        fldStruct: ArraySchema,
         required: Boolean
     ) {
         json.getArray(fieldName, required)?.map { it.asDouble() }?.let {
@@ -117,7 +118,7 @@ class DecodeJsonObjectVisitor(val json: JsonNode) : ISchemaVisitor<Message> {
     override fun visitFloatCollection(
         fieldName: String,
         defaultValue: List<Float>?,
-        fldStruct: Schema<*>,
+        fldStruct: ArraySchema,
         required: Boolean
     ) {
         json.getArray(fieldName, required)?.map { it.asText().toFloat() }?.let {
@@ -128,7 +129,7 @@ class DecodeJsonObjectVisitor(val json: JsonNode) : ISchemaVisitor<Message> {
     override fun visitLongCollection(
         fieldName: String,
         defaultValue: List<Long>?,
-        fldStruct: Schema<*>,
+        fldStruct: ArraySchema,
         required: Boolean
     ) {
         json.getArray(fieldName, required)?.map { it.asLong() }?.let {
