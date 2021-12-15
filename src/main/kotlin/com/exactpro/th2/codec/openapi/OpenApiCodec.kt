@@ -119,7 +119,9 @@ class OpenApiCodec(
                 val type = message.getList(HEADERS_FIELD)?.first { it.messageValue.getString("name") == "Content-Type" }?.messageValue?.getString("value")
                     ?: "null"
 
-                val messageSchema = dictionary.paths[uri]?.getMethods()?.get(method)?.responses?.get(code)?.content?.get(type)?.schema
+                val messageSchema = dictionary.paths[uri]?.getMethods()?.get(method)?.responses?.get(code)?.content?.get(type)?.schema?.run {
+                    dictionary.getEndPoint(this)
+                }
 
                 if (body.isNotEmpty()) {
                     checkNotNull(messageSchema) { "Message with path $uri, method $method, code $code and type $type wasn't found" }
