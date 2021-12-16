@@ -17,7 +17,7 @@ class JsonObjectVisitorTest {
         val simpleValue = "stringValue"
         val visitor = EncodeJsonObjectVisitor(message().addField(fieldName, simpleValue).build())
         val schema = createTestSchema(simpleValue)
-        visitor.visit(fieldName, null as? String, schema as StringSchema, true)
+        visitor.visit(fieldName, null as? String, schema, true)
         val result = mapper.readTree(visitor.getResult()).get(fieldName)?.asText()
         Assertions.assertEquals(simpleValue, result)
     }
@@ -28,8 +28,8 @@ class JsonObjectVisitorTest {
         val simpleValue = true
         val visitor = EncodeJsonObjectVisitor(message().addField(fieldName, simpleValue).build())
         val schema = createTestSchema(simpleValue)
-        visitor.visit(fieldName, null as? String, schema as StringSchema, true)
-        val result = mapper.readTree(visitor.getResult()).get(fieldName)?.asText()
+        visitor.visit(fieldName, null as? Boolean, schema, true)
+        val result = mapper.readTree(visitor.getResult()).get(fieldName)?.asBoolean()
         Assertions.assertEquals(simpleValue, result)
     }
 
@@ -39,8 +39,8 @@ class JsonObjectVisitorTest {
         val simpleValue = 123
         val visitor = EncodeJsonObjectVisitor(message().addField(fieldName, simpleValue).build())
         val schema = createTestSchema(simpleValue)
-        visitor.visit(fieldName, null as? String, schema as StringSchema, true)
-        val result = mapper.readTree(visitor.getResult()).get(fieldName)?.asText()
+        visitor.visit(fieldName, null as? Int, schema, true)
+        val result = mapper.readTree(visitor.getResult()).get(fieldName)?.asInt()
         Assertions.assertEquals(simpleValue, result)
     }
 
@@ -50,8 +50,8 @@ class JsonObjectVisitorTest {
         val simpleValue = 123.1f
         val visitor = EncodeJsonObjectVisitor(message().addField(fieldName, simpleValue).build())
         val schema = createTestSchema(simpleValue)
-        visitor.visit(fieldName, null as? String, schema as StringSchema, true)
-        val result = mapper.readTree(visitor.getResult()).get(fieldName)?.asText()
+        visitor.visit(fieldName, null as? Float, schema, true)
+        val result = mapper.readTree(visitor.getResult()).get(fieldName)?.asText()?.toFloat()
         Assertions.assertEquals(simpleValue, result)
     }
 
@@ -61,8 +61,8 @@ class JsonObjectVisitorTest {
         val simpleValue = 123.1
         val visitor = EncodeJsonObjectVisitor(message().addField(fieldName, simpleValue).build())
         val schema = createTestSchema(simpleValue)
-        visitor.visit(fieldName, null as? String, schema as StringSchema, true)
-        val result = mapper.readTree(visitor.getResult()).get(fieldName)?.asText()
+        visitor.visit(fieldName, null as? Double, schema, true)
+        val result = mapper.readTree(visitor.getResult()).get(fieldName)?.asDouble()
         Assertions.assertEquals(simpleValue, result)
     }
 
@@ -72,8 +72,8 @@ class JsonObjectVisitorTest {
         val simpleValue = 123123L
         val visitor = EncodeJsonObjectVisitor(message().addField(fieldName, simpleValue).build())
         val schema = createTestSchema(simpleValue)
-        visitor.visit(fieldName, null as? String, schema as StringSchema, true)
-        val result = mapper.readTree(visitor.getResult()).get(fieldName)?.asText()
+        visitor.visit(fieldName, null as? Long, schema, true)
+        val result = mapper.readTree(visitor.getResult()).get(fieldName)?.asLong()
         Assertions.assertEquals(simpleValue, result)
     }
 
