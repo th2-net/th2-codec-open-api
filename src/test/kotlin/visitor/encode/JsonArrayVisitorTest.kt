@@ -1,12 +1,12 @@
-package visitor
+package visitor.encode
 
 import com.exactpro.th2.codec.openapi.writer.visitors.json.EncodeJsonArrayVisitor
 import com.exactpro.th2.common.message.addField
 import com.exactpro.th2.common.message.message
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
+import createArrayTestSchema
 import io.swagger.v3.oas.models.OpenAPI
-import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
 import org.junit.jupiter.api.Assertions
@@ -120,16 +120,6 @@ class JsonArrayVisitorTest {
         val result = (mapper.readTree(visitor.getResult()) as ArrayNode)
         collection.forEachIndexed { index, value ->
             Assertions.assertEquals(value, result.get(index).asLong())
-        }
-    }
-
-    private fun createArrayTestSchema(type: String, format: String? = null) : ArraySchema {
-        return ArraySchema().apply {
-            items = StringSchema()
-            items.type = type
-            format?.let {
-                items.format = format
-            }
         }
     }
 

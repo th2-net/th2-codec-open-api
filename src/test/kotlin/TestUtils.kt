@@ -64,3 +64,13 @@ inline fun <reified T:Any>createTestSchema(value: T?, fillEnum: List<T>? = null)
         }
     }
 }
+
+fun createArrayTestSchema(type: String, format: String? = null) : ArraySchema {
+    return ArraySchema().apply {
+        items = StringSchema()
+        items.type = type
+        format?.let {
+            items.format = format
+        }
+    }
+}
