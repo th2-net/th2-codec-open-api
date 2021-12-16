@@ -10,9 +10,11 @@ import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 
-class DecodeJsonArrayVisitor(jsonString: String) : ISchemaVisitor<Message> {
+class DecodeJsonArrayVisitor(val json: ArrayNode) : ISchemaVisitor<Message> {
+
+    constructor(jsonString: String) : this(mapper.readTree(jsonString) as ArrayNode)
+
     private val rootMessage = message()
-    private val json = mapper.readTree(jsonString) as ArrayNode
 
     override fun visit(
         fieldName: String,
@@ -54,7 +56,11 @@ class DecodeJsonArrayVisitor(jsonString: String) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        rootMessage.addField(fieldName, json.map { it.asBoolean() })
+        rootMessage.addField(fieldName, json.map {
+            if (it.isBoolean) {
+                it.asBoolean()
+            } else error("Cannot convert $fieldName=$it to boolean")
+        })
     }
 
     override fun visitIntegerCollection(
@@ -63,7 +69,11 @@ class DecodeJsonArrayVisitor(jsonString: String) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        rootMessage.addField(fieldName, json.map { it.asInt() })
+        rootMessage.addField(fieldName, json.map {
+            if (it.isInt) {
+                it.asInt()
+            } else error("Cannot convert $fieldName=$it to integer")
+        })
     }
 
     override fun visitStringCollection(
@@ -81,7 +91,11 @@ class DecodeJsonArrayVisitor(jsonString: String) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        rootMessage.addField(fieldName, json.map { it.asDouble() })
+        rootMessage.addField(fieldName, json.map {
+            if (it.isDouble) {
+                it.asDouble()
+            } else error("Cannot convert $fieldName=$it to double")
+        })
     }
 
     override fun visitFloatCollection(
@@ -90,7 +104,11 @@ class DecodeJsonArrayVisitor(jsonString: String) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        rootMessage.addField(fieldName, json.map { it.asText().toFloat() })
+        rootMessage.addField(fieldName, json.map {
+            if (it.isFloat) {
+                it.asText().toFloat()
+            } else error("Cannot convert $fieldName=$it to float")
+        })
     }
 
     override fun visitLongCollection(
@@ -99,7 +117,11 @@ class DecodeJsonArrayVisitor(jsonString: String) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        rootMessage.addField(fieldName, json.map { it.asLong() })
+        rootMessage.addField(fieldName, json.map {
+            if (it.isLong) {
+                it.asLong()
+            } else error("Cannot convert $fieldName=$it to long")
+        })
     }
 
     override fun getResult(): Message = rootMessage.build()

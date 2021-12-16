@@ -16,10 +16,7 @@
 
 package com.exactpro.th2.codec.openapi.utils
 
-import com.exactpro.th2.common.grpc.Message
 import com.exactpro.th2.common.grpc.Value
-import com.exactpro.th2.common.message.getField
-import com.exactpro.th2.common.message.messageType
 import com.exactpro.th2.common.value.getDouble
 import com.exactpro.th2.common.value.getInt
 import com.exactpro.th2.common.value.getLong
@@ -31,7 +28,7 @@ inline fun <reified T> ArrayNode.putAll(values: List<Value>) {
     when (T::class) {
         Int::class -> {
             values.forEach {
-                add(it.getInt())
+                add(it.getString()!!.toInt())
             }
         }
         String::class -> {
@@ -41,22 +38,22 @@ inline fun <reified T> ArrayNode.putAll(values: List<Value>) {
         }
         Double::class -> {
             values.forEach {
-                add(it.getDouble())
+                add(it.getString()!!.toDouble())
             }
         }
         Float::class -> {
             values.forEach {
-                add(it.getString()?.toFloat())
+                add(it.getString()!!.toFloat())
             }
         }
         Boolean::class -> {
             values.forEach {
-                add(it.getString()?.toBoolean())
+                add(it.getString()!!.toBoolean())
             }
         }
         Long::class -> {
             values.forEach {
-                add(it.getLong())
+                add(it.getString()!!.toLong())
             }
         }
         else -> {

@@ -1,4 +1,4 @@
-package visitor.encode
+package visitor
 
 import com.exactpro.th2.codec.openapi.writer.visitors.json.EncodeJsonArrayVisitor
 import com.exactpro.th2.common.message.addField
@@ -12,36 +12,37 @@ import io.swagger.v3.oas.models.media.StringSchema
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
-class JsonArrayVisitorTest {
+class EncodeJsonArrayTest {
 
     @Test
     fun `not supported encode`() {
+        val message = message().build()
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            EncodeJsonArrayVisitor(message().build()).visit("", null as? String, StringSchema(), true)
+            EncodeJsonArrayVisitor(message).visit("", null as? String, StringSchema(), true)
         }
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            EncodeJsonArrayVisitor(message().build()).visit("", null as? Int, StringSchema(), true)
+            EncodeJsonArrayVisitor(message).visit("", null as? Int, StringSchema(), true)
         }
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            EncodeJsonArrayVisitor(message().build()).visit("", null as? Double, StringSchema(), true)
+            EncodeJsonArrayVisitor(message).visit("", null as? Double, StringSchema(), true)
         }
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            EncodeJsonArrayVisitor(message().build()).visit("", null as? Long, StringSchema(), true)
+            EncodeJsonArrayVisitor(message).visit("", null as? Long, StringSchema(), true)
         }
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            EncodeJsonArrayVisitor(message().build()).visit("", null as? Float, StringSchema(), true)
+            EncodeJsonArrayVisitor(message).visit("", null as? Float, StringSchema(), true)
         }
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            EncodeJsonArrayVisitor(message().build()).visit("", null as? Boolean, StringSchema(), true)
+            EncodeJsonArrayVisitor(message).visit("", null as? Boolean, StringSchema(), true)
         }
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            EncodeJsonArrayVisitor(message().build()).visit("", null as? Schema<*>, StringSchema(), OpenAPI(), true)
+            EncodeJsonArrayVisitor(message).visit("", null as? Schema<*>, StringSchema(), OpenAPI(), true)
         }
     }
 

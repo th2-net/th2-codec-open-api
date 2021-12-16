@@ -16,14 +16,12 @@
 
 package com.exactpro.th2.codec.openapi.writer
 
+import com.exactpro.th2.codec.CodecException
 import com.exactpro.th2.codec.openapi.utils.getEndPoint
 import com.exactpro.th2.codec.openapi.writer.visitors.ISchemaVisitor
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
-import io.swagger.v3.oas.models.media.BooleanSchema
-import io.swagger.v3.oas.models.media.NumberSchema
 import io.swagger.v3.oas.models.media.Schema
-import io.swagger.v3.oas.models.media.StringSchema
 import io.swagger.v3.parser.util.SchemaTypeUtil.BOOLEAN_TYPE
 import io.swagger.v3.parser.util.SchemaTypeUtil.INTEGER_TYPE
 import io.swagger.v3.parser.util.SchemaTypeUtil.NUMBER_TYPE
@@ -99,7 +97,7 @@ class SchemaWriter(private val openApi: OpenAPI) {
                 else -> error("Unsupported type of property $name: null")
             }
         }.onFailure {
-            throw UnsupportedOperationException("Cannot parse field [$name] inside of schema with type ${property.type}", it)
+            throw CodecException("Cannot parse field [$name] inside of schema with type ${property.type}", it)
         }
 
     }
@@ -138,7 +136,7 @@ class SchemaWriter(private val openApi: OpenAPI) {
                 else -> error("Unsupported type of property $name: null")
             }
         }.onFailure {
-            throw UnsupportedOperationException("Cannot parse array field [$name] inside of schema with type ${property.type}", it)
+            throw CodecException("Cannot parse array field [$name] inside of schema with type ${property.type}", it)
         }
     }
 

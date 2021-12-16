@@ -1,4 +1,4 @@
-package visitor.encode
+package visitor
 
 import com.exactpro.th2.codec.openapi.writer.visitors.json.EncodeJsonObjectVisitor
 import com.exactpro.th2.common.message.addField
@@ -10,7 +10,7 @@ import createTestSchema
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
-class JsonObjectVisitorTest {
+class EncodeJsonTest {
 
     @Test
     fun `string test encode`() {
