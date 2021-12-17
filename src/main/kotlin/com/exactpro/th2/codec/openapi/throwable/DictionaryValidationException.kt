@@ -19,7 +19,7 @@ package com.exactpro.th2.codec.openapi.throwable
 import com.exactpro.th2.codec.CodecException
 import org.openapitools.codegen.validation.Invalid
 
-class DictionaryException(message: String, errors: List<Invalid>, additionalErrors: List<String>) : CodecException(
+class DictionaryValidationException(message: String, errors: List<Invalid>, additionalErrors: List<String>) : CodecException(
     buildString {
         append(message)
         append("\nIssues: ")

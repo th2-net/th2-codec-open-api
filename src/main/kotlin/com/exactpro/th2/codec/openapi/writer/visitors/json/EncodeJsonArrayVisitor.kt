@@ -18,12 +18,13 @@ package com.exactpro.th2.codec.openapi.writer.visitors.json
 
 import com.exactpro.th2.codec.openapi.utils.getRequiredField
 import com.exactpro.th2.codec.openapi.utils.putAll
+import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.codec.openapi.writer.visitors.ISchemaVisitor
 import com.exactpro.th2.common.grpc.Message
+import com.exactpro.th2.common.message.toJson
 import com.exactpro.th2.common.value.getList
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
-import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 
@@ -38,7 +39,6 @@ class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<Stri
         fieldName: String,
         defaultValue: Schema<*>?,
         fldStruct: Schema<*>,
-        references: OpenAPI,
         required: Boolean
     ) {
         throw UnsupportedOperationException("Array visitor supports only collections")
@@ -132,6 +132,20 @@ class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<Stri
         message.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putAll<Long>(values)
         }
+    }
+
+    override fun visitObjectCollection(
+        fieldName: String,
+        defaultValue: List<Any>?,
+        fldStruct: ArraySchema,
+        required: Boolean
+    ) {
+        message.getRequiredField(fieldName, required)?.getList()?.map {
+            if (!it.hasMessageValue()) error("Cannot convert $fieldName=${it.toJson(true)} to json object")
+            EncodeJsonObjectVisitor(it.messageValue).apply {
+                SchemaWriter.instance.traverse(this, fldStruct.items)
+            }.getNode()
+        }?.forEach(rootNode::add)
     }
 
     override fun getResult(): String = rootNode.toPrettyString()

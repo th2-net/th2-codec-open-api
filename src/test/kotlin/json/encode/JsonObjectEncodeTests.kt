@@ -1,3 +1,5 @@
+package json.encode
+
 import com.exactpro.th2.codec.openapi.OpenApiCodec
 import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
 import com.exactpro.th2.common.grpc.MessageGroup
@@ -5,6 +7,7 @@ import com.exactpro.th2.common.message.addField
 import com.exactpro.th2.common.message.message
 import com.exactpro.th2.common.message.plusAssign
 import com.fasterxml.jackson.databind.ObjectMapper
+import getResourceAsText
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import mu.KotlinLogging
@@ -49,11 +52,7 @@ class JsonObjectEncodeTests {
     private companion object {
         val LOGGER = KotlinLogging.logger { }
         val settings = OpenApiCodecSettings()
-        val dictionary =
-            requireNotNull(JsonObjectDecodeTests::class.java.getResource("valid-dictionary.yml")) { "Dictionary from resources required" }.toURI().path.drop(
-                1
-            )
-        val openAPI: OpenAPI = OpenAPIParser().readLocation(dictionary, null, settings.dictionaryParseOption).openAPI
+        val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/valid-dictionary.yml"), null, settings.dictionaryParseOption).openAPI
         val mapper = ObjectMapper()
     }
 }

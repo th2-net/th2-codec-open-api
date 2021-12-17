@@ -16,7 +16,7 @@
 
 package com.exactpro.th2.codec.openapi
 
-import com.exactpro.th2.codec.openapi.throwable.DictionaryException
+import com.exactpro.th2.codec.openapi.throwable.DictionaryValidationException
 import io.swagger.v3.parser.core.models.SwaggerParseResult
 import mu.KotlinLogging
 import org.openapitools.codegen.validations.oas.OpenApiEvaluator
@@ -32,26 +32,26 @@ class OpenApiValidator(val configuration: RuleConfiguration) {
         val validationResult = evaluator.validate(openAPI)
 
         if (validationResult.warnings.isNotEmpty()) {
-            logger.warn {"\nSpec has issues or recommendations.\nIssues:\n"}
+            logger.warn {"Spec has issues or recommendations.\nIssues:"}
 
             validationResult.warnings.forEach {
-                logger.warn { "\t${it.message}|${it.details}\n" }
+                logger.warn { "\t${it.message}|${it.details}" }
             }
         }
 
         if (messages.isNotEmpty() || validationResult.errors.isNotEmpty()) {
 
-            logger.error {"\nSpec is invalid.\nIssues:\n"}
+            logger.error {"Spec is invalid.\nIssues:"}
 
             messages.forEach {
-                logger.error {"\t$it"}
+                logger.error {"$it"}
             }
 
             validationResult.errors.forEach {
-                logger.error { "\t${it.message}\n\t${it.details}" }
+                logger.error { "${it.message}\t${it.details}" }
             }
 
-            throw DictionaryException("Provided dictionary-spec is not valid.", validationResult.errors, messages)
+            throw DictionaryValidationException("Provided dictionary-spec is not valid.", validationResult.errors, messages)
         } else {
             logger.debug { "Provided dictionary-spec is valid" }
         }

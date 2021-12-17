@@ -29,7 +29,7 @@ import io.swagger.v3.parser.util.SchemaTypeUtil.OBJECT_TYPE
 import io.swagger.v3.parser.util.SchemaTypeUtil.STRING_TYPE
 
 
-class SchemaWriter(private val openApi: OpenAPI) {
+class SchemaWriter private constructor(private val openApi: OpenAPI) {
 
     fun traverse(
         schemaVisitor: ISchemaVisitor<*>,
@@ -44,7 +44,7 @@ class SchemaWriter(private val openApi: OpenAPI) {
             OBJECT_TYPE -> {
                 requireNotNull(schema.properties) {"Properties in object are required: $schema"}
                 schema.properties.forEach { (name, property) ->
-                    processProperty(openApi.getEndPoint(property), schemaVisitor, name, schema.required.contains(name))
+                    processProperty(openApi.getEndPoint(property), schemaVisitor, name, schema.required?.contains(name) ?: false)
                 }
             }
         }
@@ -92,7 +92,7 @@ class SchemaWriter(private val openApi: OpenAPI) {
                     visitor.visit(name, property.default as? String, property, required)
                 }
                 OBJECT_TYPE -> {
-                    visitor.visit(name, property.default as? Schema<*>, property, openApi, required)
+                    visitor.visit(name, property.default as? Schema<*>, property, required)
                 }
                 else -> error("Unsupported type of property $name: null")
             }
@@ -142,5 +142,12 @@ class SchemaWriter(private val openApi: OpenAPI) {
 
     companion object {
         const val ARRAY_TYPE = "array"
+        lateinit var instance: SchemaWriter
+            private set
+
+        fun createInstance(openApi: OpenAPI): SchemaWriter{
+            instance = SchemaWriter(openApi)
+            return instance
+        }
     }
 }

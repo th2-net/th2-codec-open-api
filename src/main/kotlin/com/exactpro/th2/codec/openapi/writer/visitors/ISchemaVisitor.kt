@@ -16,16 +16,11 @@
 
 package com.exactpro.th2.codec.openapi.writer.visitors
 
-import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
-import io.swagger.v3.oas.models.media.BooleanSchema
-import io.swagger.v3.oas.models.media.NumberSchema
 import io.swagger.v3.oas.models.media.Schema
-import io.swagger.v3.oas.models.media.StringSchema
-import java.math.BigDecimal
 
 interface ISchemaVisitor<T> {
-    fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, references: OpenAPI, required: Boolean = false)
+    fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, required: Boolean = false)
     fun visit(fieldName: String, defaultValue: String?, fldStruct: Schema<*>, required: Boolean = false)
     fun visit(fieldName: String, defaultValue: Boolean?, fldStruct: Schema<*>, required: Boolean = false)
     fun visit(fieldName: String, defaultValue: Int?, fldStruct: Schema<*>, required: Boolean = false)
@@ -38,6 +33,12 @@ interface ISchemaVisitor<T> {
     fun visitDoubleCollection(fieldName: String, defaultValue: List<Double>?, fldStruct: ArraySchema, required: Boolean = false)
     fun visitFloatCollection(fieldName: String, defaultValue: List<Float>?, fldStruct: ArraySchema, required: Boolean = false)
     fun visitLongCollection(fieldName: String, defaultValue: List<Long>?, fldStruct: ArraySchema, required: Boolean = false)
+    fun visitObjectCollection(
+        fieldName: String,
+        defaultValue: List<Any>?,
+        fldStruct: ArraySchema,
+        required: Boolean = false
+    )
 
     fun getResult(): T
 

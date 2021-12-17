@@ -1,4 +1,4 @@
-/*
+package json.decode/*
  * Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,17 +22,17 @@ import com.exactpro.th2.codec.openapi.OpenApiCodec.Companion.URI_PROPERTY
 import com.exactpro.th2.common.assertEqualMessages
 import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter.Companion.ARRAY_TYPE
-import com.exactpro.th2.common.assertContains
 import com.exactpro.th2.common.assertList
 import com.exactpro.th2.common.grpc.MessageGroup
 import com.exactpro.th2.common.grpc.RawMessage
 import com.exactpro.th2.common.message.addField
-import com.exactpro.th2.common.message.getString
 import com.exactpro.th2.common.message.message
 import com.exactpro.th2.common.message.plusAssign
 import com.exactpro.th2.common.value.toValue
 import com.google.protobuf.ByteString
+import getResourceAsText
 import io.swagger.parser.OpenAPIParser
+import io.swagger.v3.oas.models.OpenAPI
 import mu.KotlinLogging
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -76,10 +76,6 @@ class JsonArrayDecodeTests {
     companion object {
         private val LOGGER = KotlinLogging.logger { }
         private val settings = OpenApiCodecSettings()
-        private val dictionary =
-            requireNotNull(JsonObjectDecodeTests::class.java.getResource("valid-dictionary.yml")) { "Dictionary from resources required" }.toURI().path.drop(
-                1
-            )
-        private val openAPI = OpenAPIParser().readLocation(dictionary, null, settings.dictionaryParseOption).openAPI
+        val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/valid-dictionary.yml"), null, settings.dictionaryParseOption).openAPI
     }
 }

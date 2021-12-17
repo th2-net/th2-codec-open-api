@@ -11,7 +11,6 @@ import com.exactpro.th2.common.message.addFields
 import com.exactpro.th2.common.message.message
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 
@@ -25,12 +24,11 @@ class DecodeJsonObjectVisitor(val json: JsonNode) : ISchemaVisitor<Message> {
         fieldName: String,
         defaultValue: Schema<*>?,
         fldStruct: Schema<*>,
-        references: OpenAPI,
         required: Boolean
     ) {
         json.getRequiredField(fieldName, required)?.let {
             val visitor = DecodeJsonObjectVisitor(it)
-            SchemaWriter(references).traverse(visitor, fldStruct)
+            SchemaWriter.instance.traverse(visitor, fldStruct)
             rootMessage.addFields(fieldName, visitor.rootMessage.build())
         }
     }
@@ -77,8 +75,12 @@ class DecodeJsonObjectVisitor(val json: JsonNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        json.getArray(fieldName, required)?.map { it.asBoolean() }?.let {
-            rootMessage.addField(fieldName, it)
+        json.getArray(fieldName, required)?.let { array ->
+            rootMessage.addField(fieldName, array.map {
+                if (it.isBoolean) {
+                    it.asBoolean()
+                } else error("Cannot convert $fieldName=$it to boolean")
+            })
         }
     }
 
@@ -88,8 +90,12 @@ class DecodeJsonObjectVisitor(val json: JsonNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        json.getArray(fieldName, required)?.map { it.asInt() }?.let {
-            rootMessage.addField(fieldName, it)
+        json.getArray(fieldName, required)?.let { array ->
+            rootMessage.addField(fieldName, array.map {
+                if (it.isNumber) {
+                    it.asInt()
+                } else error("Cannot convert $fieldName=$it to integer")
+            })
         }
     }
 
@@ -110,8 +116,12 @@ class DecodeJsonObjectVisitor(val json: JsonNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        json.getArray(fieldName, required)?.map { it.asDouble() }?.let {
-            rootMessage.addField(fieldName, it)
+        json.getArray(fieldName, required)?.let { array ->
+            rootMessage.addField(fieldName, array.map {
+                if (it.isNumber) {
+                    it.asDouble()
+                } else error("Cannot convert $fieldName=$it to double")
+            })
         }
     }
 
@@ -121,8 +131,12 @@ class DecodeJsonObjectVisitor(val json: JsonNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        json.getArray(fieldName, required)?.map { it.asText().toFloat() }?.let {
-            rootMessage.addField(fieldName, it)
+        json.getArray(fieldName, required)?.let { array ->
+            rootMessage.addField(fieldName, array.map {
+                if (it.isNumber) {
+                    it.asText().toFloat()
+                } else error("Cannot convert $fieldName=$it to float")
+            })
         }
     }
 
@@ -132,8 +146,27 @@ class DecodeJsonObjectVisitor(val json: JsonNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        json.getArray(fieldName, required)?.map { it.asLong() }?.let {
-            rootMessage.addField(fieldName, it)
+        json.getArray(fieldName, required)?.let { array ->
+            rootMessage.addField(fieldName, array.map {
+                if (it.isNumber) {
+                    it.asLong()
+                } else error("Cannot convert $fieldName=$it to long")
+            })
+        }
+    }
+
+    override fun visitObjectCollection(
+        fieldName: String,
+        defaultValue: List<Any>?,
+        fldStruct: ArraySchema,
+        required: Boolean
+    ) {
+        json.getArray(fieldName, required)?.let { array ->
+            rootMessage.addField(fieldName, array.map {
+                DecodeJsonObjectVisitor(it).apply {
+                    SchemaWriter.instance.traverse(this, fldStruct.items)
+                }.getResult()
+            })
         }
     }
 
@@ -142,5 +175,4 @@ class DecodeJsonObjectVisitor(val json: JsonNode) : ISchemaVisitor<Message> {
     private companion object {
         val mapper = ObjectMapper()
     }
-
 }

@@ -1,18 +1,30 @@
-package visitor
+package json.visitor.encode
 
+import assertBoolean
+import assertFloat
+import assertInteger
+import assertString
+import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
+import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.codec.openapi.writer.visitors.json.EncodeJsonArrayVisitor
+import com.exactpro.th2.common.grpc.ListValue
 import com.exactpro.th2.common.message.addField
 import com.exactpro.th2.common.message.message
+import com.exactpro.th2.common.value.toValue
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import createArrayTestSchema
+import getResourceAsText
+import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
+import json.visitor.decode.JsonArrayTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
-class EncodeJsonArrayTest {
+class JsonArrayTest {
 
     @Test
     fun `not supported encode`() {
@@ -42,7 +54,61 @@ class EncodeJsonArrayTest {
         }
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            EncodeJsonArrayVisitor(message).visit("", null as? Schema<*>, StringSchema(), OpenAPI(), true)
+            EncodeJsonArrayVisitor(message).visit("", null as? Schema<*>, StringSchema(), true)
+        }
+    }
+
+    @Test
+    fun `object array test decode`() {
+        val fieldName = "objectField"
+
+        val stringName = "stringField"
+        val stringValue = "stringValue"
+
+        val integerName = "integerField"
+        val integerValue = 123
+
+        val booleanName = "booleanField"
+        val booleanValue = false
+
+        val floatName = "floatField"
+        val floatValue = 321.123f
+
+        val includedObject = "includedObjectField"
+        val includedObjectValue = message().addField(stringName, stringValue).build()
+
+        val listValue = ListValue.newBuilder().apply {
+            addValues(message().addField(stringName, stringValue).build().toValue())
+            addValues(message().addField(integerName, integerValue).build().toValue())
+            addValues(message().addField(booleanName, booleanValue).build().toValue())
+            addValues(message().addField(floatName, floatValue).build().toValue())
+            addValues(message().apply {
+                addField(stringName, stringValue)
+                addField(integerName, integerValue)
+                addField(booleanName, booleanValue)
+                addField(floatName, floatValue)
+                addField(includedObject, includedObjectValue)
+            }.build().toValue())
+        }
+
+        val message = message().addField(fieldName, listValue).build()
+
+        val result = EncodeJsonArrayVisitor(message).apply {
+            visitObjectCollection(fieldName, null, openAPI.components.schemas["ArrayObjectTest"]!! as ArraySchema, true)
+        }.getResult()
+
+        (mapper.readTree(result) as ArrayNode).let {  arrayNode ->
+            arrayNode.get(0).assertString(stringName, stringValue)
+            arrayNode.get(1).assertInteger(integerName, integerValue)
+            arrayNode.get(2).assertBoolean(booleanName, booleanValue)
+            arrayNode.get(3).assertFloat(floatName, floatValue)
+            arrayNode.get(4).let { bigMessage ->
+                bigMessage.assertString(stringName, stringValue)
+                bigMessage.assertInteger(integerName, integerValue)
+                bigMessage.assertBoolean(booleanName, booleanValue)
+                bigMessage.assertFloat(floatName, floatValue)
+                bigMessage.get(includedObject).assertString(stringName, stringValue)
+            }
         }
     }
 
@@ -125,6 +191,9 @@ class EncodeJsonArrayTest {
     }
 
     private companion object {
+        val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/visitorTests.yml"), null, OpenApiCodecSettings().dictionaryParseOption).openAPI.apply {
+            SchemaWriter.createInstance(this)
+        }
         val mapper = ObjectMapper()
     }
 }

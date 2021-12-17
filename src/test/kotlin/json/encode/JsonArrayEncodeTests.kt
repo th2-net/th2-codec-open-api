@@ -1,3 +1,5 @@
+package json.encode
+
 import com.exactpro.th2.codec.openapi.OpenApiCodec
 import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
 import com.exactpro.th2.common.grpc.MessageGroup
@@ -6,7 +8,9 @@ import com.exactpro.th2.common.message.message
 import com.exactpro.th2.common.message.plusAssign
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
+import getResourceAsText
 import io.swagger.parser.OpenAPIParser
+import io.swagger.v3.oas.models.OpenAPI
 import mu.KotlinLogging
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -43,11 +47,7 @@ class JsonArrayEncodeTests {
     companion object {
         private val LOGGER = KotlinLogging.logger { }
         private val settings = OpenApiCodecSettings()
-        private val dictionary =
-            requireNotNull(JsonObjectDecodeTests::class.java.getResource("valid-dictionary.yml")) { "Dictionary from resources required" }.toURI().path.drop(
-                1
-            )
-        private val openAPI = OpenAPIParser().readLocation(dictionary, null, settings.dictionaryParseOption).openAPI
+        val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/valid-dictionary.yml"), null, settings.dictionaryParseOption).openAPI
         private val mapper = ObjectMapper()
     }
 

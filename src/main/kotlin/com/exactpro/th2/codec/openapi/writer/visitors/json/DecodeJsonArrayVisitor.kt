@@ -1,12 +1,12 @@
 package com.exactpro.th2.codec.openapi.writer.visitors.json
 
+import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.codec.openapi.writer.visitors.ISchemaVisitor
 import com.exactpro.th2.common.grpc.Message
 import com.exactpro.th2.common.message.addField
 import com.exactpro.th2.common.message.message
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
-import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 
@@ -20,7 +20,6 @@ class DecodeJsonArrayVisitor(val json: ArrayNode) : ISchemaVisitor<Message> {
         fieldName: String,
         defaultValue: Schema<*>?,
         fldStruct: Schema<*>,
-        references: OpenAPI,
         required: Boolean
     ) {
         throw UnsupportedOperationException("Array visitor supports only collections")
@@ -121,6 +120,19 @@ class DecodeJsonArrayVisitor(val json: ArrayNode) : ISchemaVisitor<Message> {
             if (it.isLong) {
                 it.asLong()
             } else error("Cannot convert $fieldName=$it to long")
+        })
+    }
+
+    override fun visitObjectCollection(
+        fieldName: String,
+        defaultValue: List<Any>?,
+        fldStruct: ArraySchema,
+        required: Boolean
+    ) {
+        rootMessage.addField(fieldName, json.map {
+            DecodeJsonObjectVisitor(it).apply {
+                SchemaWriter.instance.traverse(this, fldStruct.items)
+            }.getResult()
         })
     }
 

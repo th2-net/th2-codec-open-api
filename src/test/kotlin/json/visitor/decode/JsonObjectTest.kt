@@ -1,19 +1,71 @@
-package visitor
+package json.visitor.decode
 
+import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
+import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.codec.openapi.writer.visitors.json.DecodeJsonObjectVisitor
 import com.exactpro.th2.common.assertDouble
 import com.exactpro.th2.common.assertInt
 import com.exactpro.th2.common.assertList
+import com.exactpro.th2.common.assertMessage
 import com.exactpro.th2.common.assertString
-import com.exactpro.th2.common.message.getString
+import com.exactpro.th2.common.message.get
+import com.exactpro.th2.common.value.getList
 import com.exactpro.th2.common.value.toValue
 import com.fasterxml.jackson.databind.ObjectMapper
 import createArrayTestSchema
 import createTestSchema
-import org.junit.jupiter.api.Assertions
+import getResourceAsText
+import io.swagger.parser.OpenAPIParser
+import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.media.ArraySchema
+import io.swagger.v3.oas.models.media.Schema
 import org.junit.jupiter.api.Test
 
-class DecodeJsonTest {
+class JsonObjectTest {
+
+    @Test
+    fun `object test decode`() {
+        val fieldName = "objectField"
+
+        val stringName = "stringField"
+        val stringValue = "stringValue"
+
+        val integerName = "integerField"
+        val integerValue = 123
+
+        val booleanName = "booleanField"
+        val booleanValue = false
+
+        val floatName = "floatField"
+        val floatValue = 321.123f
+
+        val includedObject = "includedObjectField"
+        val includedObjectValue = mapper.createObjectNode().apply {
+            this.put(stringName, stringValue)
+        }
+
+        val objectValue = mapper.createObjectNode().apply {
+            this.put(stringName, stringValue)
+            this.put(integerName, integerValue)
+            this.put(booleanName, booleanValue)
+            this.put(floatName, floatValue)
+            this.put(includedObject, includedObjectValue)
+        }
+        val json =  mapper.createObjectNode().apply {
+            put(fieldName, objectValue)
+        }
+        val result = DecodeJsonObjectVisitor(json).apply {
+            visit(fieldName, null as? Schema<*>, openAPI.components.schemas["ObjectTest"]!!, true)
+        }.getResult()
+        result[fieldName]!!.messageValue.let { bigMessage ->
+            bigMessage.assertString(stringName, stringValue)
+            bigMessage.assertInt(integerName, integerValue)
+            bigMessage.assertString(booleanName, booleanValue.toString())
+            bigMessage.assertString(floatName, floatValue.toString())
+            bigMessage.assertMessage(includedObject).assertString(stringName, stringValue)
+        }
+
+    }
 
     @Test
     fun `string test decode`() {
@@ -38,7 +90,7 @@ class DecodeJsonTest {
         val result = DecodeJsonObjectVisitor(json).apply {
             visit(fieldName, null as? Boolean, createTestSchema(simpleValue), true)
         }.getResult()
-        Assertions.assertEquals(simpleValue, result.getString(fieldName).toBoolean())
+        result.assertString(fieldName, simpleValue.toString())
     }
 
     @Test
@@ -77,7 +129,7 @@ class DecodeJsonTest {
         val result = DecodeJsonObjectVisitor(json).apply {
             visit(fieldName, null as? Float, createTestSchema(simpleValue), true)
         }.getResult()
-        Assertions.assertEquals(simpleValue, result.getString(fieldName)?.toFloat())
+        result.assertString(fieldName, simpleValue.toString())
     }
 
     @Test
@@ -90,7 +142,7 @@ class DecodeJsonTest {
         val result = DecodeJsonObjectVisitor(json).apply {
             visit(fieldName, null as? Long, createTestSchema(simpleValue), true)
         }.getResult()
-        Assertions.assertEquals(simpleValue, result.getString(fieldName)?.toLong())
+        result.assertString(fieldName, simpleValue.toString())
     }
 
     @Test
@@ -177,8 +229,79 @@ class DecodeJsonTest {
         result.assertList(fieldName, collection.map { it.toValue() })
     }
 
+    @Test
+    fun `object array test decode`() {
+        val fieldName = "objectField"
+
+        val stringName = "stringField"
+        val stringValue = "stringValue"
+
+        val integerName = "integerField"
+        val integerValue = 123
+
+        val booleanName = "booleanField"
+        val booleanValue = false
+
+        val floatName = "floatField"
+        val floatValue = 321.123f
+
+        val includedObject = "includedObjectField"
+        val includedObjectValue = mapper.createObjectNode().apply {
+            this.put(stringName, stringValue)
+        }
+
+
+        val jsonArrayNode = mapper.createArrayNode().apply {
+            add(mapper.createObjectNode().apply {
+                this.put(stringName, stringValue)
+            })
+            add(mapper.createObjectNode().apply {
+                this.put(integerName, integerValue)
+            })
+            add(mapper.createObjectNode().apply {
+                this.put(booleanName, booleanValue)
+            })
+            add(mapper.createObjectNode().apply {
+                this.put(floatName, floatValue)
+            })
+            add(mapper.createObjectNode().apply {
+                this.put(stringName, stringValue)
+                this.put(integerName, integerValue)
+                this.put(booleanName, booleanValue)
+                this.put(floatName, floatValue)
+                this.put(includedObject, includedObjectValue)
+            })
+        }
+
+        val json =  mapper.createObjectNode().apply {
+            put(fieldName, jsonArrayNode)
+        }
+
+        val result = DecodeJsonObjectVisitor(json).apply {
+            visitObjectCollection(fieldName, null, openAPI.components.schemas["ArrayObjectTest"]!! as ArraySchema, true)
+        }.getResult()
+
+        (result[fieldName]!!).let { listValue ->
+            val list = listValue.getList()!!
+            list[0].messageValue.assertString(stringName, stringValue)
+            list[1].messageValue.assertInt(integerName, integerValue)
+            list[2].messageValue.assertString(booleanName, booleanValue.toString())
+            list[3].messageValue.assertString(floatName, floatValue.toString())
+            list[4].messageValue.let { bigMessage ->
+                bigMessage.assertString(stringName, stringValue)
+                bigMessage.assertInt(integerName, integerValue)
+                bigMessage.assertString(booleanName, booleanValue.toString())
+                bigMessage.assertString(floatName, floatValue.toString())
+                bigMessage.assertMessage(includedObject).assertString(stringName, stringValue)
+            }
+        }
+    }
+
 
     private companion object {
+        val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/visitorTests.yml"), null, OpenApiCodecSettings().dictionaryParseOption).openAPI.apply {
+            SchemaWriter.createInstance(this)
+        }
         private val mapper = ObjectMapper()
     }
 }

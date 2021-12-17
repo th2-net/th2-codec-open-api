@@ -22,6 +22,7 @@ import com.exactpro.th2.codec.openapi.utils.putAll
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.codec.openapi.writer.visitors.ISchemaVisitor
 import com.exactpro.th2.common.grpc.Message
+import com.exactpro.th2.common.message.toJson
 import com.exactpro.th2.common.value.getDouble
 import com.exactpro.th2.common.value.getInt
 import com.exactpro.th2.common.value.getList
@@ -30,7 +31,6 @@ import com.exactpro.th2.common.value.getMessage
 import com.exactpro.th2.common.value.getString
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
-import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 
@@ -42,12 +42,11 @@ class EncodeJsonObjectVisitor(private val message: Message) : ISchemaVisitor<Str
         fieldName: String,
         defaultValue: Schema<*>?,
         fldStruct: Schema<*>,
-        references: OpenAPI,
         required: Boolean
     ) {
         message.getRequiredField(fieldName, required)?.getMessage()?.let { nextMessage ->
             val visitor = EncodeJsonObjectVisitor(nextMessage)
-            SchemaWriter(references).traverse(visitor, fldStruct)
+            SchemaWriter.instance.traverse(visitor, fldStruct)
             rootNode.put(fieldName, visitor.rootNode)
         }
     }
@@ -154,7 +153,23 @@ class EncodeJsonObjectVisitor(private val message: Message) : ISchemaVisitor<Str
         }
     }
 
+    override fun visitObjectCollection(
+        fieldName: String,
+        defaultValue: List<Any>?,
+        fldStruct: ArraySchema,
+        required: Boolean
+    ) {
+        message.getRequiredField(fieldName, required)?.getList()?.map {
+            if (!it.hasMessageValue()) error("Cannot convert $fieldName=${it.toJson(true)} to json object")
+            EncodeJsonObjectVisitor(it.messageValue).apply {
+                SchemaWriter.instance.traverse(this, fldStruct.items)
+            }.getNode()
+        }?.run(rootNode.putArray(fieldName)::addAll)
+    }
+
     override fun getResult(): String = rootNode.toPrettyString()
+
+    fun getNode() = rootNode
 
     private companion object {
         val mapper = ObjectMapper()

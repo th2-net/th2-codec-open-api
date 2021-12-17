@@ -16,11 +16,12 @@
 
 import com.exactpro.th2.codec.openapi.OpenApiCodecFactory
 import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
-import com.exactpro.th2.codec.openapi.throwable.DictionaryException
+import com.exactpro.th2.codec.openapi.throwable.DictionaryValidationException
 import com.exactpro.th2.codec.openapi.OpenApiValidator
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.parser.core.models.ParseOptions
+import mu.KotlinLogging
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.openapitools.codegen.validations.oas.RuleConfiguration
@@ -31,52 +32,70 @@ class ValidationTests {
 
     @Test
     fun `valid dictionary`() {
-        val dictionary = requireNotNull(ValidationTests::class.java.getResource("valid-dictionary.yml")) {"Dictionary from resources required"}.toURI().path.drop(1)
-        val result = OpenAPIParser().readLocation(dictionary, null, parseOptions)
-
-        validator.validate(result)
+        Assertions.assertDoesNotThrow {
+            File(ValidationTests::class.java.getResource("dictionaries/valid/").path).walk().forEach { dictionary ->
+                if (dictionary.name.endsWith(".yml")) {
+                    validator.validate(parser.readLocation(dictionary.path, null, parseOptions))
+                    LOGGER.info { "Validated valid dictionary ${dictionary.name} from test method" }
+                }
+            }
+        }
     }
 
     @Test
     fun `valid dictionary in factory`() {
-        val dictionary = requireNotNull(ValidationTests::class.java.getResource("valid-dictionary.yml")) {"Dictionary from resources required"}.toURI().path.drop(1)
+        Assertions.assertDoesNotThrow {
+            File(ValidationTests::class.java.getResource("dictionaries/valid/").path).walk().forEach { dictionary ->
+                if (dictionary.name.endsWith(".yml")) {
+                    val factory = OpenApiCodecFactory().apply {
+                        init { dictionary.inputStream() }
+                    }
 
-        val factory = OpenApiCodecFactory().apply {
-            init { File(dictionary).inputStream() }
+                    factory.create(OpenApiCodecSettings().apply {
+                        dictionaryParseOption = parseOptions
+                        validationSettings = ObjectMapper().readValue(getJsonConfiguration().toURL(), RuleConfiguration::class.java)
+                    })
+                    LOGGER.info { "Validated valid dictionary ${dictionary.name} inside of factory" }
+                }
+            }
         }
-
-        factory.create(OpenApiCodecSettings().apply {
-            dictionaryParseOption = parseOptions
-            validationSettings = ObjectMapper().readValue(getJsonConfiguration().toURL(), RuleConfiguration::class.java)
-        })
     }
 
     @Test
     fun `invalid dictionary`() {
-        val dictionary = requireNotNull(ValidationTests::class.java.getResource("invalid-dictionary.yml")) {"Dictionary from resources required"}.toURI().path.drop(1)
-        val result = OpenAPIParser().readLocation(dictionary, null, parseOptions)
+        File(ValidationTests::class.java.getResource("dictionaries/invalid/").path).walk().forEach { dictionary ->
+            if (dictionary.name.endsWith(".yml")) {
+                Assertions.assertThrows(DictionaryValidationException::class.java) {
+                    validator.validate(parser.readLocation(dictionary.path, null, parseOptions))
+                }
 
-        Assertions.assertThrows(DictionaryException::class.java) {
-            validator.validate(result)
+                LOGGER.info { "Validated invalid dictionary ${dictionary.name} from test method" }
+            }
         }
     }
 
     @Test
     fun `invalid dictionary in factory`() {
-        val dictionary = requireNotNull(ValidationTests::class.java.getResource("invalid-dictionary.yml")) {"Dictionary from resources required"}.toURI().path.drop(1)
-        val factory = OpenApiCodecFactory().apply {
-            init { File(dictionary).inputStream() }
-        }
-        Assertions.assertThrows(DictionaryException::class.java) {
-            factory.create(OpenApiCodecSettings().apply {
-                dictionaryParseOption = parseOptions
-                validationSettings =
-                    ObjectMapper().readValue(getJsonConfiguration().toURL(), RuleConfiguration::class.java)
-            })
+        File(ValidationTests::class.java.getResource("dictionaries/invalid/").path).walk().forEach { dictionary ->
+            if (dictionary.name.endsWith(".yml")) {
+                val factory = OpenApiCodecFactory().apply {
+                    init { dictionary.inputStream() }
+                }
+                Assertions.assertThrows(DictionaryValidationException::class.java) {
+                    factory.create(OpenApiCodecSettings().apply {
+                        dictionaryParseOption = parseOptions
+                        validationSettings =
+                            ObjectMapper().readValue(getJsonConfiguration().toURL(), RuleConfiguration::class.java)
+                    })
+                }
+                LOGGER.info { "Validated invalid dictionary ${dictionary.name} from factory" }
+            }
         }
     }
 
-    companion object {
+    private companion object {
+        val LOGGER = KotlinLogging.logger { }
+        val parser = OpenAPIParser()
         val parseOptions = ParseOptions().apply { isResolve = true }
         val validator = OpenApiValidator(ObjectMapper().readValue(getJsonConfiguration().toURL(), RuleConfiguration::class.java))
         private fun getJsonConfiguration(): URI {

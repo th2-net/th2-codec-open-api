@@ -52,7 +52,9 @@ class OpenApiCodec(
 
     private val messagesToSchema = mutableMapOf<String, HttpContainer>()
 
+
     init {
+        SchemaWriter.createInstance(dictionary)
         dictionary.paths.forEach { pathKey, pathsValue ->
             pathsValue.getMethods().forEach { (methodKey, methodValue) ->
                 // Request
@@ -131,7 +133,7 @@ class OpenApiCodec(
                         JsonSchemaTypes.ARRAY -> DecodeJsonArrayVisitor(body)
                         JsonSchemaTypes.OBJECT -> DecodeJsonObjectVisitor(body)
                     }
-                    SchemaWriter(dictionary).runCatching {
+                    SchemaWriter.instance.runCatching {
                         traverse(visitor, messageSchema)
                     }.onFailure {
                         throw DecodeException(
@@ -196,7 +198,7 @@ class OpenApiCodec(
                             JsonSchemaTypes.ARRAY -> EncodeJsonArrayVisitor(parsedMessage)
                             JsonSchemaTypes.OBJECT -> EncodeJsonObjectVisitor(parsedMessage)
                         }
-                        SchemaWriter(dictionary).runCatching {
+                        SchemaWriter.instance.runCatching {
                             traverse(visitor, messageSchema)
                         }.onFailure {
                             throw EncodeException("Cannot parse json body of response message $messageType", it)

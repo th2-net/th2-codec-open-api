@@ -1,16 +1,70 @@
-package visitor
+package json.visitor.encode
 
+import assertBoolean
+import assertFloat
+import assertInteger
+import assertString
+import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
+import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.codec.openapi.writer.visitors.json.EncodeJsonObjectVisitor
+import com.exactpro.th2.common.grpc.ListValue
 import com.exactpro.th2.common.message.addField
 import com.exactpro.th2.common.message.message
+import com.exactpro.th2.common.value.toValue
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import createArrayTestSchema
 import createTestSchema
+import getResourceAsText
+import io.swagger.parser.OpenAPIParser
+import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.media.ArraySchema
+import io.swagger.v3.oas.models.media.Schema
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
-class EncodeJsonTest {
+class JsonObjectTest {
+
+    @Test
+    fun `object test decode`() {
+        val fieldName = "objectField"
+
+        val stringName = "stringField"
+        val stringValue = "stringValue"
+
+        val integerName = "integerField"
+        val integerValue = 123
+
+        val booleanName = "booleanField"
+        val booleanValue = false
+
+        val floatName = "floatField"
+        val floatValue = 321.123f
+
+        val includedObject = "includedObjectField"
+        val includedObjectValue = message().addField(stringName, stringValue).build()
+
+        val message = message().addField(fieldName, message().apply {
+            addField(stringName, stringValue)
+            addField(integerName, integerValue)
+            addField(booleanName, booleanValue)
+            addField(floatName, floatValue)
+            addField(includedObject, includedObjectValue)
+        }).build()
+
+        val result = EncodeJsonObjectVisitor(message).apply {
+            visit(fieldName, null as? Schema<*>, openAPI.components.schemas["ObjectTest"]!!, true)
+        }.getResult()
+
+        mapper.readTree(result).get(fieldName).let { objectNode ->
+            objectNode.assertString(stringName, stringValue)
+            objectNode.assertInteger(integerName, integerValue)
+            objectNode.assertBoolean(booleanName, booleanValue)
+            objectNode.assertFloat(floatName, floatValue)
+            objectNode.get(includedObject).assertString(stringName, stringValue)
+        }
+
+    }
 
     @Test
     fun `string test encode`() {
@@ -86,6 +140,7 @@ class EncodeJsonTest {
         val schema = createArrayTestSchema("string")
         visitor.visitStringCollection(fieldName, null, schema, true)
         val result = requireNotNull(mapper.readTree(visitor.getResult()).get(fieldName) as? ArrayNode)
+        Assertions.assertEquals(4, result.size())
         collection.forEachIndexed { index, value ->
             Assertions.assertEquals(value, result.get(index).asText())
         }
@@ -99,6 +154,7 @@ class EncodeJsonTest {
         val schema = createArrayTestSchema("boolean")
         visitor.visitBooleanCollection(fieldName, null, schema, true)
         val result = requireNotNull(mapper.readTree(visitor.getResult()).get(fieldName) as? ArrayNode)
+        Assertions.assertEquals(4, result.size())
         collection.forEachIndexed { index, value ->
             Assertions.assertEquals(value, result.get(index).asBoolean())
         }
@@ -112,6 +168,7 @@ class EncodeJsonTest {
         val schema = createArrayTestSchema("integer")
         visitor.visitIntegerCollection(fieldName, null, schema, true)
         val result = requireNotNull(mapper.readTree(visitor.getResult()).get(fieldName) as? ArrayNode)
+        Assertions.assertEquals(4, result.size())
         collection.forEachIndexed { index, value ->
             Assertions.assertEquals(value, result.get(index).asInt())
         }
@@ -125,6 +182,7 @@ class EncodeJsonTest {
         val schema = createArrayTestSchema("number","float")
         visitor.visitFloatCollection(fieldName, null, schema, true)
         val result = requireNotNull(mapper.readTree(visitor.getResult()).get(fieldName) as? ArrayNode)
+        Assertions.assertEquals(4, result.size())
         collection.forEachIndexed { index, value ->
             Assertions.assertEquals(value, result.get(index).asText().toFloat())
         }
@@ -138,6 +196,7 @@ class EncodeJsonTest {
         val schema = createArrayTestSchema("number", "double")
         visitor.visitDoubleCollection(fieldName, null , schema, true)
         val result = requireNotNull(mapper.readTree(visitor.getResult()).get(fieldName) as? ArrayNode)
+        Assertions.assertEquals(4, result.size())
         collection.forEachIndexed { index, value ->
             Assertions.assertEquals(value, result.get(index).asDouble())
         }
@@ -151,12 +210,73 @@ class EncodeJsonTest {
         val schema = createArrayTestSchema("integer", "int64")
         visitor.visitLongCollection(fieldName, null, schema, true)
         val result = requireNotNull(mapper.readTree(visitor.getResult()).get(fieldName) as? ArrayNode)
+        Assertions.assertEquals(4, result.size())
         collection.forEachIndexed { index, value ->
             Assertions.assertEquals(value, result.get(index).asLong())
         }
     }
 
+    @Test
+    fun `object array test decode`() {
+        val fieldName = "objectField"
+
+        val stringName = "stringField"
+        val stringValue = "stringValue"
+
+        val integerName = "integerField"
+        val integerValue = 123
+
+        val booleanName = "booleanField"
+        val booleanValue = false
+
+        val floatName = "floatField"
+        val floatValue = 321.123f
+
+        val includedObject = "includedObjectField"
+        val includedObjectValue = message().addField(stringName, stringValue).build()
+
+        val listValue = ListValue.newBuilder().apply {
+            addValues(message().addField(stringName, stringValue).build().toValue())
+            addValues(message().addField(integerName, integerValue).build().toValue())
+            addValues(message().addField(booleanName, booleanValue).build().toValue())
+            addValues(message().addField(floatName, floatValue).build().toValue())
+            addValues(message().apply {
+                addField(stringName, stringValue)
+                addField(integerName, integerValue)
+                addField(booleanName, booleanValue)
+                addField(floatName, floatValue)
+                addField(includedObject, includedObjectValue)
+            }.build().toValue())
+        }
+
+        val message = message().addField(fieldName, listValue).build()
+
+        val result = EncodeJsonObjectVisitor(message).apply {
+            visitObjectCollection(fieldName, null, openAPI.components.schemas["ArrayObjectTest"]!! as ArraySchema, true)
+        }.getResult()
+
+        mapper.readTree(result).let { objectNode ->
+            (objectNode[fieldName] as ArrayNode).let { arrayNode->
+                Assertions.assertEquals(5, arrayNode.size())
+                arrayNode.get(0).assertString(stringName, stringValue)
+                arrayNode.get(1).assertInteger(integerName, integerValue)
+                arrayNode.get(2).assertBoolean(booleanName, booleanValue)
+                arrayNode.get(3).assertFloat(floatName, floatValue)
+                arrayNode.get(4).let { bigMessage ->
+                    bigMessage.assertString(stringName, stringValue)
+                    bigMessage.assertInteger(integerName, integerValue)
+                    bigMessage.assertBoolean(booleanName, booleanValue)
+                    bigMessage.assertFloat(floatName, floatValue)
+                    bigMessage.get(includedObject).assertString(stringName, stringValue)
+                }
+            }
+        }
+    }
+
     private companion object {
+        val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/visitorTests.yml"), null, OpenApiCodecSettings().dictionaryParseOption).openAPI.apply {
+            SchemaWriter.createInstance(this)
+        }
         val mapper = ObjectMapper()
     }
 }
