@@ -106,7 +106,17 @@ class SchemaWriter private constructor(private val openApi: OpenAPI) {
         runCatching {
             when(property.items.type) {
                 INTEGER_TYPE -> {
-                    visitor.visitIntegerCollection(name, property.default as? List<Int>, property, required)
+                    when (property.items.format) {
+                        "int64" -> {
+                            visitor.visitLongCollection(name, property.default as? List<Long>, property, required)
+                        }
+                        null, "", "int32" -> {
+                            visitor.visitIntegerCollection(name, property.default as? List<Int>, property, required)
+                        }
+                        else -> {
+                            error("Unsupported format of property $name: ${property.format}")
+                        }
+                    }
                 }
                 BOOLEAN_TYPE -> {
                     visitor.visitBooleanCollection(name, property.default as? List<Boolean>, property, required)
@@ -116,14 +126,11 @@ class SchemaWriter private constructor(private val openApi: OpenAPI) {
                         "float" -> {
                             visitor.visitFloatCollection(name, property.default as? List<Float>, property, required)
                         }
-                        "int64" -> {
-                            visitor.visitLongCollection(name, property.default as? List<Long>, property, required)
-                        }
                         "double" -> {
                             visitor.visitDoubleCollection(name, property.default as? List<Double>, property, required)
                         }
-                        null, "", "int32" -> {
-                            visitor.visitIntegerCollection(name, property.default as? List<Int>, property, required)
+                        null, "" -> {
+                            visitor.visitStringCollection(name, property.default as? List<String>, property, required)
                         }
                         else -> {
                             error("Unsupported format of property $name: ${property.format}")

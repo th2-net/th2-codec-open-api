@@ -19,6 +19,11 @@ package com.exactpro.th2.codec.openapi.writer.visitors.json
 import com.exactpro.th2.codec.openapi.utils.checkEnum
 import com.exactpro.th2.codec.openapi.utils.getArray
 import com.exactpro.th2.codec.openapi.utils.getRequiredField
+import com.exactpro.th2.codec.openapi.utils.validateAsBoolean
+import com.exactpro.th2.codec.openapi.utils.validateAsDouble
+import com.exactpro.th2.codec.openapi.utils.validateAsFloat
+import com.exactpro.th2.codec.openapi.utils.validateAsInteger
+import com.exactpro.th2.codec.openapi.utils.validateAsLong
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.codec.openapi.writer.visitors.ISchemaVisitor
 import com.exactpro.th2.common.grpc.Message
@@ -34,7 +39,6 @@ class DecodeJsonObjectVisitor(val json: JsonNode) : ISchemaVisitor<Message> {
     private val rootMessage = message()
 
     constructor(jsonString: String) : this(mapper.readTree(jsonString))
-
 
     override fun visit(
         fieldName: String,
@@ -56,31 +60,31 @@ class DecodeJsonObjectVisitor(val json: JsonNode) : ISchemaVisitor<Message> {
     }
 
     override fun visit(fieldName: String, defaultValue: Boolean?, fldStruct: Schema<*>, required: Boolean) {
-        val value = json.getRequiredField(fieldName, required)?.asBoolean()
+        val value = json.getRequiredField(fieldName, required)?.validateAsBoolean()
         fldStruct.checkEnum(value, fieldName)
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Int?, fldStruct: Schema<*>, required: Boolean) {
-        val value = json.getRequiredField(fieldName, required)?.asInt()
+        val value = json.getRequiredField(fieldName, required)?.validateAsInteger()
         fldStruct.checkEnum(value, fieldName)
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Float?, fldStruct: Schema<*>, required: Boolean) {
-        val value = json.getRequiredField(fieldName, required)?.asText()?.toFloat()
+        val value = json.getRequiredField(fieldName, required)?.validateAsFloat()
         fldStruct.checkEnum(value, fieldName)
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Double?, fldStruct: Schema<*>, required: Boolean) {
-        val value = json.getRequiredField(fieldName, required)?.asDouble()
+        val value = json.getRequiredField(fieldName, required)?.validateAsDouble()
         fldStruct.checkEnum(value, fieldName)
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Long?, fldStruct: Schema<*>, required: Boolean) {
-        val value = json.getRequiredField(fieldName, required)?.asLong()
+        val value = json.getRequiredField(fieldName, required)?.validateAsLong()
         fldStruct.checkEnum(value, fieldName)
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
@@ -92,11 +96,7 @@ class DecodeJsonObjectVisitor(val json: JsonNode) : ISchemaVisitor<Message> {
         required: Boolean
     ) {
         json.getArray(fieldName, required)?.let { array ->
-            rootMessage.addField(fieldName, array.map {
-                if (it.isBoolean) {
-                    it.asBoolean()
-                } else error("Cannot convert $fieldName=$it to boolean")
-            })
+            rootMessage.addField(fieldName, array.map { it.validateAsBoolean() })
         }
     }
 
@@ -107,11 +107,7 @@ class DecodeJsonObjectVisitor(val json: JsonNode) : ISchemaVisitor<Message> {
         required: Boolean
     ) {
         json.getArray(fieldName, required)?.let { array ->
-            rootMessage.addField(fieldName, array.map {
-                if (it.isNumber) {
-                    it.asInt()
-                } else error("Cannot convert $fieldName=$it to integer")
-            })
+            rootMessage.addField(fieldName, array.map { it.validateAsInteger() })
         }
     }
 
@@ -133,11 +129,7 @@ class DecodeJsonObjectVisitor(val json: JsonNode) : ISchemaVisitor<Message> {
         required: Boolean
     ) {
         json.getArray(fieldName, required)?.let { array ->
-            rootMessage.addField(fieldName, array.map {
-                if (it.isNumber) {
-                    it.asDouble()
-                } else error("Cannot convert $fieldName=$it to double")
-            })
+            rootMessage.addField(fieldName, array.map { it.validateAsDouble() })
         }
     }
 
@@ -148,11 +140,7 @@ class DecodeJsonObjectVisitor(val json: JsonNode) : ISchemaVisitor<Message> {
         required: Boolean
     ) {
         json.getArray(fieldName, required)?.let { array ->
-            rootMessage.addField(fieldName, array.map {
-                if (it.isNumber) {
-                    it.asText().toFloat()
-                } else error("Cannot convert $fieldName=$it to float")
-            })
+            rootMessage.addField(fieldName, array.map { it.validateAsFloat() })
         }
     }
 
@@ -163,11 +151,7 @@ class DecodeJsonObjectVisitor(val json: JsonNode) : ISchemaVisitor<Message> {
         required: Boolean
     ) {
         json.getArray(fieldName, required)?.let { array ->
-            rootMessage.addField(fieldName, array.map {
-                if (it.isNumber) {
-                    it.asLong()
-                } else error("Cannot convert $fieldName=$it to long")
-            })
+            rootMessage.addField(fieldName, array.map { it.validateAsLong() })
         }
     }
 

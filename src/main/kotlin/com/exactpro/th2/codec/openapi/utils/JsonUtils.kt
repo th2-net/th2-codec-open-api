@@ -79,3 +79,35 @@ fun JsonNode.getArray(fieldName: String, required: Boolean) : ArrayNode? {
     }
     return field as? ArrayNode
 }
+
+fun JsonNode.validateAsBoolean() : Boolean {
+    return if (isBoolean) {
+        asText().toBoolean()
+    } else error("Cannot convert $this to Boolean")
+}
+
+
+fun JsonNode.validateAsLong() : Long {
+    return if (isNumber) {
+        asLong()
+    } else error("Cannot convert $this to Long")
+}
+
+fun JsonNode.validateAsInteger() : Int {
+    return if (isNumber) {
+        asInt()
+    } else error("Cannot convert $this to Int")
+}
+
+fun JsonNode.validateAsDouble() : Double {
+    return if (isNumber) {
+        asDouble()
+    } else error("Cannot convert $this to Double")
+}
+
+fun JsonNode.validateAsFloat() : Float {
+    return if (isNumber) {
+        asText().toFloat()
+    } else error("Cannot convert $this to Float")
+}
+

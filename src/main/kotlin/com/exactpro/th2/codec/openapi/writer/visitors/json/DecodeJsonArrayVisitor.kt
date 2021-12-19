@@ -16,6 +16,11 @@
 
 package com.exactpro.th2.codec.openapi.writer.visitors.json
 
+import com.exactpro.th2.codec.openapi.utils.validateAsBoolean
+import com.exactpro.th2.codec.openapi.utils.validateAsDouble
+import com.exactpro.th2.codec.openapi.utils.validateAsFloat
+import com.exactpro.th2.codec.openapi.utils.validateAsInteger
+import com.exactpro.th2.codec.openapi.utils.validateAsLong
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.codec.openapi.writer.visitors.ISchemaVisitor
 import com.exactpro.th2.common.grpc.Message
@@ -32,12 +37,7 @@ class DecodeJsonArrayVisitor(val json: ArrayNode) : ISchemaVisitor<Message> {
 
     private val rootMessage = message()
 
-    override fun visit(
-        fieldName: String,
-        defaultValue: Schema<*>?,
-        fldStruct: Schema<*>,
-        required: Boolean
-    ) {
+    override fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, required: Boolean) {
         throw UnsupportedOperationException("Array visitor supports only collections")
     }
 
@@ -71,11 +71,7 @@ class DecodeJsonArrayVisitor(val json: ArrayNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        rootMessage.addField(fieldName, json.map {
-            if (it.isBoolean) {
-                it.asBoolean()
-            } else error("Cannot convert $fieldName=$it to boolean")
-        })
+        rootMessage.addField(fieldName, json.map { it.validateAsBoolean() })
     }
 
     override fun visitIntegerCollection(
@@ -84,11 +80,7 @@ class DecodeJsonArrayVisitor(val json: ArrayNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        rootMessage.addField(fieldName, json.map {
-            if (it.isInt) {
-                it.asInt()
-            } else error("Cannot convert $fieldName=$it to integer")
-        })
+        rootMessage.addField(fieldName, json.map { it.validateAsInteger() })
     }
 
     override fun visitStringCollection(
@@ -106,11 +98,7 @@ class DecodeJsonArrayVisitor(val json: ArrayNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        rootMessage.addField(fieldName, json.map {
-            if (it.isDouble) {
-                it.asDouble()
-            } else error("Cannot convert $fieldName=$it to double")
-        })
+        rootMessage.addField(fieldName, json.map { it.validateAsDouble() })
     }
 
     override fun visitFloatCollection(
@@ -119,11 +107,7 @@ class DecodeJsonArrayVisitor(val json: ArrayNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        rootMessage.addField(fieldName, json.map {
-            if (it.isFloat) {
-                it.asText().toFloat()
-            } else error("Cannot convert $fieldName=$it to float")
-        })
+        rootMessage.addField(fieldName, json.map { it.validateAsFloat() })
     }
 
     override fun visitLongCollection(
@@ -132,11 +116,7 @@ class DecodeJsonArrayVisitor(val json: ArrayNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        rootMessage.addField(fieldName, json.map {
-            if (it.isLong) {
-                it.asLong()
-            } else error("Cannot convert $fieldName=$it to long")
-        })
+        rootMessage.addField(fieldName, json.map { it.validateAsLong() })
     }
 
     override fun visitObjectCollection(
