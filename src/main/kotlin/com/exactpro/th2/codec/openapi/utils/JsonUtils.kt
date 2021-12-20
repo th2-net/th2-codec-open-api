@@ -17,12 +17,10 @@
 package com.exactpro.th2.codec.openapi.utils
 
 import com.exactpro.th2.common.grpc.Value
-import com.exactpro.th2.common.value.getDouble
-import com.exactpro.th2.common.value.getInt
-import com.exactpro.th2.common.value.getLong
 import com.exactpro.th2.common.value.getString
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.ObjectNode
 
 inline fun <reified T> ArrayNode.putAll(values: List<Value>) {
     when (T::class) {
@@ -69,7 +67,7 @@ fun JsonNode.getRequiredField(fieldName: String, required: Boolean): JsonNode? {
     } else result
 }
 
-fun JsonNode.getArray(fieldName: String, required: Boolean) : ArrayNode? {
+fun JsonNode.getRequiredArray(fieldName: String, required: Boolean) : ArrayNode? {
     val field = get(fieldName)
     if (required && field==null) {
         error {"$fieldName array field was required!"}
@@ -109,5 +107,11 @@ fun JsonNode.validateAsFloat() : Float {
     return if (isNumber) {
         asText().toFloat()
     } else error("Cannot convert $this to Float")
+}
+
+fun JsonNode.validateAsObject() : ObjectNode {
+    return if (isObject) {
+        this as ObjectNode
+    } else error("Cannot convert $this to Object")
 }
 

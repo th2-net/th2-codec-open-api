@@ -21,6 +21,7 @@ import com.exactpro.th2.codec.openapi.utils.validateAsDouble
 import com.exactpro.th2.codec.openapi.utils.validateAsFloat
 import com.exactpro.th2.codec.openapi.utils.validateAsInteger
 import com.exactpro.th2.codec.openapi.utils.validateAsLong
+import com.exactpro.th2.codec.openapi.utils.validateAsObject
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.codec.openapi.writer.visitors.ISchemaVisitor
 import com.exactpro.th2.common.grpc.Message
@@ -126,7 +127,7 @@ class DecodeJsonArrayVisitor(val json: ArrayNode) : ISchemaVisitor<Message> {
         required: Boolean
     ) {
         rootMessage.addField(fieldName, json.map {
-            DecodeJsonObjectVisitor(it).apply {
+            DecodeJsonObjectVisitor(it.validateAsObject()).apply {
                 SchemaWriter.instance.traverse(this, fldStruct.items)
             }.getResult()
         })
