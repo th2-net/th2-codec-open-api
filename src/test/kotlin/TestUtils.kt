@@ -23,195 +23,24 @@ import com.exactpro.th2.common.grpc.MessageGroup
 import com.exactpro.th2.common.grpc.RawMessage
 import com.exactpro.th2.common.message.addField
 import com.exactpro.th2.common.message.getList
+import com.exactpro.th2.common.message.getString
 import com.exactpro.th2.common.message.message
+import com.exactpro.th2.common.message.messageType
 import com.exactpro.th2.common.message.plusAssign
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.ArrayNode
-import com.fasterxml.jackson.databind.node.JsonNodeType
 import com.google.protobuf.ByteString
-import io.swagger.v3.oas.models.media.ArraySchema
-import io.swagger.v3.oas.models.media.BooleanSchema
-import io.swagger.v3.oas.models.media.IntegerSchema
-import io.swagger.v3.oas.models.media.NumberSchema
-import io.swagger.v3.oas.models.media.ObjectSchema
-import io.swagger.v3.oas.models.media.Schema
-import io.swagger.v3.oas.models.media.StringSchema
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.fail
+
+
+const val PROTOCOL = "openapi"
+const val REQUEST_MESSAGE_TYPE = "Request"
+const val RESPONSE_MESSAGE_TYPE = "Response"
+const val FORMAT_HEADER_NAME = "Content-Type"
 
 fun getResourceAsText(path: String): String {
     return object {}.javaClass.getResource(path)!!.readText()
 }
 
-inline fun <reified T:Any>createTestSchema(value: T?, fillEnum: List<T>? = null) : Schema<*> {
-    when (T::class) {
-        String::class -> {
-            return StringSchema().apply {
-                type = "string"
-                example = value
-                fillEnum?.forEach {
-                    enum.add(it.toString())
-                }
-            }
-        }
-        Boolean::class -> {
-            return BooleanSchema().apply {
-                type = "boolean"
-                example = value
-            }
-        }
-        Int::class -> {
-            return NumberSchema().apply {
-                type = "number"
-                example = value
-                fillEnum?.forEach {
-                    enum.add((it as Int).toBigDecimal())
-                }
-            }
-        }
-        Long::class -> {
-            return NumberSchema().apply {
-                type = "number"
-                example = value
-                fillEnum?.forEach {
-                    enum.add((it as Long).toBigDecimal())
-                }
-            }
-        }
-        Float::class -> {
-            return NumberSchema().apply {
-                type = "number"
-                example = value
-                fillEnum?.forEach {
-                    enum.add((it as Float).toBigDecimal())
-                }
-            }
-        }
-        Double::class -> {
-            return NumberSchema().apply {
-                type = "number"
-                example = value
-                fillEnum?.forEach {
-                    enum.add((it as Double).toBigDecimal())
-                }
-            }
-        }
-        else -> {
-            throw UnsupportedOperationException("createTestSchema don't supports ${T::class} type of value")
-        }
-    }
-}
-
-fun createArrayTestSchema(type: String, format: String? = null) : ArraySchema {
-    return ArraySchema().apply {
-        items = StringSchema()
-        items.type = type
-        format?.let {
-            items.format = format
-        }
-    }
-}
-
-fun JsonNode.asSchema() : Schema<*> {
-    return when (this.nodeType) {
-        JsonNodeType.ARRAY -> ArraySchema().apply {
-            val arrayNode = this@asSchema as ArrayNode
-            if (arrayNode.get(0).isObject) {
-                this.items = arrayNode.map { it.asSchema() }.reduce { to, from  -> to.apply { properties = properties + from.properties } }
-            } else {
-                this.items = arrayNode.get(0).asSchema()
-            }
-        }
-        JsonNodeType.OBJECT -> ObjectSchema().apply {
-            properties = mutableMapOf()
-            fields().forEach {
-                properties[it.key] = it.value.asSchema()
-            }
-        }
-        JsonNodeType.NUMBER -> {
-            if (this.isFloat) {
-                NumberSchema().apply {
-                    format = "float"
-                    example = this@asSchema.asInt()
-                }
-            } else if (this.isDouble) {
-                NumberSchema().apply {
-                    format = "double"
-                    example = this@asSchema.asDouble()
-                }
-            } else if (this.isInt) {
-                IntegerSchema().apply {
-                    example = this@asSchema.asInt()
-                }
-            } else if (this.isLong) {
-                IntegerSchema().apply {
-                    type = "int64"
-                    example = this@asSchema.asInt()
-                }
-            } else error("Wrong type of number inside json")
-        }
-        JsonNodeType.STRING -> {
-            StringSchema().apply {
-                example = this@asSchema.asText()
-            }
-        }
-        JsonNodeType.BOOLEAN -> {
-            BooleanSchema().apply {
-                example = this@asSchema.asBoolean()
-            }
-        }
-        JsonNodeType.NULL -> {
-            StringSchema()
-        }
-        else -> {
-            error("Wrong JsonNodeType of number inside json")
-        }
-    }
-}
-
-fun JsonNode.assertString(fieldName: String, fieldValue: String) {
-    if (!get(fieldName).isTextual) {
-        fail("$fieldName isn't textual type: ${get(fieldName).asText()}")
-    }
-    Assertions.assertEquals(fieldValue, get(fieldName).asText())
-}
-
-fun JsonNode.assertBoolean(fieldName: String, fieldValue: Boolean) {
-    if (!get(fieldName).isBoolean) {
-        fail("$fieldName isn't boolean type: ${get(fieldName).asText()}")
-    }
-    Assertions.assertEquals(fieldValue, get(fieldName).asBoolean())
-}
-
-fun JsonNode.assertFloat(fieldName: String, fieldValue: Float) {
-    if (!get(fieldName).isNumber) {
-        fail("$fieldName isn't float type: ${get(fieldName).asText()}")
-    }
-    Assertions.assertEquals(fieldValue, get(fieldName).asText().toFloat())
-}
-
-fun JsonNode.assertDouble(fieldName: String, fieldValue: Double) {
-    if (!get(fieldName).isNumber) {
-        fail("$fieldName isn't double type: ${get(fieldName).asText()}")
-    }
-    Assertions.assertEquals(fieldValue, get(fieldName).asDouble())
-}
-
-fun JsonNode.assertLong(fieldName: String, fieldValue: Long) {
-    if (!get(fieldName).isNumber) {
-        fail("$fieldName isn't long type: ${get(fieldName).asText()}")
-    }
-    Assertions.assertEquals(fieldValue, get(fieldName).asLong())
-}
-
-fun JsonNode.assertInteger(fieldName: String, fieldValue: Int) {
-    if (!get(fieldName).isNumber) {
-        fail("$fieldName isn't integer type: ${get(fieldName).asText()}")
-    }
-    Assertions.assertEquals(fieldValue, get(fieldName).asInt())
-}
-
-fun OpenApiCodec.testDecode(headerType: String, path: String, method: String, code: String?, type: String?, bodyData: String?): Message? {
+fun OpenApiCodec.testDecode(path: String, method: String, code: String?, type: String?, bodyData: String? = null): Message? {
     val group = MessageGroup.newBuilder()
     val headerParentID = EventID.newBuilder().apply {
         id = "123"
@@ -219,27 +48,27 @@ fun OpenApiCodec.testDecode(headerType: String, path: String, method: String, co
     val bodyParentID = EventID.newBuilder().apply {
         id = "321"
     }.build()
-
+    val headerType = if (code == null) REQUEST_MESSAGE_TYPE else RESPONSE_MESSAGE_TYPE
     val header = message(headerType).apply {
         parentEventId = headerParentID
         when(headerType) {
-            "Response" -> {
+            RESPONSE_MESSAGE_TYPE -> {
                 code?.let {
                     addField(OpenApiCodec.STATUS_CODE_FIELD, code)
                 }
                 type?.let {
                     addField(OpenApiCodec.HEADERS_FIELD, listOf(message().apply {
-                        addField("name", "Content-Type")
+                        addField("name", FORMAT_HEADER_NAME)
                         addField("value", it)
                     }))
                 }
             }
-            "Request" -> {
+            REQUEST_MESSAGE_TYPE -> {
                 addField(OpenApiCodec.URI_FIELD, path)
                 addField(OpenApiCodec.METHOD_FIELD, method)
                 type?.let {
                     addField(OpenApiCodec.HEADERS_FIELD, listOf(message().apply {
-                        addField("name", "Content-Type")
+                        addField("name", FORMAT_HEADER_NAME)
                         addField("value", it)
                     }))
                 }
@@ -252,14 +81,14 @@ fun OpenApiCodec.testDecode(headerType: String, path: String, method: String, co
         group += RawMessage.newBuilder().apply {
             parentEventId = bodyParentID
             when(headerType) {
-                "Response" -> {
+                RESPONSE_MESSAGE_TYPE -> {
                     metadataBuilder.putProperties(OpenApiCodec.URI_PROPERTY, path)
                     metadataBuilder.putProperties(OpenApiCodec.METHOD_PROPERTY, method)
                     code?.let {
                         metadataBuilder.putProperties(OpenApiCodec.CODE_PROPERTY, it)
                     }
                 }
-                "Request" -> {
+                REQUEST_MESSAGE_TYPE -> {
                     metadataBuilder.putProperties(OpenApiCodec.URI_PROPERTY, path)
                     metadataBuilder.putProperties(OpenApiCodec.METHOD_PROPERTY, method)
                 }
@@ -282,16 +111,18 @@ fun OpenApiCodec.testDecode(headerType: String, path: String, method: String, co
     return null
 }
 
-fun OpenApiCodec.testEncode(path: String, method: String, code: String?, type: String?, fillMessage: Message.Builder.() -> Unit): RawMessage {
+fun OpenApiCodec.testEncode(path: String, method: String, code: String?, type: String?, fillMessage: (Message.Builder.() -> Unit)? = null): RawMessage? {
     val rawParentID = EventID.newBuilder().apply {
         id = "123"
     }.build()
 
     val messageType = combineName(path, method, code?:"", type?:"")
     val jsonMessage = message(messageType).apply {
-        metadataBuilder.protocol = "openapi"
+        metadataBuilder.protocol = PROTOCOL
         parentEventId = rawParentID
-        fillMessage()
+        if (fillMessage != null) {
+            fillMessage()
+        }
     }.build()
 
     val messageGroup = MessageGroup.newBuilder()
@@ -299,32 +130,53 @@ fun OpenApiCodec.testEncode(path: String, method: String, code: String?, type: S
 
     val resultGroup =  encode(messageGroup.build())
 
-
-    Assertions.assertEquals(2, resultGroup.messagesList.size)
-
     Assertions.assertTrue(resultGroup.messagesList[0].hasMessage())
-    Assertions.assertTrue(resultGroup.messagesList[1].hasRawMessage())
+
     val header = resultGroup.messagesList[0].message
 
-    header.apply {
+    val headerType = if (code == null) REQUEST_MESSAGE_TYPE else RESPONSE_MESSAGE_TYPE
+
+    header.run {
         Assertions.assertEquals(rawParentID, parentEventId) {"Decode process shouldn't lose parent event id inside of header"}
-        code?.let {
-            assertString(OpenApiCodec.CODE_FIELD, code)
-            type?.let {
-                this.getList(OpenApiCodec.HEADERS_FIELD)!![0].messageValue.assertString("value", type)
-            } ?: Assertions.assertFalse(this.getList(OpenApiCodec.HEADERS_FIELD) == null)
-        } ?: run {
-            assertString(OpenApiCodec.URI_FIELD, path)
-            assertString(OpenApiCodec.METHOD_FIELD, method)
-            type?.let {
-                this.getList(OpenApiCodec.HEADERS_FIELD)!![0].messageValue.assertString("value", type)
-            } ?: Assertions.assertFalse(this.getList(OpenApiCodec.HEADERS_FIELD) == null)
+        Assertions.assertEquals(headerType, this.messageType)
+        when (headerType) {
+            REQUEST_MESSAGE_TYPE -> {
+                assertString(OpenApiCodec.URI_FIELD, path)
+                assertString(OpenApiCodec.METHOD_FIELD, method)
+                type?.let {
+                    this.getList(OpenApiCodec.HEADERS_FIELD)!![0].messageValue.assertString("value", type)
+                } ?: Assertions.assertNull(this.getList(OpenApiCodec.HEADERS_FIELD)?.find { it.messageValue.getString("name") == FORMAT_HEADER_NAME })
+            }
+            RESPONSE_MESSAGE_TYPE -> {
+                assertString(OpenApiCodec.CODE_FIELD, code)
+                type?.let {
+                    this.getList(OpenApiCodec.HEADERS_FIELD)!![0].messageValue.assertString("value", type)
+                } ?: Assertions.assertFalse(this.getList(OpenApiCodec.HEADERS_FIELD) == null)
+            }
+            else -> error("Wrong type of header message: $headerType")
         }
     }
-    resultGroup.messagesList[1]?.rawMessage?.apply {
-        Assertions.assertEquals(rawParentID, parentEventId) {"Decode process shouldn't lose parent event id inside of body"}
+
+    val body = resultGroup.messagesList.getOrNull(1)?.rawMessage
+
+    if (fillMessage != null) {
+        Assertions.assertNotNull(body) {"Encode must have body in result of filling incoming message"}
+        Assertions.assertEquals(2, resultGroup.messagesList.size)
+        Assertions.assertTrue(resultGroup.messagesList[1].hasRawMessage())
+
+        body!!.let { rawMessage ->
+            Assertions.assertEquals(rawParentID, rawMessage.parentEventId) {"Encode process shouldn't lose parent event id inside of body"}
+            code?.let {
+                Assertions.assertEquals(it, rawMessage.metadata.propertiesMap[OpenApiCodec.CODE_PROPERTY])
+            }
+            Assertions.assertEquals(method, rawMessage.metadata.propertiesMap[OpenApiCodec.METHOD_PROPERTY])
+            Assertions.assertEquals(path, rawMessage.metadata.propertiesMap[OpenApiCodec.URI_PROPERTY])
+        }
+    } else {
+        Assertions.assertEquals(1, resultGroup.messagesList.size)
     }
-    return  resultGroup.messagesList[1].rawMessage
+
+    return body
 }
 
 private fun combineName(vararg steps : String): String {

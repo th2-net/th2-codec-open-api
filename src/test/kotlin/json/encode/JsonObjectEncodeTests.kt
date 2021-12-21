@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import getResourceAsText
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
-import mu.KotlinLogging
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import testEncode
@@ -37,15 +36,8 @@ class JsonObjectEncodeTests {
             addField("testEnabled", true)
             addField("testStatus", "FAILED")
         }
-        val jsonString = rawMessage.body.toStringUtf8()
 
-        Assertions.assertEquals("200", rawMessage.metadata.propertiesMap[OpenApiCodec.CODE_PROPERTY])
-        Assertions.assertEquals("get", rawMessage.metadata.propertiesMap[OpenApiCodec.METHOD_PROPERTY])
-        Assertions.assertEquals("/test/object", rawMessage.metadata.propertiesMap[OpenApiCodec.URI_PROPERTY])
-
-        LOGGER.info { "JSON: \n$jsonString" }
-
-        mapper.readTree(jsonString).let { json ->
+        mapper.readTree(rawMessage!!.body.toStringUtf8()).let { json ->
             Assertions.assertEquals(3, json.size())
             Assertions.assertEquals("1234567", json.get("publicKey").asText())
             Assertions.assertTrue(json.get("testEnabled").asBoolean())
@@ -61,14 +53,7 @@ class JsonObjectEncodeTests {
             addField("testStatus", "FAILED")
         }
 
-        val jsonString = rawMessage.body.toStringUtf8()
-
-        Assertions.assertEquals("get", rawMessage.metadata.propertiesMap[OpenApiCodec.METHOD_PROPERTY])
-        Assertions.assertEquals("/test", rawMessage.metadata.propertiesMap[OpenApiCodec.URI_PROPERTY])
-
-        LOGGER.info { "JSON: \n$jsonString" }
-
-        mapper.readTree(jsonString).let { json ->
+        mapper.readTree(rawMessage!!.body.toStringUtf8()).let { json ->
             Assertions.assertEquals(3, json.size())
             Assertions.assertEquals("1234567", json.get("publicKey").asText())
             Assertions.assertTrue(json.get("testEnabled").asBoolean())
@@ -76,8 +61,17 @@ class JsonObjectEncodeTests {
         }
     }
 
+    @Test
+    fun `json encode request empty body`() {
+        Assertions.assertNull(OpenApiCodec(openAPI, settings).testEncode("/test", "get", null, null))
+    }
+
+    @Test
+    fun `json encode response empty body`() {
+        Assertions.assertNull(OpenApiCodec(openAPI, settings).testEncode("/test", "get", null, null))
+    }
+
     private companion object {
-        val LOGGER = KotlinLogging.logger { }
         val settings = OpenApiCodecSettings()
         val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/valid-dictionary.yml"), null, settings.dictionaryParseOption).openAPI
         val mapper = ObjectMapper()

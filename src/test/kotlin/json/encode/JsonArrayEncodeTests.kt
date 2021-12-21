@@ -24,7 +24,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode
 import getResourceAsText
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
-import mu.KotlinLogging
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import testEncode
@@ -33,10 +32,14 @@ class JsonArrayEncodeTests {
 
     @Test
     fun `simple test array json encode response`() {
-        val rawMessage = OpenApiCodec(openAPI, settings).testEncode("/store", "get", "200", "application/json") {
+        val rawMessage = OpenApiCodec(openAPI, settings).testEncode(
+            "/test",
+            "get",
+            "200",
+            "application/json") {
             addField("array", listOf("test0", "test1", "test2"))
         }
-        val jsonString = rawMessage.body.toStringUtf8()
+        val jsonString = rawMessage!!.body.toStringUtf8()
 
         mapper.readTree(jsonString).let { json ->
             Assertions.assertTrue(json.isArray) { "Result of encode must be array" }
@@ -48,10 +51,50 @@ class JsonArrayEncodeTests {
         }
     }
 
+    @Test
+    fun `simple test array json encode request`() {
+        val rawMessage = OpenApiCodec(openAPI, settings).testEncode(
+            "/test",
+            "get",
+            null,
+            "application/json") {
+            addField("array", listOf("test0", "test1", "test2"))
+        }
+        val jsonString = rawMessage!!.body.toStringUtf8()
+
+        mapper.readTree(jsonString).let { json ->
+            Assertions.assertTrue(json.isArray) { "Result of encode must be array" }
+            val arrayJson = (json as ArrayNode)
+            Assertions.assertEquals(3, arrayJson.count())
+            for (i in 0..2) {
+                Assertions.assertEquals("test$i", arrayJson.get(i).asText())
+            }
+        }
+    }
+
+    @Test
+    fun `array json encode response empty body`() {
+        val rawMessage = OpenApiCodec(openAPI, settings).testEncode(
+            "/test",
+            "get",
+            "200",
+            "application/json")
+        Assertions.assertNull(rawMessage)
+    }
+
+    @Test
+    fun `array json encode request empty body`() {
+        val rawMessage = OpenApiCodec(openAPI, settings).testEncode(
+            "/test",
+            "get",
+            null,
+            null)
+        Assertions.assertNull(rawMessage)
+    }
+
     companion object {
-        private val LOGGER = KotlinLogging.logger { }
         private val settings = OpenApiCodecSettings()
-        val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/valid-dictionary.yml"), null, settings.dictionaryParseOption).openAPI
+        val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/array-json-tests.yml"), null, settings.dictionaryParseOption).openAPI
         private val mapper = ObjectMapper()
     }
 

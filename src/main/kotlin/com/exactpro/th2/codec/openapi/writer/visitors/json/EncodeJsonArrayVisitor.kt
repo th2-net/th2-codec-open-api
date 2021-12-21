@@ -149,5 +149,11 @@ class EncodeJsonArrayVisitor(override val from: Message) : EncodeVisitor<Message
         }?.forEach(rootNode::add)
     }
 
-    override fun getResult(): ByteString = ByteString.copyFrom(rootNode.toString().toByteArray())
+    override fun getResult(): ByteString  {
+        return if (rootNode.isEmpty) {
+            ByteString.EMPTY
+        } else {
+            ByteString.copyFrom(rootNode.toString().toByteArray())
+        }
+    }
 }

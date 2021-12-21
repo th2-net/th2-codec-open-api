@@ -22,7 +22,6 @@ import com.exactpro.th2.common.message.getString
 import getResourceAsText
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
-import mu.KotlinLogging
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import testDecode
@@ -37,8 +36,7 @@ class JsonObjectDecodeTests {
                       "testStatus" : "FAILED"
                     }""".trimIndent()
         val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
-            "Response",
-            "/test/object",
+            "/test",
             "get",
             "200",
             "application/json",
@@ -49,9 +47,47 @@ class JsonObjectDecodeTests {
         Assertions.assertEquals("FAILED", decodedResult!!.getString("testStatus"))
     }
 
+    @Test
+    fun `simple test json decode request`() {
+        val jsonData = """{
+                      "publicKey" : "1234567",
+                      "testEnabled" : true,
+                      "testStatus" : "FAILED"
+                    }""".trimIndent()
+        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
+            "/test",
+            "get",
+            null,
+            "application/json",
+            jsonData)
+
+        Assertions.assertEquals("1234567", decodedResult!!.getString("publicKey"))
+        Assertions.assertEquals(true, decodedResult!!.getString("testEnabled").toBoolean())
+        Assertions.assertEquals("FAILED", decodedResult!!.getString("testStatus"))
+    }
+
+    @Test
+    fun `test json decode request empty body`() {
+        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
+            "/test",
+            "get",
+            null,
+            null)
+        Assertions.assertNull(decodedResult)
+    }
+
+    @Test
+    fun `test json decode response empty body`() {
+        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
+            "/test",
+            "get",
+            "200",
+            null)
+        Assertions.assertNull(decodedResult)
+    }
+
     companion object {
-        private val LOGGER = KotlinLogging.logger { }
         private val settings = OpenApiCodecSettings()
-        val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/valid-dictionary.yml"), null, settings.dictionaryParseOption).openAPI
+        val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/object-json-tests.yml"), null, settings.dictionaryParseOption).openAPI
     }
 }

@@ -73,27 +73,32 @@ class OpenApiCodec(
 
             val container = checkNotNull(messagesToSchema[messageType]) { "There no message $messageType in dictionary" }
 
-            val rawMessage = RawMessage.newBuilder().apply {
+            builder += createHeaderMessage(container).apply {
                 parentEventId = parsedMessage.parentEventId
-                metadataBuilder.apply {
-                    putAllProperties(metadata.propertiesMap)
-                    this.id = metadata.id
-                    this.timestamp = metadata.timestamp
-                    this.protocol = PROTOCOL
-                }
             }
 
             container.body?.let { messageSchema ->
                 val visitor = VisitorFactory.createEncodeVisitor(container.bodyFormat!!, messageSchema.type, parsedMessage)
                 SchemaWriter.instance.traverse(visitor, messageSchema)
-                rawMessage.body = visitor.getResult()
+                val result = visitor.getResult()
+                if (!result.isEmpty) {
+                    builder += RawMessage.newBuilder().apply {
+                        parentEventId = parsedMessage.parentEventId
+                        container.fillMetadata(metadataBuilder)
+                        metadataBuilder.apply {
+                            putAllProperties(metadata.propertiesMap)
+                            this.id = metadata.id
+                            this.timestamp = metadata.timestamp
+                            this.protocol = PROTOCOL
+                        }
+                        body = result
+                    }
+                }
+
             }
 
-            container.fillMetadata(rawMessage.metadataBuilder)
-            builder += createHeaderMessage(container).apply {
-                parentEventId = parsedMessage.parentEventId
-            }
-            builder += rawMessage
+
+
         }
 
         return builder.build()
@@ -126,17 +131,17 @@ class OpenApiCodec(
                     val method = requireNotNull(rawMessage.metadata.propertiesMap[METHOD_PROPERTY]?.lowercase()) { "Method property in metadata from response is required" }
                     val code = requireNotNull(message.getString(STATUS_CODE_FIELD)) { "Code status field required inside of http response message" }
 
-                    dictionary.paths[uri]?.getMethods()?.get(method)?.responses?.get(code)?.content?.get(bodyFormat)?.schema?.run {
+                    checkNotNull(dictionary.paths[uri]?.getMethods()?.get(method)?.responses?.get(code)?.content?.get(bodyFormat)?.schema?.run {
                         dictionary.getEndPoint(this)
-                    } ?: error { "Response schema with path $uri, method $method, code $code and type $bodyFormat wasn't found" }
+                    }) { "Response schema with path $uri, method $method, code $code and type $bodyFormat wasn't found" }
                 }
                 REQUEST_MESSAGE -> {
                     val uri = requireNotNull(message.getString(URI_FIELD)) { "URI field in request is required" }
                     val method = requireNotNull(message.getString(METHOD_FIELD)) { "Method field in request is required" }
 
-                    dictionary.paths[uri]?.getMethods()?.get(method)?.requestBody?.content?.get(bodyFormat)?.schema?.run {
+                    checkNotNull(dictionary.paths[uri]?.getMethods()?.get(method)?.requestBody?.content?.get(bodyFormat)?.schema?.run {
                         dictionary.getEndPoint(this)
-                    } ?: error { "Request schema with path $uri, method $method and type $bodyFormat wasn't found" }
+                    }) { "Request schema with path $uri, method $method and type $bodyFormat wasn't found" }
                 }
                 else -> error("Unsupported message type: ${message.messageType}")
             }
@@ -208,6 +213,8 @@ class OpenApiCodec(
         val map = mutableMapOf<String, HttpContainer>()
         dictionary.paths.forEach { pathKey, pathsValue ->
             pathsValue.getMethods().forEach { (methodKey, methodValue) ->
+
+                map[combineName(pathKey, methodKey)] = RequestContainer(pathKey, methodKey, methodValue.parameters, null, null)
 
                 // Request
                 methodValue.requestBody?.content?.forEach { (typeKey, typeValue) ->
