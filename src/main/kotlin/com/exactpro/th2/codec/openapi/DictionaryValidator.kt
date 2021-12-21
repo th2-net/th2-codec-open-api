@@ -22,7 +22,7 @@ import mu.KotlinLogging
 import org.openapitools.codegen.validations.oas.OpenApiEvaluator
 import org.openapitools.codegen.validations.oas.RuleConfiguration
 
-class OpenApiValidator(val configuration: RuleConfiguration) {
+class DictionaryValidator(val configuration: RuleConfiguration) {
 
     fun validate(dictionary: SwaggerParseResult) {
         val openAPI = dictionary.openAPI
@@ -44,7 +44,7 @@ class OpenApiValidator(val configuration: RuleConfiguration) {
             logger.error {"Spec is invalid.\nIssues:"}
 
             messages.forEach {
-                logger.error {"$it"}
+                logger.error { it }
             }
 
             validationResult.errors.forEach {

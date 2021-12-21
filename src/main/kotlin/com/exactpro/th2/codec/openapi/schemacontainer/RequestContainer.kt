@@ -24,7 +24,7 @@ class RequestContainer(
     val method: String,
     val params: List<Parameter>?,
     override val body: Schema<*>?,
-    override val format: String?
+    override val bodyFormat: String?
 ) : HttpContainer {
 
 }

@@ -17,7 +17,7 @@
 import com.exactpro.th2.codec.openapi.OpenApiCodecFactory
 import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
 import com.exactpro.th2.codec.openapi.throwable.DictionaryValidationException
-import com.exactpro.th2.codec.openapi.OpenApiValidator
+import com.exactpro.th2.codec.openapi.DictionaryValidator
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.parser.core.models.ParseOptions
@@ -97,7 +97,7 @@ class ValidationTests {
         val LOGGER = KotlinLogging.logger { }
         val parser = OpenAPIParser()
         val parseOptions = ParseOptions().apply { isResolve = true }
-        val validator = OpenApiValidator(ObjectMapper().readValue(getJsonConfiguration().toURL(), RuleConfiguration::class.java))
+        val validator = DictionaryValidator(ObjectMapper().readValue(getJsonConfiguration().toURL(), RuleConfiguration::class.java))
         private fun getJsonConfiguration(): URI {
             return requireNotNull(ValidationTests::class.java.getResource("rule-config.json")) {"Rule configuration from resources required"}.toURI()
         }

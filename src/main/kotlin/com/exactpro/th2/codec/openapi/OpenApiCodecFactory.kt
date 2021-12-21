@@ -53,7 +53,7 @@ class OpenApiCodecFactory : IPipelineCodecFactory {
     }
 
     private fun SwaggerParseResult.validate(validationSettings: RuleConfiguration) {
-        OpenApiValidator(validationSettings).validate(this)
+        DictionaryValidator(validationSettings).validate(this)
     }
 
     companion object {

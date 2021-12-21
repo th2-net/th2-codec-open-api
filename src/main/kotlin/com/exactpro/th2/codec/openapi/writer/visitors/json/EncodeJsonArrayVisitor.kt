@@ -19,16 +19,17 @@ package com.exactpro.th2.codec.openapi.writer.visitors.json
 import com.exactpro.th2.codec.openapi.utils.getRequiredField
 import com.exactpro.th2.codec.openapi.utils.putAll
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter
-import com.exactpro.th2.codec.openapi.writer.visitors.ISchemaVisitor
+import com.exactpro.th2.codec.openapi.writer.visitors.SchemaVisitor.EncodeVisitor
 import com.exactpro.th2.common.grpc.Message
 import com.exactpro.th2.common.message.toJson
 import com.exactpro.th2.common.value.getList
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
+import com.google.protobuf.ByteString
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 
-class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<String> {
+class EncodeJsonArrayVisitor(override val from: Message) : EncodeVisitor<Message>() {
     private val rootNode: ArrayNode = mapper.createArrayNode()
 
     companion object {
@@ -74,7 +75,7 @@ class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<Stri
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
+        from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putAll<Boolean>(values)
         }
     }
@@ -85,7 +86,7 @@ class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<Stri
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
+        from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putAll<Int>(values)
         }
     }
@@ -96,7 +97,7 @@ class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<Stri
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
+        from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putAll<String>(values)
         }
     }
@@ -107,7 +108,7 @@ class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<Stri
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
+        from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putAll<Double>(values)
         }
     }
@@ -118,7 +119,7 @@ class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<Stri
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
+        from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putAll<Float>(values)
         }
     }
@@ -129,7 +130,7 @@ class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<Stri
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
+        from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putAll<Long>(values)
         }
     }
@@ -140,7 +141,7 @@ class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<Stri
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        message.getRequiredField(fieldName, required)?.getList()?.map {
+        from.getRequiredField(fieldName, required)?.getList()?.map {
             if (!it.hasMessageValue()) error("Cannot convert $fieldName=${it.toJson(true)} to json object")
             EncodeJsonObjectVisitor(it.messageValue).apply {
                 SchemaWriter.instance.traverse(this, fldStruct.items)
@@ -148,5 +149,5 @@ class EncodeJsonArrayVisitor(private val message: Message) : ISchemaVisitor<Stri
         }?.forEach(rootNode::add)
     }
 
-    override fun getResult(): String = rootNode.toPrettyString()
+    override fun getResult(): ByteString = ByteString.copyFrom(rootNode.toString().toByteArray())
 }

@@ -23,7 +23,7 @@ class ResponseContainer(
     val method: String,
     val code: String,
     override val body: Schema<*>?,
-    override val format: String?
+    override val bodyFormat: String?
 ) : HttpContainer {
 
 }

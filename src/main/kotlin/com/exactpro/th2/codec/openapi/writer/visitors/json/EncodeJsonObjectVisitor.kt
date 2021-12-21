@@ -20,7 +20,7 @@ import com.exactpro.th2.codec.openapi.utils.checkEnum
 import com.exactpro.th2.codec.openapi.utils.getRequiredField
 import com.exactpro.th2.codec.openapi.utils.putAll
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter
-import com.exactpro.th2.codec.openapi.writer.visitors.ISchemaVisitor
+import com.exactpro.th2.codec.openapi.writer.visitors.SchemaVisitor.EncodeVisitor
 import com.exactpro.th2.common.grpc.Message
 import com.exactpro.th2.common.message.toJson
 import com.exactpro.th2.common.value.getDouble
@@ -31,11 +31,12 @@ import com.exactpro.th2.common.value.getMessage
 import com.exactpro.th2.common.value.getString
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.google.protobuf.ByteString
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 
 
-class EncodeJsonObjectVisitor(private val message: Message) : ISchemaVisitor<String> {
+class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Message>() {
     private val rootNode: ObjectNode = mapper.createObjectNode()
 
     override fun visit(
@@ -44,7 +45,7 @@ class EncodeJsonObjectVisitor(private val message: Message) : ISchemaVisitor<Str
         fldStruct: Schema<*>,
         required: Boolean
     ) {
-        message.getRequiredField(fieldName, required)?.getMessage()?.let { nextMessage ->
+        from.getRequiredField(fieldName, required)?.getMessage()?.let { nextMessage ->
             val visitor = EncodeJsonObjectVisitor(nextMessage)
             SchemaWriter.instance.traverse(visitor, fldStruct)
             rootNode.put(fieldName, visitor.rootNode)
@@ -52,37 +53,37 @@ class EncodeJsonObjectVisitor(private val message: Message) : ISchemaVisitor<Str
     }
 
     override fun visit(fieldName: String, defaultValue: String?, fldStruct: Schema<*>, required: Boolean) {
-        val value = message.getRequiredField(fieldName, required)?.getString()
+        val value = from.getRequiredField(fieldName, required)?.getString()
         fldStruct.checkEnum(value, fieldName)
         rootNode.put(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Boolean?, fldStruct: Schema<*>, required: Boolean) {
-        val value = message.getRequiredField(fieldName, required)?.getString()?.toBoolean()
+        val value = from.getRequiredField(fieldName, required)?.getString()?.toBoolean()
         fldStruct.checkEnum(value, fieldName)
         rootNode.put(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Int?, fldStruct: Schema<*>, required: Boolean) {
-        val value = message.getRequiredField(fieldName, required)?.getInt()
+        val value = from.getRequiredField(fieldName, required)?.getInt()
         fldStruct.checkEnum(value, fieldName)
         rootNode.put(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Float?, fldStruct: Schema<*>, required: Boolean) {
-        val value = message.getRequiredField(fieldName, required)?.getString()?.toFloat()
+        val value = from.getRequiredField(fieldName, required)?.getString()?.toFloat()
         fldStruct.checkEnum(value, fieldName)
         rootNode.put(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Double?, fldStruct: Schema<*>, required: Boolean) {
-        val value = message.getRequiredField(fieldName, required)?.getDouble()
+        val value = from.getRequiredField(fieldName, required)?.getDouble()
         fldStruct.checkEnum(value, fieldName)
         rootNode.put(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Long?, fldStruct: Schema<*>, required: Boolean) {
-        val value = message.getRequiredField(fieldName, required)?.getLong()
+        val value = from.getRequiredField(fieldName, required)?.getLong()
         fldStruct.checkEnum(value, fieldName)
         rootNode.put(fieldName, value ?: defaultValue)
     }
@@ -93,7 +94,7 @@ class EncodeJsonObjectVisitor(private val message: Message) : ISchemaVisitor<Str
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
+        from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putArray(fieldName).putAll<Boolean>(values)
         }
     }
@@ -104,7 +105,7 @@ class EncodeJsonObjectVisitor(private val message: Message) : ISchemaVisitor<Str
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
+        from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putArray(fieldName).putAll<Int>(values)
         }
     }
@@ -115,7 +116,7 @@ class EncodeJsonObjectVisitor(private val message: Message) : ISchemaVisitor<Str
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
+        from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putArray(fieldName).putAll<String>(values)
         }
     }
@@ -126,7 +127,7 @@ class EncodeJsonObjectVisitor(private val message: Message) : ISchemaVisitor<Str
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
+        from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putArray(fieldName).putAll<Double>(values)
         }
     }
@@ -137,7 +138,7 @@ class EncodeJsonObjectVisitor(private val message: Message) : ISchemaVisitor<Str
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
+        from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putArray(fieldName).putAll<Float>(values)
         }
     }
@@ -148,7 +149,7 @@ class EncodeJsonObjectVisitor(private val message: Message) : ISchemaVisitor<Str
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        message.getRequiredField(fieldName, required)?.getList()?.let { values ->
+        from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putArray(fieldName).putAll<Long>(values)
         }
     }
@@ -159,7 +160,7 @@ class EncodeJsonObjectVisitor(private val message: Message) : ISchemaVisitor<Str
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        message.getRequiredField(fieldName, required)?.getList()?.map {
+        from.getRequiredField(fieldName, required)?.getList()?.map {
             if (!it.hasMessageValue()) error("Cannot convert $fieldName=${it.toJson(true)} to json object")
             EncodeJsonObjectVisitor(it.messageValue).apply {
                 SchemaWriter.instance.traverse(this, fldStruct.items)
@@ -167,7 +168,7 @@ class EncodeJsonObjectVisitor(private val message: Message) : ISchemaVisitor<Str
         }?.run(rootNode.putArray(fieldName)::addAll)
     }
 
-    override fun getResult(): String = rootNode.toPrettyString()
+    override fun getResult(): ByteString = ByteString.copyFrom(rootNode.toString().toByteArray())
 
     fun getNode() = rootNode
 

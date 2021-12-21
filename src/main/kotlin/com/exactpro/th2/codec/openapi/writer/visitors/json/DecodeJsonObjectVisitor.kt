@@ -26,7 +26,7 @@ import com.exactpro.th2.codec.openapi.utils.validateAsInteger
 import com.exactpro.th2.codec.openapi.utils.validateAsLong
 import com.exactpro.th2.codec.openapi.utils.validateAsObject
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter
-import com.exactpro.th2.codec.openapi.writer.visitors.ISchemaVisitor
+import com.exactpro.th2.codec.openapi.writer.visitors.SchemaVisitor.DecodeVisitor
 import com.exactpro.th2.common.grpc.Message
 import com.exactpro.th2.common.message.addField
 import com.exactpro.th2.common.message.addFields
@@ -36,7 +36,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 
-class DecodeJsonObjectVisitor(val json: ObjectNode) : ISchemaVisitor<Message> {
+class DecodeJsonObjectVisitor(override val from: ObjectNode) : DecodeVisitor<ObjectNode>() {
     private val rootMessage = message()
 
     constructor(jsonString: String) : this(mapper.readTree(jsonString) as ObjectNode)
@@ -47,7 +47,7 @@ class DecodeJsonObjectVisitor(val json: ObjectNode) : ISchemaVisitor<Message> {
         fldStruct: Schema<*>,
         required: Boolean
     ) {
-        json.getRequiredField(fieldName, required)?.let {
+        from.getRequiredField(fieldName, required)?.let {
             val visitor = DecodeJsonObjectVisitor(it.validateAsObject())
             SchemaWriter.instance.traverse(visitor, fldStruct)
             rootMessage.addFields(fieldName, visitor.rootMessage.build())
@@ -55,37 +55,37 @@ class DecodeJsonObjectVisitor(val json: ObjectNode) : ISchemaVisitor<Message> {
     }
 
     override fun visit(fieldName: String, defaultValue: String?, fldStruct: Schema<*>, required: Boolean) {
-        val value = json.getRequiredField(fieldName, required)?.asText()
+        val value = from.getRequiredField(fieldName, required)?.asText()
         fldStruct.checkEnum(value, fieldName)
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Boolean?, fldStruct: Schema<*>, required: Boolean) {
-        val value = json.getRequiredField(fieldName, required)?.validateAsBoolean()
+        val value = from.getRequiredField(fieldName, required)?.validateAsBoolean()
         fldStruct.checkEnum(value, fieldName)
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Int?, fldStruct: Schema<*>, required: Boolean) {
-        val value = json.getRequiredField(fieldName, required)?.validateAsInteger()
+        val value = from.getRequiredField(fieldName, required)?.validateAsInteger()
         fldStruct.checkEnum(value, fieldName)
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Float?, fldStruct: Schema<*>, required: Boolean) {
-        val value = json.getRequiredField(fieldName, required)?.validateAsFloat()
+        val value = from.getRequiredField(fieldName, required)?.validateAsFloat()
         fldStruct.checkEnum(value, fieldName)
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Double?, fldStruct: Schema<*>, required: Boolean) {
-        val value = json.getRequiredField(fieldName, required)?.validateAsDouble()
+        val value = from.getRequiredField(fieldName, required)?.validateAsDouble()
         fldStruct.checkEnum(value, fieldName)
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Long?, fldStruct: Schema<*>, required: Boolean) {
-        val value = json.getRequiredField(fieldName, required)?.validateAsLong()
+        val value = from.getRequiredField(fieldName, required)?.validateAsLong()
         fldStruct.checkEnum(value, fieldName)
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
@@ -96,7 +96,7 @@ class DecodeJsonObjectVisitor(val json: ObjectNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        json.getRequiredArray(fieldName, required)?.let { array ->
+        from.getRequiredArray(fieldName, required)?.let { array ->
             rootMessage.addField(fieldName, array.map { it.validateAsBoolean() })
         }
     }
@@ -107,7 +107,7 @@ class DecodeJsonObjectVisitor(val json: ObjectNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        json.getRequiredArray(fieldName, required)?.let { array ->
+        from.getRequiredArray(fieldName, required)?.let { array ->
             rootMessage.addField(fieldName, array.map { it.validateAsInteger() })
         }
     }
@@ -118,7 +118,7 @@ class DecodeJsonObjectVisitor(val json: ObjectNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        json.getRequiredArray(fieldName, required)?.map { it.asText() }?.let {
+        from.getRequiredArray(fieldName, required)?.map { it.asText() }?.let {
             rootMessage.addField(fieldName, it)
         }
     }
@@ -129,7 +129,7 @@ class DecodeJsonObjectVisitor(val json: ObjectNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        json.getRequiredArray(fieldName, required)?.let { array ->
+        from.getRequiredArray(fieldName, required)?.let { array ->
             rootMessage.addField(fieldName, array.map { it.validateAsDouble() })
         }
     }
@@ -140,7 +140,7 @@ class DecodeJsonObjectVisitor(val json: ObjectNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        json.getRequiredArray(fieldName, required)?.let { array ->
+        from.getRequiredArray(fieldName, required)?.let { array ->
             rootMessage.addField(fieldName, array.map { it.validateAsFloat() })
         }
     }
@@ -151,7 +151,7 @@ class DecodeJsonObjectVisitor(val json: ObjectNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        json.getRequiredArray(fieldName, required)?.let { array ->
+        from.getRequiredArray(fieldName, required)?.let { array ->
             rootMessage.addField(fieldName, array.map { it.validateAsLong() })
         }
     }
@@ -162,7 +162,7 @@ class DecodeJsonObjectVisitor(val json: ObjectNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        json.getRequiredArray(fieldName, required)?.let { array ->
+        from.getRequiredArray(fieldName, required)?.let { array ->
             rootMessage.addField(fieldName, array.map {
                 DecodeJsonObjectVisitor(it.validateAsObject()).apply {
                     SchemaWriter.instance.traverse(this, fldStruct.items)

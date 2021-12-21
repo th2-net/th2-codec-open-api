@@ -20,7 +20,7 @@ import io.swagger.v3.oas.models.media.Schema
 
 sealed interface HttpContainer {
     val body: Schema<*>?
-    val format: String?
+    val bodyFormat: String?
 }
 
 

@@ -23,7 +23,7 @@ import com.exactpro.th2.codec.openapi.utils.validateAsInteger
 import com.exactpro.th2.codec.openapi.utils.validateAsLong
 import com.exactpro.th2.codec.openapi.utils.validateAsObject
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter
-import com.exactpro.th2.codec.openapi.writer.visitors.ISchemaVisitor
+import com.exactpro.th2.codec.openapi.writer.visitors.SchemaVisitor.DecodeVisitor
 import com.exactpro.th2.common.grpc.Message
 import com.exactpro.th2.common.message.addField
 import com.exactpro.th2.common.message.message
@@ -32,7 +32,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 
-class DecodeJsonArrayVisitor(val json: ArrayNode) : ISchemaVisitor<Message> {
+class DecodeJsonArrayVisitor(override val from: ArrayNode) : DecodeVisitor<ArrayNode>() {
 
     constructor(jsonString: String) : this(mapper.readTree(jsonString) as ArrayNode)
 
@@ -72,7 +72,7 @@ class DecodeJsonArrayVisitor(val json: ArrayNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        rootMessage.addField(fieldName, json.map { it.validateAsBoolean() })
+        rootMessage.addField(fieldName, from.map { it.validateAsBoolean() })
     }
 
     override fun visitIntegerCollection(
@@ -81,7 +81,7 @@ class DecodeJsonArrayVisitor(val json: ArrayNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        rootMessage.addField(fieldName, json.map { it.validateAsInteger() })
+        rootMessage.addField(fieldName, from.map { it.validateAsInteger() })
     }
 
     override fun visitStringCollection(
@@ -90,7 +90,7 @@ class DecodeJsonArrayVisitor(val json: ArrayNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        rootMessage.addField(fieldName, json.map { it.asText() })
+        rootMessage.addField(fieldName, from.map { it.asText() })
     }
 
     override fun visitDoubleCollection(
@@ -99,7 +99,7 @@ class DecodeJsonArrayVisitor(val json: ArrayNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        rootMessage.addField(fieldName, json.map { it.validateAsDouble() })
+        rootMessage.addField(fieldName, from.map { it.validateAsDouble() })
     }
 
     override fun visitFloatCollection(
@@ -108,7 +108,7 @@ class DecodeJsonArrayVisitor(val json: ArrayNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        rootMessage.addField(fieldName, json.map { it.validateAsFloat() })
+        rootMessage.addField(fieldName, from.map { it.validateAsFloat() })
     }
 
     override fun visitLongCollection(
@@ -117,7 +117,7 @@ class DecodeJsonArrayVisitor(val json: ArrayNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        rootMessage.addField(fieldName, json.map { it.validateAsLong() })
+        rootMessage.addField(fieldName, from.map { it.validateAsLong() })
     }
 
     override fun visitObjectCollection(
@@ -126,7 +126,7 @@ class DecodeJsonArrayVisitor(val json: ArrayNode) : ISchemaVisitor<Message> {
         fldStruct: ArraySchema,
         required: Boolean
     ) {
-        rootMessage.addField(fieldName, json.map {
+        rootMessage.addField(fieldName, from.map {
             DecodeJsonObjectVisitor(it.validateAsObject()).apply {
                 SchemaWriter.instance.traverse(this, fldStruct.items)
             }.getResult()

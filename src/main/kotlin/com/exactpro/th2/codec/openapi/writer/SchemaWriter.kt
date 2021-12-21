@@ -18,7 +18,7 @@ package com.exactpro.th2.codec.openapi.writer
 
 import com.exactpro.th2.codec.CodecException
 import com.exactpro.th2.codec.openapi.utils.getEndPoint
-import com.exactpro.th2.codec.openapi.writer.visitors.ISchemaVisitor
+import com.exactpro.th2.codec.openapi.writer.visitors.SchemaVisitor
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
@@ -32,7 +32,7 @@ import io.swagger.v3.parser.util.SchemaTypeUtil.STRING_TYPE
 class SchemaWriter private constructor(private val openApi: OpenAPI) {
 
     fun traverse(
-        schemaVisitor: ISchemaVisitor<*>,
+        schemaVisitor: SchemaVisitor<*, *>,
         msgStructure: Schema<*>
     ) {
         val schema = openApi.getEndPoint(msgStructure)
@@ -50,7 +50,7 @@ class SchemaWriter private constructor(private val openApi: OpenAPI) {
         }
     }
 
-    private fun processProperty(property: Schema<*>, visitor: ISchemaVisitor<*>, name: String, required: Boolean = false) {
+    private fun processProperty(property: Schema<*>, visitor: SchemaVisitor<*, *>, name: String, required: Boolean = false) {
         runCatching {
             when(property.type) {
                 ARRAY_TYPE -> {
@@ -102,7 +102,7 @@ class SchemaWriter private constructor(private val openApi: OpenAPI) {
 
     }
 
-    private fun processArrayProperty(property: ArraySchema, visitor: ISchemaVisitor<*>, name: String, required: Boolean = false) {
+    private fun processArrayProperty(property: ArraySchema, visitor: SchemaVisitor<*, *>, name: String, required: Boolean = false) {
         runCatching {
             when(property.items.type) {
                 INTEGER_TYPE -> {
@@ -139,6 +139,9 @@ class SchemaWriter private constructor(private val openApi: OpenAPI) {
                 }
                 STRING_TYPE -> {
                     visitor.visitStringCollection(name, property.default as? List<String>, property, required)
+                }
+                OBJECT_TYPE -> {
+                    visitor.visitObjectCollection(name, property.default as List<Any>, property, required)
                 }
                 else -> error("Unsupported type of property $name: null")
             }

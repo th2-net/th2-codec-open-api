@@ -21,8 +21,6 @@ import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.parser.models.RefType
-import org.apache.poi.ss.formula.functions.T
-import kotlin.reflect.KClass
 
 private fun PathItem.getByMethod(method: String) : Operation? {
     when (method.lowercase()) {
@@ -62,19 +60,6 @@ fun OpenAPI.getEndPoint(schema: Schema<*>): Schema<*> {
         findByRef(schema.`$ref`) ?: error("Unsupported schema, no reference was found: ${schema.`$ref`}")
     } else {
         schema
-    }
-}
-
-enum class MessageFormat(val format: String) {
-    JSON("application/json");
-
-    companion object {
-        fun getFormat(format: String) : MessageFormat? {
-            values().forEach {
-                if (it.format == format) return it
-            }
-            return null
-        }
     }
 }
 

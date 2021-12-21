@@ -112,7 +112,7 @@ class JsonArrayTest {
             visitObjectCollection(fieldName, null, openAPI.components.schemas["ArrayObjectTest"]!! as ArraySchema, true)
         }.getResult()
 
-        (mapper.readTree(result) as ArrayNode).let {  arrayNode ->
+        (mapper.readTree(result.toStringUtf8()) as ArrayNode).let {  arrayNode ->
             arrayNode.get(0).assertString(stringName, stringValue)
             arrayNode.get(1).assertInteger(integerName, integerValue)
             arrayNode.get(2).assertBoolean(booleanName, booleanValue)
@@ -134,7 +134,7 @@ class JsonArrayTest {
         val visitor = EncodeJsonArrayVisitor(message().addField(fieldName, collection).build())
         val schema = createArrayTestSchema("string")
         visitor.visitStringCollection(fieldName, null, schema, true)
-        val result = (mapper.readTree(visitor.getResult()) as ArrayNode)
+        val result = (mapper.readTree(visitor.getResult().toStringUtf8()) as ArrayNode)
         collection.forEachIndexed { index, value ->
             Assertions.assertEquals(value, result.get(index).asText())
         }
@@ -147,7 +147,7 @@ class JsonArrayTest {
         val visitor = EncodeJsonArrayVisitor(message().addField(fieldName, collection).build())
         val schema = createArrayTestSchema("boolean")
         visitor.visitBooleanCollection(fieldName, null, schema, true)
-        val result = (mapper.readTree(visitor.getResult()) as ArrayNode)
+        val result = (mapper.readTree(visitor.getResult().toStringUtf8()) as ArrayNode)
         collection.forEachIndexed { index, value ->
             Assertions.assertEquals(value, result.get(index).asBoolean())
         }
@@ -160,7 +160,7 @@ class JsonArrayTest {
         val visitor = EncodeJsonArrayVisitor(message().addField(fieldName, collection).build())
         val schema = createArrayTestSchema("integer")
         visitor.visitIntegerCollection(fieldName, null, schema, true)
-        val result = (mapper.readTree(visitor.getResult()) as ArrayNode)
+        val result = (mapper.readTree(visitor.getResult().toStringUtf8()) as ArrayNode)
         collection.forEachIndexed { index, value ->
             Assertions.assertEquals(value, result.get(index).asInt())
         }
@@ -173,7 +173,7 @@ class JsonArrayTest {
         val visitor = EncodeJsonArrayVisitor(message().addField(fieldName, collection).build())
         val schema = createArrayTestSchema("number","float")
         visitor.visitFloatCollection(fieldName, null, schema, true)
-        val result = (mapper.readTree(visitor.getResult()) as ArrayNode)
+        val result = (mapper.readTree(visitor.getResult().toStringUtf8()) as ArrayNode)
         collection.forEachIndexed { index, value ->
             Assertions.assertEquals(value, result.get(index).asText().toFloat())
         }
@@ -186,7 +186,7 @@ class JsonArrayTest {
         val visitor = EncodeJsonArrayVisitor(message().addField(fieldName, collection).build())
         val schema = createArrayTestSchema("number", "double")
         visitor.visitDoubleCollection(fieldName, null , schema, true)
-        val result = (mapper.readTree(visitor.getResult()) as ArrayNode)
+        val result = (mapper.readTree(visitor.getResult().toStringUtf8()) as ArrayNode)
         collection.forEachIndexed { index, value ->
             Assertions.assertEquals(value, result.get(index).asDouble())
         }
@@ -199,7 +199,7 @@ class JsonArrayTest {
         val visitor = EncodeJsonArrayVisitor(message().addField(fieldName, collection).build())
         val schema = createArrayTestSchema("integer", "int64")
         visitor.visitLongCollection(fieldName, null, schema, true)
-        val result = (mapper.readTree(visitor.getResult()) as ArrayNode)
+        val result = (mapper.readTree(visitor.getResult().toStringUtf8()) as ArrayNode)
         collection.forEachIndexed { index, value ->
             Assertions.assertEquals(value, result.get(index).asLong())
         }
