@@ -17,66 +17,36 @@
 package json.decode
 
 import com.exactpro.th2.codec.openapi.OpenApiCodec
-import com.exactpro.th2.codec.openapi.OpenApiCodec.Companion.HEADERS_FIELD
-import com.exactpro.th2.codec.openapi.OpenApiCodec.Companion.METHOD_PROPERTY
-import com.exactpro.th2.codec.openapi.OpenApiCodec.Companion.STATUS_CODE_FIELD
-import com.exactpro.th2.codec.openapi.OpenApiCodec.Companion.URI_PROPERTY
-import com.exactpro.th2.common.assertEqualMessages
 import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
-import com.exactpro.th2.common.grpc.MessageGroup
-import com.exactpro.th2.common.grpc.RawMessage
-import com.exactpro.th2.common.message.addField
 import com.exactpro.th2.common.message.getString
-import com.exactpro.th2.common.message.message
-import com.exactpro.th2.common.message.plusAssign
-import com.google.protobuf.ByteString
 import getResourceAsText
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import mu.KotlinLogging
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import testDecode
 
 class JsonObjectDecodeTests {
     
     @Test
     fun `simple test json decode response`() {
-        val codec = OpenApiCodec(openAPI, settings)
-        val response = message("Response").apply {
-            addField(STATUS_CODE_FIELD, "200")
-            addField(HEADERS_FIELD, listOf(message().apply {
-                addField("name", "Content-Type")
-                addField("value", "application/json")
-            }))
-        }.build()
-
-        val body = RawMessage.newBuilder().apply {
-            metadataBuilder.putProperties(URI_PROPERTY, "/test/object")
-            metadataBuilder.putProperties(METHOD_PROPERTY, "GET")
-            body = ByteString.copyFrom("""{
+        val jsonData = """{
                       "publicKey" : "1234567",
                       "testEnabled" : true,
                       "testStatus" : "FAILED"
-                    }""".trimIndent().toByteArray())
-        }.build()
+                    }""".trimIndent()
+        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
+            "Response",
+            "/test/object",
+            "get",
+            "200",
+            "application/json",
+            jsonData)
 
-        val group = MessageGroup.newBuilder()
-
-        group += response
-        group += body
-
-        val decodeResult = codec.decode(group.build())
-
-        Assertions.assertEquals(2, decodeResult.messagesList.size)
-        Assertions.assertTrue(decodeResult.messagesList[0].hasMessage())
-        Assertions.assertTrue(decodeResult.messagesList[1].hasMessage())
-        assertEqualMessages(response, decodeResult.messagesList[0].message)
-
-        decodeResult.messagesList[1].message.run {
-            Assertions.assertEquals("1234567", this.getString("publicKey"))
-            Assertions.assertEquals(true, this.getString("testEnabled").toBoolean())
-            Assertions.assertEquals("FAILED", this.getString("testStatus"))
-        }
+        Assertions.assertEquals("1234567", decodedResult!!.getString("publicKey"))
+        Assertions.assertEquals(true, decodedResult!!.getString("testEnabled").toBoolean())
+        Assertions.assertEquals("FAILED", decodedResult!!.getString("testStatus"))
     }
 
     companion object {

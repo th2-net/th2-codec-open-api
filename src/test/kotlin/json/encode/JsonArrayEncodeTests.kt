@@ -18,10 +18,7 @@ package json.encode
 
 import com.exactpro.th2.codec.openapi.OpenApiCodec
 import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
-import com.exactpro.th2.common.grpc.MessageGroup
 import com.exactpro.th2.common.message.addField
-import com.exactpro.th2.common.message.message
-import com.exactpro.th2.common.message.plusAssign
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import getResourceAsText
@@ -30,25 +27,16 @@ import io.swagger.v3.oas.models.OpenAPI
 import mu.KotlinLogging
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import testEncode
 
 class JsonArrayEncodeTests {
 
     @Test
     fun `simple test array json encode response`() {
-        val codec = OpenApiCodec(openAPI, settings)
-        val jsonMessage = message("StoreGet200ApplicationJson").apply {
-            metadataBuilder.protocol = "openapi"
+        val rawMessage = OpenApiCodec(openAPI, settings).testEncode("/store", "get", "200", "application/json") {
             addField("array", listOf("test0", "test1", "test2"))
-        }.build()
-
-        val messageGroup = MessageGroup.newBuilder()
-        messageGroup += jsonMessage
-
-        val result = codec.encode(messageGroup.build())
-
-        Assertions.assertEquals(1, result.messagesList.size)
-        Assertions.assertTrue(result.messagesList[0].hasRawMessage())
-        val jsonString = result.messagesList[0].rawMessage.body.toStringUtf8()
+        }
+        val jsonString = rawMessage.body.toStringUtf8()
 
         mapper.readTree(jsonString).let { json ->
             Assertions.assertTrue(json.isArray) { "Result of encode must be array" }

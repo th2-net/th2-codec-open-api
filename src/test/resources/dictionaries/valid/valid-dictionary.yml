@@ -8,6 +8,30 @@ servers:
 
 
 paths:
+  /test:
+    get:
+      tags:
+        - test
+      summary: Store an object
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestObject"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                example:
+                  - /store/params/bank/item_1
+                  - /store/params/bank/item_2
+                  - /store/params/bank/item_3
+
   /store:
     get:
       tags:
@@ -110,9 +134,33 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TestObject"
+    put:
+      tags:
+        - test
+      summary: Returns the test object
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestNonRequiredObject"
 
 components:
   schemas:
+    TestNonRequiredObject:
+      type: object
+      description: |
+        Defines the test object.
+      properties:
+        publicKey:
+          type: string
+          example: "123qwer...12"
+        testEnabled:
+          type: boolean
+          example: false
+        testStatus:
+          $ref: "#/components/schemas/TestStatus"
     TestObject:
       type: object
       description: |

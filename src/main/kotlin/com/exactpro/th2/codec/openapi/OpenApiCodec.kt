@@ -40,8 +40,11 @@ import io.swagger.v3.oas.models.OpenAPI
 import com.exactpro.th2.common.grpc.AnyMessage.KindCase.MESSAGE
 import com.exactpro.th2.common.grpc.AnyMessage.KindCase.RAW_MESSAGE
 import com.exactpro.th2.common.grpc.Message
+import com.exactpro.th2.common.grpc.RawMessageMetadata
+import com.exactpro.th2.common.message.addField
 import com.exactpro.th2.common.message.getList
 import com.exactpro.th2.common.message.getString
+import com.exactpro.th2.common.message.message
 import com.exactpro.th2.common.message.messageType
 import io.swagger.v3.oas.models.media.Schema
 import mu.KotlinLogging
@@ -77,8 +80,7 @@ class OpenApiCodec(
             val metadata = parsedMessage.metadata
             val messageType = metadata.messageType
 
-            val container =
-                checkNotNull(messagesToSchema[messageType]) { "There no message $messageType in dictionary" }
+            val container = checkNotNull(messagesToSchema[messageType]) { "There no message $messageType in dictionary" }
 
             val rawMessage = RawMessage.newBuilder().apply {
                 parentEventId = parsedMessage.parentEventId
@@ -91,7 +93,7 @@ class OpenApiCodec(
             }
 
             container.body?.let { messageSchema ->
-                when (MessageFormat.getFormat(messageSchema.format)
+                when (MessageFormat.getFormat(container.format!!)
                     ?: error("Unsupported format of message ${messageSchema.format}")) {
                     MessageFormat.JSON -> {
                         val visitor = when (JsonSchemaTypes.getType(messageSchema.type)
@@ -109,22 +111,8 @@ class OpenApiCodec(
                 }
             }
 
-            when (container) {
-                is ResponseContainer -> {
-                    rawMessage.metadataBuilder.apply {
-                        putProperties(METHOD_PROPERTY, container.method)
-                        putProperties(URI_PROPERTY, container.path)
-                        putProperties(CODE_PROPERTY, container.code)
-                    }
-                }
-                is RequestContainer -> {
-                    rawMessage.metadataBuilder.apply {
-                        putProperties(METHOD_PROPERTY, container.method)
-                        putProperties(URI_PROPERTY, container.path)
-                    }
-                }
-            }
-
+            container.fillMetadata(rawMessage.metadataBuilder)
+            builder += createHeaderMessage(container)
             builder += rawMessage
         }
 
@@ -161,7 +149,7 @@ class OpenApiCodec(
                     checkNotNull(messageSchema) { "Response schema with path $uri, method $method, code $code and type $type wasn't found" }
 
                     messageSchema.runCatching {
-                        builder += decodeSingle(body)
+                        builder += decodeSingle(body, type)
                     }.onFailure {
                         throw DecodeException(
                             "Cannot parse json body of response with path $uri, method $method, code $code and type $type",
@@ -185,7 +173,7 @@ class OpenApiCodec(
                     checkNotNull(messageSchema) { "Request schema with path $uri, method $method and type $type wasn't found" }
 
                     messageSchema.runCatching {
-                        builder += decodeSingle(body)
+                        builder += decodeSingle(body, type)
                     }.onFailure {
                         throw DecodeException(
                             "Cannot parse json body of request with path $uri, method $method and type $type",
@@ -201,7 +189,7 @@ class OpenApiCodec(
         return builder.build()
     }
 
-    private fun Schema<*>.decodeSingle(body: String): Message {
+    private fun Schema<*>.decodeSingle(body: String, format: String): Message {
         when (MessageFormat.getFormat(format) ?: error("Unsupported format of message $format")) {
             MessageFormat.JSON -> {
                 val visitor = when (JsonSchemaTypes.getType(type)
@@ -215,35 +203,72 @@ class OpenApiCodec(
         }
     }
 
+    private fun HttpContainer.fillMetadata(metadata: RawMessageMetadata.Builder) {
+        metadata.apply {
+            when (this@fillMetadata) {
+                is ResponseContainer -> {
+                    putProperties(METHOD_PROPERTY, method)
+                    putProperties(URI_PROPERTY, path)
+                    putProperties(CODE_PROPERTY, code)
+                }
+                is RequestContainer -> {
+                    putProperties(METHOD_PROPERTY, method)
+                    putProperties(URI_PROPERTY, path)
+                }
+            }
+        }
+    }
+
+    private fun createHeaderMessage(container: HttpContainer) : Message {
+        return when (container) {
+            is ResponseContainer -> {
+                message(RESPONSE_MESSAGE).apply {
+                    addField(CODE_FIELD, container.code)
+                    container.format?.let {
+                        addField(HEADERS_FIELD, listOf(message().apply {
+                            addField("name", "Content-Type")
+                            addField("value", container.format)
+                        }))
+                    }
+                }.build()
+            }
+            is RequestContainer -> {
+                message(REQUEST_MESSAGE).apply {
+                    addField(URI_FIELD, container.path)
+                    addField(METHOD_FIELD, container.method)
+                    container.format?.let {
+                        addField(HEADERS_FIELD, listOf(message().apply {
+                            addField("name", CONTENT_TYPE_PROPERTY)
+                            addField("value", container.format)
+                        }))
+                    }
+                }.build()
+            }
+        }
+    }
+
     private fun OpenAPI.toMap(): Map<String, HttpContainer> {
         val map = mutableMapOf<String, HttpContainer>()
         dictionary.paths.forEach { pathKey, pathsValue ->
             pathsValue.getMethods().forEach { (methodKey, methodValue) ->
                 // Request
                 methodValue.requestBody?.content?.forEach { (typeKey, typeValue) ->
-                    val schema = dictionary.getEndPoint(typeValue.schema).apply {
-                        format = typeKey
-                    }
-
-                    map[combineName(listOf(pathKey, methodKey, typeKey))] =
-                        RequestContainer(pathKey, methodKey, methodValue.parameters, schema)
+                    map[combineName(pathKey, methodKey, typeKey)] =
+                        RequestContainer(pathKey, methodKey, methodValue.parameters, dictionary.getEndPoint(typeValue.schema), typeKey)
                 } ?: run {
-                    map[combineName(listOf(pathKey, methodKey))] =
-                        RequestContainer(pathKey, methodKey, methodValue.parameters, null)
+                    map[combineName(pathKey, methodKey)] =
+                        RequestContainer(pathKey, methodKey, methodValue.parameters, null, null)
                 }
 
 
                 // Response
                 methodValue.responses?.forEach { (responseKey, responseValue) ->
                     responseValue.content?.forEach { (typeKey, typeValue) ->
-                        val schema = dictionary.getEndPoint(typeValue.schema).apply {
-                            format = typeKey
-                        }
-                        map[combineName(listOf(pathKey, methodKey, responseKey, typeKey))] =
-                            ResponseContainer(pathKey, methodKey, responseKey, schema)
+                        map[combineName(pathKey, methodKey, responseKey, typeKey)] =
+                            ResponseContainer(pathKey, methodKey, responseKey, dictionary.getEndPoint(typeValue.schema), typeKey)
                     } ?: run {
-                        map[combineName(listOf(pathKey, methodKey, responseKey))] =
-                            ResponseContainer(pathKey, methodKey, responseKey, null)
+                        map[combineName(pathKey, methodKey, responseKey)] =
+                            ResponseContainer(pathKey, methodKey, responseKey, null, null)
                     }
                 }
             }
@@ -252,7 +277,7 @@ class OpenApiCodec(
         return map
     }
 
-    private fun combineName(steps: List<String>): String {
+    private fun combineName(vararg steps: String): String {
         return buildString {
             for (step in steps) {
                 step.split("{", "}", "-", "/", "_").forEach { word ->
@@ -267,8 +292,12 @@ class OpenApiCodec(
         const val RESPONSE_MESSAGE = "Response"
         const val REQUEST_MESSAGE = "Request"
         const val METHOD_PROPERTY = "method"
+        const val METHOD_FIELD = METHOD_PROPERTY
+        const val CONTENT_TYPE_PROPERTY = "Content-Type"
         const val URI_PROPERTY = "uri"
+        const val URI_FIELD = "uri"
         const val CODE_PROPERTY = "code"
+        const val CODE_FIELD = CODE_PROPERTY
         const val STATUS_CODE_FIELD = "statusCode"
         const val HEADERS_FIELD = "headers"
     }
