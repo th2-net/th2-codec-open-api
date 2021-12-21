@@ -133,7 +133,7 @@ class DecodeJsonArrayVisitor(override val from: ArrayNode) : DecodeVisitor<Array
         })
     }
 
-    override fun getResult(): Message = rootMessage.build()
+    override fun getResult(): Message.Builder = rootMessage
 
     private companion object {
         val mapper = ObjectMapper()

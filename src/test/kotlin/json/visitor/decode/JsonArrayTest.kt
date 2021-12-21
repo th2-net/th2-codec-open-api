@@ -144,7 +144,7 @@ class JsonArrayTest {
         }
         val visitor = DecodeJsonArrayVisitor(jsonArrayNode)
         visitor.visitStringCollection(fieldName, null, createArrayTestSchema("string"), true)
-        visitor.getResult().assertList(fieldName, collection.map {it.toValue()})
+        visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
     }
 
     @Test
@@ -156,7 +156,7 @@ class JsonArrayTest {
         }
         val visitor = DecodeJsonArrayVisitor(jsonArrayNode)
         visitor.visitBooleanCollection(fieldName, null, createArrayTestSchema("boolean"), true)
-        visitor.getResult().assertList(fieldName, collection.map {it.toValue()})
+        visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
     }
 
     @Test
@@ -168,7 +168,7 @@ class JsonArrayTest {
         }
         val visitor = DecodeJsonArrayVisitor(jsonArrayNode)
         visitor.visitIntegerCollection(fieldName, null, createArrayTestSchema("integer"), true)
-        visitor.getResult().assertList(fieldName, collection.map {it.toValue()})
+        visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
     }
 
     @Test
@@ -180,7 +180,7 @@ class JsonArrayTest {
         }
         val visitor = DecodeJsonArrayVisitor(jsonArrayNode)
         visitor.visitDoubleCollection(fieldName, null, createArrayTestSchema("number", "double"), true)
-        visitor.getResult().assertList(fieldName, collection.map {it.toValue()})
+        visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
     }
 
     @Test
@@ -192,7 +192,7 @@ class JsonArrayTest {
         }
         val visitor = DecodeJsonArrayVisitor(jsonArrayNode)
         visitor.visitFloatCollection(fieldName, null, createArrayTestSchema("number", "float"), true)
-        visitor.getResult().assertList(fieldName, collection.map {it.toValue()})
+        visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
     }
 
     @Test
@@ -204,7 +204,7 @@ class JsonArrayTest {
         }
         val visitor = DecodeJsonArrayVisitor(jsonArrayNode)
         visitor.visitLongCollection(fieldName, null, createArrayTestSchema("integer", "int64"), true)
-        visitor.getResult().assertList(fieldName, collection.map {it.toValue()})
+        visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
     }
 
     private companion object {

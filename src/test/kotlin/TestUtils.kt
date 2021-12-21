@@ -17,6 +17,7 @@
 import com.exactpro.th2.codec.openapi.OpenApiCodec
 import com.exactpro.th2.common.assertEqualMessages
 import com.exactpro.th2.common.assertString
+import com.exactpro.th2.common.grpc.EventID
 import com.exactpro.th2.common.grpc.Message
 import com.exactpro.th2.common.grpc.MessageGroup
 import com.exactpro.th2.common.grpc.RawMessage
@@ -212,8 +213,15 @@ fun JsonNode.assertInteger(fieldName: String, fieldValue: Int) {
 
 fun OpenApiCodec.testDecode(headerType: String, path: String, method: String, code: String?, type: String?, bodyData: String?): Message? {
     val group = MessageGroup.newBuilder()
+    val headerParentID = EventID.newBuilder().apply {
+        id = "123"
+    }.build()
+    val bodyParentID = EventID.newBuilder().apply {
+        id = "321"
+    }.build()
 
     val header = message(headerType).apply {
+        parentEventId = headerParentID
         when(headerType) {
             "Response" -> {
                 code?.let {
@@ -242,6 +250,7 @@ fun OpenApiCodec.testDecode(headerType: String, path: String, method: String, co
 
     bodyData?.let {
         group += RawMessage.newBuilder().apply {
+            parentEventId = bodyParentID
             when(headerType) {
                 "Response" -> {
                     metadataBuilder.putProperties(OpenApiCodec.URI_PROPERTY, path)
@@ -262,19 +271,26 @@ fun OpenApiCodec.testDecode(headerType: String, path: String, method: String, co
     Assertions.assertTrue(decodeResult.messagesList.size>0)
     Assertions.assertTrue(decodeResult.messagesList[0].hasMessage())
     assertEqualMessages(header, decodeResult.messagesList[0].message)
+    Assertions.assertEquals(headerParentID, decodeResult.messagesList[0].message.parentEventId)  {"Decode process shouldn't lose parent event id inside of header"}
 
     if (bodyData != null) {
         Assertions.assertEquals(2, decodeResult.messagesList.size)
         Assertions.assertTrue(decodeResult.messagesList[1].hasMessage())
+        Assertions.assertEquals(bodyParentID, decodeResult.messagesList[1].message.parentEventId) {"Decode process shouldn't lose parent event id inside of body"}
         return decodeResult.messagesList[1].message
     }
     return null
 }
 
 fun OpenApiCodec.testEncode(path: String, method: String, code: String?, type: String?, fillMessage: Message.Builder.() -> Unit): RawMessage {
+    val rawParentID = EventID.newBuilder().apply {
+        id = "123"
+    }.build()
+
     val messageType = combineName(path, method, code?:"", type?:"")
     val jsonMessage = message(messageType).apply {
         metadataBuilder.protocol = "openapi"
+        parentEventId = rawParentID
         fillMessage()
     }.build()
 
@@ -291,6 +307,7 @@ fun OpenApiCodec.testEncode(path: String, method: String, code: String?, type: S
     val header = resultGroup.messagesList[0].message
 
     header.apply {
+        Assertions.assertEquals(rawParentID, parentEventId) {"Decode process shouldn't lose parent event id inside of header"}
         code?.let {
             assertString(OpenApiCodec.CODE_FIELD, code)
             type?.let {
@@ -303,6 +320,9 @@ fun OpenApiCodec.testEncode(path: String, method: String, code: String?, type: S
                 this.getList(OpenApiCodec.HEADERS_FIELD)!![0].messageValue.assertString("value", type)
             } ?: Assertions.assertFalse(this.getList(OpenApiCodec.HEADERS_FIELD) == null)
         }
+    }
+    resultGroup.messagesList[1]?.rawMessage?.apply {
+        Assertions.assertEquals(rawParentID, parentEventId) {"Decode process shouldn't lose parent event id inside of body"}
     }
     return  resultGroup.messagesList[1].rawMessage
 }

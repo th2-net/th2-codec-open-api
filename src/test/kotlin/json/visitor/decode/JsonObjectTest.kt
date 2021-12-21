@@ -93,7 +93,7 @@ class JsonObjectTest {
         val result = DecodeJsonObjectVisitor(json).apply {
             visit(fieldName, null as? String, createTestSchema(simpleValue), true)
         }.getResult()
-        result.assertString(fieldName, simpleValue)
+        result.build().assertString(fieldName, simpleValue)
     }
 
     @Test
@@ -106,7 +106,7 @@ class JsonObjectTest {
         val result = DecodeJsonObjectVisitor(json).apply {
             visit(fieldName, null as? Boolean, createTestSchema(simpleValue), true)
         }.getResult()
-        result.assertString(fieldName, simpleValue.toString())
+        result.build().assertString(fieldName, simpleValue.toString())
     }
 
     @Test
@@ -119,7 +119,7 @@ class JsonObjectTest {
         val result = DecodeJsonObjectVisitor(json).apply {
             visit(fieldName, null as? Int, createTestSchema(simpleValue), true)
         }.getResult()
-        result.assertInt(fieldName, simpleValue)
+        result.build().assertInt(fieldName, simpleValue)
     }
 
     @Test
@@ -132,7 +132,7 @@ class JsonObjectTest {
         val result = DecodeJsonObjectVisitor(json).apply {
             visit(fieldName, null as? Double, createTestSchema(simpleValue), true)
         }.getResult()
-        result.assertDouble(fieldName, simpleValue)
+        result.build().assertDouble(fieldName, simpleValue)
     }
 
     @Test
@@ -145,7 +145,7 @@ class JsonObjectTest {
         val result = DecodeJsonObjectVisitor(json).apply {
             visit(fieldName, null as? Float, createTestSchema(simpleValue), true)
         }.getResult()
-        result.assertString(fieldName, simpleValue.toString())
+        result.build().assertString(fieldName, simpleValue.toString())
     }
 
     @Test
@@ -158,7 +158,7 @@ class JsonObjectTest {
         val result = DecodeJsonObjectVisitor(json).apply {
             visit(fieldName, null as? Long, createTestSchema(simpleValue), true)
         }.getResult()
-        result.assertString(fieldName, simpleValue.toString())
+        result.build().assertString(fieldName, simpleValue.toString())
     }
 
     @Test
@@ -172,7 +172,7 @@ class JsonObjectTest {
         val result = DecodeJsonObjectVisitor(json).apply {
             visitStringCollection(fieldName, null, createArrayTestSchema("string"), true)
         }.getResult()
-        result.assertList(fieldName, collection.map { it.toValue() })
+        result.build().assertList(fieldName, collection.map { it.toValue() })
     }
 
     @Test
@@ -186,7 +186,7 @@ class JsonObjectTest {
         val result = DecodeJsonObjectVisitor(json).apply {
             visitBooleanCollection(fieldName, null, createArrayTestSchema("string"), true)
         }.getResult()
-        result.assertList(fieldName, collection.map { it.toValue() })
+        result.build().assertList(fieldName, collection.map { it.toValue() })
     }
 
     @Test
@@ -200,7 +200,7 @@ class JsonObjectTest {
         val result = DecodeJsonObjectVisitor(json).apply {
             visitIntegerCollection(fieldName, null, createArrayTestSchema("integer"), true)
         }.getResult()
-        result.assertList(fieldName, collection.map { it.toValue() })
+        result.build().assertList(fieldName, collection.map { it.toValue() })
     }
 
     @Test
@@ -214,7 +214,7 @@ class JsonObjectTest {
         val result = DecodeJsonObjectVisitor(json).apply {
             visitDoubleCollection(fieldName, null, createArrayTestSchema("string"), true)
         }.getResult()
-        result.assertList(fieldName, collection.map { it.toValue() })
+        result.build().assertList(fieldName, collection.map { it.toValue() })
     }
 
     @Test
@@ -228,7 +228,7 @@ class JsonObjectTest {
         val result = DecodeJsonObjectVisitor(json).apply {
             visitFloatCollection(fieldName, null, createArrayTestSchema("string"), true)
         }.getResult()
-        result.assertList(fieldName, collection.map { it.toValue() })
+        result.build().assertList(fieldName, collection.map { it.toValue() })
     }
 
     @Test
@@ -242,7 +242,7 @@ class JsonObjectTest {
         val result = DecodeJsonObjectVisitor(json).apply {
             visitLongCollection(fieldName, null, createArrayTestSchema("string"), true)
         }.getResult()
-        result.assertList(fieldName, collection.map { it.toValue() })
+        result.build().assertList(fieldName, collection.map { it.toValue() })
     }
 
     @Test

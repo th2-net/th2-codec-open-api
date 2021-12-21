@@ -90,7 +90,9 @@ class OpenApiCodec(
             }
 
             container.fillMetadata(rawMessage.metadataBuilder)
-            builder += createHeaderMessage(container)
+            builder += createHeaderMessage(container).apply {
+                parentEventId = parsedMessage.parentEventId
+            }
             builder += rawMessage
         }
 
@@ -100,18 +102,22 @@ class OpenApiCodec(
     override fun decode(messageGroup: MessageGroup): MessageGroup {
         val messages = messageGroup.messagesList
 
-        require(messages.size == 2) { "Message group must contain only 2 messages" }
+        require(messages.size < 3) { "Message group must contain only 1 or 2 messages" }
         require(messages[0].kindCase == MESSAGE) { "Message must be a raw message" }
-        require(messages[1].kindCase == RAW_MESSAGE) { "Message must be a raw message" }
         val message = messages[0].message
-        val rawMessage = messages[1].rawMessage
 
-        val body = rawMessage.body
+        val rawMessage = if (messages.size == 2) {
+            require(messages[1].kindCase == RAW_MESSAGE) { "Message must be a raw message" }
+            messages[1].rawMessage
+        } else null
+
+
+        val body = rawMessage?.body
 
         val builder = MessageGroup.newBuilder()
         builder += message
 
-        if (!body.isEmpty) {
+        if (body != null) {
             val bodyFormat = message.getList(HEADERS_FIELD)?.first { it.messageValue.getString("name") == "Content-Type" }?.messageValue?.getString("value")
                 ?: "null"
             val messageSchema = when (message.messageType) {
@@ -138,7 +144,9 @@ class OpenApiCodec(
             messageSchema.runCatching {
                 val visitor = VisitorFactory.createDecodeVisitor(bodyFormat, messageSchema.type, body)
                 SchemaWriter.instance.traverse(visitor, this)
-                builder += visitor.getResult()
+                builder += visitor.getResult().apply {
+                    parentEventId = rawMessage.parentEventId
+                }
             }.onFailure {
                 throw DecodeException(
                     "Cannot parse body of http message",
@@ -168,7 +176,7 @@ class OpenApiCodec(
         }
     }
 
-    private fun createHeaderMessage(container: HttpContainer) : Message {
+    private fun createHeaderMessage(container: HttpContainer) : Message.Builder {
         return when (container) {
             is ResponseContainer -> {
                 message(RESPONSE_MESSAGE).apply {
@@ -179,7 +187,7 @@ class OpenApiCodec(
                             addField("value", container.bodyFormat)
                         }))
                     }
-                }.build()
+                }
             }
             is RequestContainer -> {
                 message(REQUEST_MESSAGE).apply {
@@ -191,7 +199,7 @@ class OpenApiCodec(
                             addField("value", container.bodyFormat)
                         }))
                     }
-                }.build()
+                }
             }
         }
     }

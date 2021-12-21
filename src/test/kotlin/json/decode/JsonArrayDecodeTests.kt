@@ -25,6 +25,7 @@ import getResourceAsText
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import mu.KotlinLogging
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import testDecode
 
@@ -35,7 +36,7 @@ class JsonArrayDecodeTests {
         val jsonData = """["test1", "test2", "test3"]"""
         val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
             "Response",
-            "/store",
+            "/test",
             "get",
             "200",
             "application/json",
@@ -43,9 +44,34 @@ class JsonArrayDecodeTests {
         decodedResult!!.assertList(ARRAY_TYPE, listOf("test1".toValue(), "test2".toValue(), "test3".toValue()))
     }
 
+    @Test
+    fun `simple test json array decode request`() {
+        val jsonData = """["test1", "test2", "test3"]"""
+        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
+            "Request",
+            "/test",
+            "get",
+            null,
+            "application/json",
+            jsonData)
+        decodedResult!!.assertList(ARRAY_TYPE, listOf("test1".toValue(), "test2".toValue(), "test3".toValue()))
+    }
+
+    @Test
+    fun `test json array decode request without body`() {
+        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
+            "Request",
+            "/test",
+            "get",
+            null,
+            null,
+            null)
+        Assertions.assertNull(decodedResult)
+    }
+
     companion object {
         private val LOGGER = KotlinLogging.logger { }
         private val settings = OpenApiCodecSettings()
-        val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/valid-dictionary.yml"), null, settings.dictionaryParseOption).openAPI
+        val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/array-json-tests.yml"), null, settings.dictionaryParseOption).openAPI
     }
 }

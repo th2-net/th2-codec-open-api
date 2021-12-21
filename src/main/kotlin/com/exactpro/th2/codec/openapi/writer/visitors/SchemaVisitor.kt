@@ -47,7 +47,7 @@ sealed class SchemaVisitor<FromType, ToType> {
 
     abstract class EncodeVisitor<T> : SchemaVisitor<T, ByteString>()
 
-    abstract class DecodeVisitor<T> : SchemaVisitor<T, Message>()
+    abstract class DecodeVisitor<T> : SchemaVisitor<T, Message.Builder>()
 }
 
 

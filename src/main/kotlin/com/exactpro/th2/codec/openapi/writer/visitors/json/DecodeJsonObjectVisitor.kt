@@ -171,7 +171,7 @@ class DecodeJsonObjectVisitor(override val from: ObjectNode) : DecodeVisitor<Obj
         }
     }
 
-    override fun getResult(): Message = rootMessage.build()
+    override fun getResult(): Message.Builder = rootMessage
 
     private companion object {
         val mapper = ObjectMapper()
