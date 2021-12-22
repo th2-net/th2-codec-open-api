@@ -1,4 +1,4 @@
-/*
+package com.exactpro.th2.codec.openapi/*
  * Copyright 2021-2022 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import com.exactpro.th2.codec.openapi.OpenApiCodec
 import com.exactpro.th2.common.assertEqualMessages
 import com.exactpro.th2.common.assertString
 import com.exactpro.th2.common.grpc.EventID
@@ -37,7 +36,7 @@ const val RESPONSE_MESSAGE_TYPE = "Response"
 const val FORMAT_HEADER_NAME = "Content-Type"
 
 fun getResourceAsText(path: String): String {
-    return object {}.javaClass.getResource(path)!!.readText()
+    return String.javaClass.classLoader.getResource(path)!!.readText()
 }
 
 fun OpenApiCodec.testDecode(path: String, method: String, code: String?, type: String?, bodyData: String? = null): Message? {

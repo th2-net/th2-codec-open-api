@@ -1,4 +1,4 @@
-/*
+package com.exactpro.th2.codec.openapi/*
  * Copyright 2021-2022 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -74,7 +74,7 @@ inline fun <reified T:Any>createTestSchema(value: T?, fillEnum: List<T>? = null)
             }
         }
         else -> {
-            throw UnsupportedOperationException("createTestSchema don't supports ${T::class} type of value")
+            throw UnsupportedOperationException("com.exactpro.th2.codec.openapi.createTestSchema don't supports ${T::class} type of value")
         }
     }
 }

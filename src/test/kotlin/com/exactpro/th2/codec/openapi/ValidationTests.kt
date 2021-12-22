@@ -1,4 +1,4 @@
-/*
+package com.exactpro.th2.codec.openapi/*
  * Copyright 2021-2022 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-import com.exactpro.th2.codec.openapi.OpenApiCodecFactory
-import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
 import com.exactpro.th2.codec.openapi.throwable.DictionaryValidationException
-import com.exactpro.th2.codec.openapi.DictionaryValidator
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.parser.core.models.ParseOptions
@@ -33,7 +30,7 @@ class ValidationTests {
     @Test
     fun `valid dictionary`() {
         Assertions.assertDoesNotThrow {
-            File(ValidationTests::class.java.getResource("dictionaries/valid/").path).walk().forEach { dictionary ->
+            File(ValidationTests::class.java.classLoader.getResource("dictionaries/valid/")!!.path).walk().forEach { dictionary ->
                 if (dictionary.name.endsWith(".yml")) {
                     validator.validate(parser.readLocation(dictionary.path, null, parseOptions))
                     LOGGER.info { "Validated valid dictionary ${dictionary.name} from test method" }
@@ -45,7 +42,7 @@ class ValidationTests {
     @Test
     fun `valid dictionary in factory`() {
         Assertions.assertDoesNotThrow {
-            File(ValidationTests::class.java.getResource("dictionaries/valid/").path).walk().forEach { dictionary ->
+            File(ValidationTests::class.java.classLoader.getResource("dictionaries/valid/")!!.path).walk().forEach { dictionary ->
                 if (dictionary.name.endsWith(".yml")) {
                     val factory = OpenApiCodecFactory().apply {
                         init { dictionary.inputStream() }
@@ -63,7 +60,7 @@ class ValidationTests {
 
     @Test
     fun `invalid dictionary`() {
-        File(ValidationTests::class.java.getResource("dictionaries/invalid/").path).walk().forEach { dictionary ->
+        File(ValidationTests::class.java.classLoader.getResource("dictionaries/invalid/")!!.path).walk().forEach { dictionary ->
             if (dictionary.name.endsWith(".yml")) {
                 Assertions.assertThrows(DictionaryValidationException::class.java) {
                     validator.validate(parser.readLocation(dictionary.path, null, parseOptions))
@@ -76,7 +73,7 @@ class ValidationTests {
 
     @Test
     fun `invalid dictionary in factory`() {
-        File(ValidationTests::class.java.getResource("dictionaries/invalid/").path).walk().forEach { dictionary ->
+        File(ValidationTests::class.java.classLoader.getResource("dictionaries/invalid/")!!.path).walk().forEach { dictionary ->
             if (dictionary.name.endsWith(".yml")) {
                 val factory = OpenApiCodecFactory().apply {
                     init { dictionary.inputStream() }
@@ -99,7 +96,7 @@ class ValidationTests {
         val parseOptions = ParseOptions().apply { isResolve = true }
         val validator = DictionaryValidator(ObjectMapper().readValue(getJsonConfiguration().toURL(), RuleConfiguration::class.java))
         private fun getJsonConfiguration(): URI {
-            return requireNotNull(ValidationTests::class.java.getResource("rule-config.json")) {"Rule configuration from resources required"}.toURI()
+            return requireNotNull(this::class.java.classLoader.getResource("rule-config.json")) {"Rule configuration from resources required"}.toURI()
         }
     }
 }

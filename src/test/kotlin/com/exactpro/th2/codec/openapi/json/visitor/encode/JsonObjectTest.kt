@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package json.visitor.encode
+package com.exactpro.th2.codec.openapi.json.visitor.encode
 
-import assertBoolean
-import assertFloat
-import assertInteger
-import assertString
+import com.exactpro.th2.codec.openapi.assertBoolean
+import com.exactpro.th2.codec.openapi.assertFloat
+import com.exactpro.th2.codec.openapi.assertInteger
+import com.exactpro.th2.codec.openapi.assertString
 import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.codec.openapi.writer.visitors.json.EncodeJsonObjectVisitor
@@ -29,9 +29,9 @@ import com.exactpro.th2.common.message.message
 import com.exactpro.th2.common.value.toValue
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
-import createArrayTestSchema
-import createTestSchema
-import getResourceAsText
+import com.exactpro.th2.codec.openapi.createArrayTestSchema
+import com.exactpro.th2.codec.openapi.createTestSchema
+import com.exactpro.th2.codec.openapi.getResourceAsText
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema

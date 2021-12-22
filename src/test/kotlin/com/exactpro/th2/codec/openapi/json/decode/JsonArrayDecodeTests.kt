@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package json.decode
+package com.exactpro.th2.codec.openapi.json.decode
 
 import com.exactpro.th2.codec.openapi.OpenApiCodec
 import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter.Companion.ARRAY_TYPE
 import com.exactpro.th2.common.assertList
 import com.exactpro.th2.common.value.toValue
-import getResourceAsText
+import com.exactpro.th2.codec.openapi.getResourceAsText
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import testDecode
+import com.exactpro.th2.codec.openapi.testDecode
 
 class JsonArrayDecodeTests {
 

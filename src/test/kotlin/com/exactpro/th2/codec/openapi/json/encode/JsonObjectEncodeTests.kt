@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package json.encode
+package com.exactpro.th2.codec.openapi.json.encode
 
 import com.exactpro.th2.codec.openapi.OpenApiCodec
 import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
 import com.exactpro.th2.common.message.addField
 import com.fasterxml.jackson.databind.ObjectMapper
-import getResourceAsText
+import com.exactpro.th2.codec.openapi.getResourceAsText
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import testEncode
+import com.exactpro.th2.codec.openapi.testEncode
 
 class JsonObjectEncodeTests {
 
