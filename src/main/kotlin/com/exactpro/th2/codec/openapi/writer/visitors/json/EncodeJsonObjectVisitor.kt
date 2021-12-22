@@ -48,7 +48,7 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
         from.getRequiredField(fieldName, required)?.getMessage()?.let { nextMessage ->
             val visitor = EncodeJsonObjectVisitor(nextMessage)
             SchemaWriter.instance.traverse(visitor, fldStruct)
-            rootNode.put(fieldName, visitor.rootNode)
+            rootNode.set<ObjectNode>(fieldName, visitor.rootNode)
         }
     }
 

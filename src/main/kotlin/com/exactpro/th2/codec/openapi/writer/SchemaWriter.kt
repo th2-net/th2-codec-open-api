@@ -102,6 +102,7 @@ class SchemaWriter private constructor(private val openApi: OpenAPI) {
 
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun processArrayProperty(property: ArraySchema, visitor: SchemaVisitor<*, *>, name: String, required: Boolean = false) {
         runCatching {
             when(property.items.type) {

@@ -42,6 +42,7 @@ private fun PathItem.getByMethod(method: String) : Operation? {
     }
 }
 
+@Suppress("UNCHECKED_CAST")
 fun PathItem.getMethods() : Map<String, Operation> {
     return listOf("get", "put", "delete", "post").map {
         it to getByMethod(it)

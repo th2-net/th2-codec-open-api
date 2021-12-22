@@ -43,8 +43,8 @@ class JsonObjectDecodeTests {
             jsonData)
 
         Assertions.assertEquals("1234567", decodedResult!!.getString("publicKey"))
-        Assertions.assertEquals(true, decodedResult!!.getString("testEnabled").toBoolean())
-        Assertions.assertEquals("FAILED", decodedResult!!.getString("testStatus"))
+        Assertions.assertEquals(true, decodedResult.getString("testEnabled").toBoolean())
+        Assertions.assertEquals("FAILED", decodedResult.getString("testStatus"))
     }
 
     @Test
@@ -62,8 +62,8 @@ class JsonObjectDecodeTests {
             jsonData)
 
         Assertions.assertEquals("1234567", decodedResult!!.getString("publicKey"))
-        Assertions.assertEquals(true, decodedResult!!.getString("testEnabled").toBoolean())
-        Assertions.assertEquals("FAILED", decodedResult!!.getString("testStatus"))
+        Assertions.assertEquals(true, decodedResult.getString("testEnabled").toBoolean())
+        Assertions.assertEquals("FAILED", decodedResult.getString("testStatus"))
     }
 
     @Test

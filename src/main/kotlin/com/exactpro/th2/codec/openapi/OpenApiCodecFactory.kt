@@ -40,16 +40,16 @@ class OpenApiCodecFactory : IPipelineCodecFactory {
 
     override fun create(settings: IPipelineCodecSettings?): IPipelineCodec {
         check(this::context.isInitialized) {"Open api context was not loaded"}
-        val settings = requireNotNull(settings as? OpenApiCodecSettings) {
+        val openApiSettings = requireNotNull(settings as? OpenApiCodecSettings) {
             "settings is not an instance of ${OpenApiCodecSettings::class.java}: $settings"
         }
         val content = context[DictionaryType.MAIN].bufferedReader().use(BufferedReader::readText)
-        val result = OpenAPIParser().readContents(content, null, settings.dictionaryParseOption)
-        result.validate(settings.validationSettings)
+        val result = OpenAPIParser().readContents(content, null, openApiSettings.dictionaryParseOption)
+        result.validate(openApiSettings.validationSettings)
 
         LOGGER.info { "${result.openAPI.info.title} OpenApi dictionary was loaded and validated" }
 
-        return OpenApiCodec(result.openAPI, settings)
+        return OpenApiCodec(result.openAPI, openApiSettings)
     }
 
     private fun SwaggerParseResult.validate(validationSettings: RuleConfiguration) {

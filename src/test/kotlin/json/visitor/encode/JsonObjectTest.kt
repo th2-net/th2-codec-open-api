@@ -39,6 +39,7 @@ import io.swagger.v3.oas.models.media.Schema
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
+@Suppress("CAST_NEVER_SUCCEEDS")
 class JsonObjectTest {
 
     @Test

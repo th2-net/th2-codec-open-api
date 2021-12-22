@@ -27,6 +27,7 @@ import com.exactpro.th2.common.message.get
 import com.exactpro.th2.common.value.getList
 import com.exactpro.th2.common.value.toValue
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
 import createArrayTestSchema
 import getResourceAsText
 import io.swagger.parser.OpenAPIParser
@@ -39,6 +40,7 @@ import org.junit.jupiter.api.Test
 
 class JsonArrayTest {
 
+    @Suppress("CAST_NEVER_SUCCEEDS")
     @Test
     fun `not supported decode`() {
         val node = mapper.createArrayNode()
@@ -111,7 +113,7 @@ class JsonArrayTest {
                 this.put(integerName, integerValue)
                 this.put(booleanName, booleanValue)
                 this.put(floatName, floatValue)
-                this.put(includedObject, includedObjectValue)
+                this.set<ObjectNode>(includedObject, includedObjectValue)
             })
         }
 

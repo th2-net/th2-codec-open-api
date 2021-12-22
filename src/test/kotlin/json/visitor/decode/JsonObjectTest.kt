@@ -28,6 +28,7 @@ import com.exactpro.th2.common.message.get
 import com.exactpro.th2.common.value.getList
 import com.exactpro.th2.common.value.toValue
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
 import createArrayTestSchema
 import createTestSchema
 import getResourceAsText
@@ -37,6 +38,7 @@ import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 import org.junit.jupiter.api.Test
 
+@Suppress("CAST_NEVER_SUCCEEDS")
 class JsonObjectTest {
 
     @Test
@@ -65,10 +67,10 @@ class JsonObjectTest {
             this.put(integerName, integerValue)
             this.put(booleanName, booleanValue)
             this.put(floatName, floatValue)
-            this.put(includedObject, includedObjectValue)
+            this.set<ObjectNode>(includedObject, includedObjectValue)
         }
         val json =  mapper.createObjectNode().apply {
-            put(fieldName, objectValue)
+            this.set<ObjectNode>(fieldName, objectValue)
         }
         val result = DecodeJsonObjectVisitor(json).apply {
             visit(fieldName, null as? Schema<*>, openAPI.components.schemas["ObjectTest"]!!, true)
@@ -285,12 +287,12 @@ class JsonObjectTest {
                 this.put(integerName, integerValue)
                 this.put(booleanName, booleanValue)
                 this.put(floatName, floatValue)
-                this.put(includedObject, includedObjectValue)
+                this.set<ObjectNode>(includedObject, includedObjectValue)
             })
         }
 
         val json =  mapper.createObjectNode().apply {
-            put(fieldName, jsonArrayNode)
+            this.set<ObjectNode>(fieldName, jsonArrayNode)
         }
 
         val result = DecodeJsonObjectVisitor(json).apply {

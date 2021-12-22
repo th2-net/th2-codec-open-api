@@ -41,6 +41,7 @@ import org.junit.jupiter.api.Test
 
 class JsonArrayTest {
 
+    @Suppress("CAST_NEVER_SUCCEEDS")
     @Test
     fun `not supported encode`() {
         val message = message().build()
