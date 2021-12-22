@@ -38,7 +38,7 @@ const val RESPONSE_MESSAGE_TYPE = "Response"
 const val FORMAT_HEADER_NAME = "Content-Type"
 
 fun getResourceAsText(path: String): String {
-    return String::class.java.classLoader.getResource(path)?.readText() ?: fail("Resource [$path] is required")
+    return String.Companion::class.java.classLoader.getResource(path)?.readText() ?: fail("Resource [$path] is required")
 }
 
 fun OpenApiCodec.testDecode(path: String, method: String, code: String?, type: String?, bodyData: String? = null): Message? {
