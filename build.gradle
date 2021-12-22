@@ -1,8 +1,7 @@
 plugins {
     id 'com.palantir.docker' version '0.25.0' apply false
     id 'org.jetbrains.kotlin.jvm' version "${kotlin_version}"
-    id 'com.github.harbby.gradle.serviceloader' version '1.1.8'
-    id 'java-test-fixtures'
+    id 'com.github.harbby.gradle.serviceloader' version '1.1.5'
 }
 
 apply plugin: 'kotlin'
@@ -63,12 +62,10 @@ jar {
 dependencies {
     api platform('com.exactpro.th2:bom:3.0.0')
 
-    implementation 'com.exactpro.th2:common:3.31.1'
+    implementation 'com.exactpro.th2:common:3.31.4'
     implementation 'com.exactpro.th2:codec:4.2.0'
-    implementation 'com.exactpro.th2:sailfish-utils:3.11.0'
 
     implementation "com.exactpro.sf:sailfish-core:${sailfishVersion}"
-    implementation "com.exactpro.sf:service-http:${sailfishVersion}"
 
     implementation 'org.slf4j:slf4j-log4j12'
     implementation 'org.slf4j:slf4j-api'
@@ -76,18 +73,16 @@ dependencies {
     implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jdk8', version: kotlin_version
     implementation group: 'org.jetbrains.kotlin', name: 'kotlin-reflect', version: kotlin_version
     implementation group: 'io.github.microutils', name: 'kotlin-logging', version: '2.0.10'
+
     implementation group: 'io.swagger.core.v3', name: 'swagger-jaxrs2', version: '2.1.10'
     implementation group: 'io.swagger.parser.v3', name: 'swagger-parser', version: '2.0.28'
     implementation group: 'org.openapitools', name: 'openapi-generator', version: '5.3.0'
 
 //    implementation group: 'org.openapitools', name: 'openapi-generator-maven-plugin', version: '5.3.0'
 
-
     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
     testImplementation group: 'org.jetbrains.kotlin', name: 'kotlin-test-junit5', version: kotlin_version
-
     testImplementation testFixtures('com.exactpro.th2:common:3.31.1')
-
 }
 
 test {

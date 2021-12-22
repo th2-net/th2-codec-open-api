@@ -28,6 +28,8 @@ import com.exactpro.th2.common.message.messageType
 import com.exactpro.th2.common.message.plusAssign
 import com.google.protobuf.ByteString
 import org.junit.jupiter.api.Assertions
+import java.util.Locale
+import kotlin.test.fail
 
 
 const val PROTOCOL = "openapi"
@@ -36,7 +38,7 @@ const val RESPONSE_MESSAGE_TYPE = "Response"
 const val FORMAT_HEADER_NAME = "Content-Type"
 
 fun getResourceAsText(path: String): String {
-    return String.javaClass.classLoader.getResource(path)!!.readText()
+    return String::class.java.classLoader.getResource(path)?.readText() ?: fail("Resource [$path] is required")
 }
 
 fun OpenApiCodec.testDecode(path: String, method: String, code: String?, type: String?, bodyData: String? = null): Message? {
@@ -182,7 +184,7 @@ private fun combineName(vararg steps : String): String {
     return buildString {
         for (step in steps) {
             step.split("{", "}", "-", "/", "_").forEach { word ->
-                append(word.capitalize())
+                append(word.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() })
             }
         }
     }
