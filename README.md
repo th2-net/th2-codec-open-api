@@ -8,9 +8,9 @@ This microservice can validate open api dictionary, encode th2 messages or decod
 
 ## How it works
 
-On start of box this microservice will validate linked dictionary. Format of dictionary must be **OpenApi yaml**.
+On start of box this microservice will validate linked dictionary. Format of dictionary must be **OpenApi** yml or json.
 If there are any problems that must be fixed, microservice will stop working with all info about problem in log.
-Valid format of dictionary can be found [here](https://swagger.io/specification/).
+Valid format of dictionary can be found [here](https://swagger.io/specification/) or [here](https://github.com/OAI/OpenAPI-Specification).
 
 ### ENCODE: 
 Each response or request from dictionary will generate message type according to the rules of camel case
