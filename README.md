@@ -87,3 +87,36 @@ Result of decode:
 |:---:|:---:|:---:|
 |name|String|HTTP header name|
 |value|String|HTTP header value|
+
+
+### Codec configs:
+
+Config contain two main types of options.
+
+####validationSettings (open api dictionary)
+* enableRecommendations - Enable or Disable recommendations, true by default.
+* enableApacheNginxUnderscoreRecommendation - Enable or Disable the recommendation check for Apache/Nginx potentially ignoring header with underscore by default.
+* enableOneOfWithPropertiesRecommendation - Enable or Disable the recommendation check for schemas containing properties and oneOf definitions.
+* enableUnusedSchemasRecommendation - Enable or Disable the recommendation check for unused schemas.
+* enableSchemaTypeRecommendation - Enable or Disable the recommendation check for schemas containing type definitions, specifically for changes between OpenAPI 3.0.x and 3.1.
+* enableNullableAttributeRecommendation - Enable or Disable the recommendation check for the 'nullable' attribute.
+* enableInvalidTypeRecommendation - Enable or Disable the recommendation check for the 'type' attribute.
+
+####dictionaryParseOption (open api dictionary)
+* resolve - true by default;
+* resolveCombinators - true by default;
+* resolveFully;
+* flatten;
+* flattenComposedSchemas;
+* camelCaseFlattenNaming;
+* skipMatches;
+
+### Configuration example
+
+```yaml
+validationSettings:
+  enableRecommendations: true
+dictionaryParseOption:
+  resolve: true
+```
+
