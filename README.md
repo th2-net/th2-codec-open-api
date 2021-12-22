@@ -93,7 +93,7 @@ Result of decode:
 
 Config contain two main types of options.
 
-####validationSettings (open api dictionary)
+**validationSettings (open api dictionary)**
 * enableRecommendations - Enable or Disable recommendations, true by default.
 * enableApacheNginxUnderscoreRecommendation - Enable or Disable the recommendation check for Apache/Nginx potentially ignoring header with underscore by default.
 * enableOneOfWithPropertiesRecommendation - Enable or Disable the recommendation check for schemas containing properties and oneOf definitions.
@@ -102,7 +102,7 @@ Config contain two main types of options.
 * enableNullableAttributeRecommendation - Enable or Disable the recommendation check for the 'nullable' attribute.
 * enableInvalidTypeRecommendation - Enable or Disable the recommendation check for the 'type' attribute.
 
-####dictionaryParseOption (open api dictionary)
+**dictionaryParseOption (open api dictionary)**
 * resolve - true by default;
 * resolveCombinators - true by default;
 * resolveFully;
