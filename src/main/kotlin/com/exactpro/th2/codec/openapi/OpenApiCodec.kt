@@ -36,14 +36,14 @@ import com.exactpro.th2.common.grpc.Message
 import com.exactpro.th2.common.grpc.RawMessageMetadata
 import com.exactpro.th2.common.message.addField
 import com.exactpro.th2.common.message.getList
+import com.exactpro.th2.common.message.getMessage
 import com.exactpro.th2.common.message.getString
 import com.exactpro.th2.common.message.message
 import com.exactpro.th2.common.message.messageType
 import mu.KotlinLogging
 
 class OpenApiCodec(
-    private val dictionary: OpenAPI,
-    private val settings: OpenApiCodecSettings
+    private val dictionary: OpenAPI
 ) : IPipelineCodec {
 
     private val messagesToSchema = dictionary.toMap()
@@ -73,8 +73,9 @@ class OpenApiCodec(
 
             val container = checkNotNull(messagesToSchema[messageType]) { "There no message $messageType in dictionary" }
 
-            builder += createHeaderMessage(container).apply {
+            builder += createHeaderMessage(container, parsedMessage).apply {
                 parentEventId = parsedMessage.parentEventId
+                metadataBuilder.putAllProperties(parsedMessage.metadata.propertiesMap)
             }
 
             container.body?.let { messageSchema ->
@@ -84,6 +85,7 @@ class OpenApiCodec(
                 if (!result.isEmpty) {
                     builder += RawMessage.newBuilder().apply {
                         parentEventId = parsedMessage.parentEventId
+                        metadataBuilder.putAllProperties(parsedMessage.metadata.propertiesMap)
                         container.fillMetadata(metadataBuilder)
                         metadataBuilder.apply {
                             putAllProperties(metadata.propertiesMap)
@@ -94,11 +96,7 @@ class OpenApiCodec(
                         body = result
                     }
                 }
-
             }
-
-
-
         }
 
         return builder.build()
@@ -109,20 +107,17 @@ class OpenApiCodec(
 
         require(messages.size < 3) { "Message group must contain only 1 or 2 messages" }
         require(messages[0].kindCase == MESSAGE) { "Message must be a raw message" }
-        val message = messages[0].message
-
-        val rawMessage = if (messages.size == 2) {
-            require(messages[1].kindCase == RAW_MESSAGE) { "Message must be a raw message" }
-            messages[1].rawMessage
-        } else null
-
-
-        val body = rawMessage?.body
-
         val builder = MessageGroup.newBuilder()
+
+        val message = messages[0].message
         builder += message
 
-        if (body != null) {
+
+        if (messages.size == 2) {
+            require(messages[1].kindCase == RAW_MESSAGE) { "Message must be a raw message" }
+            val rawMessage = messages[1].rawMessage!!
+            val body = rawMessage.body
+
             val bodyFormat = message.getList(HEADERS_FIELD)?.first { it.messageValue.getString("name") == "Content-Type" }?.messageValue?.getString("value")
                 ?: "null"
             val messageSchema = when (message.messageType) {
@@ -151,6 +146,7 @@ class OpenApiCodec(
                 SchemaWriter.instance.traverse(visitor, this)
                 builder += visitor.getResult().apply {
                     parentEventId = rawMessage.parentEventId
+                    metadataBuilder.putAllProperties(rawMessage.metadata.propertiesMap)
                 }
             }.onFailure {
                 throw DecodeException(
@@ -159,6 +155,7 @@ class OpenApiCodec(
                 )
             }
         }
+
         return builder.build()
     }
 
@@ -181,7 +178,8 @@ class OpenApiCodec(
         }
     }
 
-    private fun createHeaderMessage(container: HttpContainer) : Message.Builder {
+    private fun createHeaderMessage(container: HttpContainer, message: Message) : Message.Builder {
+
         return when (container) {
             is ResponseContainer -> {
                 message(RESPONSE_MESSAGE).apply {
@@ -196,7 +194,11 @@ class OpenApiCodec(
             }
             is RequestContainer -> {
                 message(REQUEST_MESSAGE).apply {
-                    addField(URI_FIELD, container.path)
+                    if (container.params != null && container.params.isNotEmpty() ) {
+                        addField(URI_FIELD, URIResolver.resolve(container.params, message.getMessage(URI_PARAMS_FIELD), container.path))
+                    } else {
+                        addField(URI_FIELD, container.path)
+                    }
                     addField(METHOD_FIELD, container.method)
                     container.bodyFormat?.let {
                         addField(HEADERS_FIELD, listOf(message().apply {
@@ -213,7 +215,6 @@ class OpenApiCodec(
         val map = mutableMapOf<String, HttpContainer>()
         dictionary.paths.forEach { pathKey, pathsValue ->
             pathsValue.getMethods().forEach { (methodKey, methodValue) ->
-
                 map[combineName(pathKey, methodKey)] = RequestContainer(pathKey, methodKey, methodValue.parameters, null, null)
 
                 // Request
@@ -244,7 +245,7 @@ class OpenApiCodec(
     private fun combineName(vararg steps: String): String {
         return buildString {
             for (step in steps) {
-                step.split("{", "}", "-", "/", "_").forEach { word ->
+                step.split("""[^A-Za-z0-9]""".toRegex()).forEach { word ->
                     append(word.capitalize())
                 }
             }
@@ -264,5 +265,6 @@ class OpenApiCodec(
         const val CODE_FIELD = CODE_PROPERTY
         const val STATUS_CODE_FIELD = "statusCode"
         const val HEADERS_FIELD = "headers"
+        const val URI_PARAMS_FIELD = "UriParameters"
     }
 }

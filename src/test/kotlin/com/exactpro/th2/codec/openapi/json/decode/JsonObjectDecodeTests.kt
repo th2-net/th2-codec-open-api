@@ -35,7 +35,7 @@ class JsonObjectDecodeTests {
                       "testEnabled" : true,
                       "testStatus" : "FAILED"
                     }""".trimIndent()
-        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
+        val decodedResult = OpenApiCodec(openAPI).testDecode(
             "/test",
             "get",
             "200",
@@ -54,7 +54,7 @@ class JsonObjectDecodeTests {
                       "testEnabled" : true,
                       "testStatus" : "FAILED"
                     }""".trimIndent()
-        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
+        val decodedResult = OpenApiCodec(openAPI).testDecode(
             "/test",
             "get",
             null,
@@ -66,28 +66,8 @@ class JsonObjectDecodeTests {
         Assertions.assertEquals("FAILED", decodedResult.getString("testStatus"))
     }
 
-    @Test
-    fun `test json decode request empty body`() {
-        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
-            "/test",
-            "get",
-            null,
-            null)
-        Assertions.assertNull(decodedResult)
-    }
-
-    @Test
-    fun `test json decode response empty body`() {
-        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
-            "/test",
-            "get",
-            "200",
-            null)
-        Assertions.assertNull(decodedResult)
-    }
-
-    companion object {
-        private val settings = OpenApiCodecSettings()
+    private companion object {
+        val settings = OpenApiCodecSettings()
         val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/object-json-tests.yml"), null, settings.dictionaryParseOption).openAPI
     }
 }

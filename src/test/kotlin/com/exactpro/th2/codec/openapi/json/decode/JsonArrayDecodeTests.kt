@@ -24,7 +24,6 @@ import com.exactpro.th2.common.value.toValue
 import com.exactpro.th2.codec.openapi.getResourceAsText
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import com.exactpro.th2.codec.openapi.testDecode
 
@@ -33,7 +32,7 @@ class JsonArrayDecodeTests {
     @Test
     fun `simple test json array decode response`() {
         val jsonData = """["test1", "test2", "test3"]"""
-        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
+        val decodedResult = OpenApiCodec(openAPI).testDecode(
             "/test",
             "get",
             "200",
@@ -45,7 +44,7 @@ class JsonArrayDecodeTests {
     @Test
     fun `simple test json array decode request`() {
         val jsonData = """["test1", "test2", "test3"]"""
-        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
+        val decodedResult = OpenApiCodec(openAPI).testDecode(
             "/test",
             "get",
             null,
@@ -54,28 +53,8 @@ class JsonArrayDecodeTests {
         decodedResult!!.assertList(ARRAY_TYPE, listOf("test1".toValue(), "test2".toValue(), "test3".toValue()))
     }
 
-    @Test
-    fun `test json array decode request without body`() {
-        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
-            "/test",
-            "get",
-            null,
-            null)
-        Assertions.assertNull(decodedResult)
-    }
-
-    @Test
-    fun `test json array decode response without body`() {
-        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
-            "/test",
-            "get",
-            "200",
-            null)
-        Assertions.assertNull(decodedResult)
-    }
-
-    companion object {
-        private val settings = OpenApiCodecSettings()
+    private companion object {
+        val settings = OpenApiCodecSettings()
         val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/array-json-tests.yml"), null, settings.dictionaryParseOption).openAPI
     }
 }

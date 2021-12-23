@@ -25,12 +25,12 @@ import org.openapitools.codegen.validations.oas.RuleConfiguration
 import java.io.File
 import java.net.URI
 
-class ValidationTests {
+class ValidationDictionaryTests {
 
     @Test
     fun `valid dictionary`() {
         Assertions.assertDoesNotThrow {
-            File(ValidationTests::class.java.classLoader.getResource("dictionaries/valid/")!!.path).walk().forEach { dictionary ->
+            File(ValidationDictionaryTests::class.java.classLoader.getResource("dictionaries/valid/")!!.path).walk().forEach { dictionary ->
                 if (dictionary.name.endsWith(YAML_FORMAT) || dictionary.name.endsWith(JSON_FORMAT)) {
                     validator.validate(parser.readLocation(dictionary.path, null, parseOptions))
                     LOGGER.info { "Validated valid dictionary ${dictionary.name} from test method" }
@@ -42,7 +42,7 @@ class ValidationTests {
     @Test
     fun `valid dictionary in factory`() {
         Assertions.assertDoesNotThrow {
-            File(ValidationTests::class.java.classLoader.getResource("dictionaries/valid/")!!.path).walk().forEach { dictionary ->
+            File(ValidationDictionaryTests::class.java.classLoader.getResource("dictionaries/valid/")!!.path).walk().forEach { dictionary ->
                 if (dictionary.name.endsWith(YAML_FORMAT) || dictionary.name.endsWith(JSON_FORMAT)) {
                     val factory = OpenApiCodecFactory().apply {
                         init { dictionary.inputStream() }
@@ -60,7 +60,7 @@ class ValidationTests {
 
     @Test
     fun `invalid dictionary`() {
-        File(ValidationTests::class.java.classLoader.getResource("dictionaries/invalid/")!!.path).walk().forEach { dictionary ->
+        File(ValidationDictionaryTests::class.java.classLoader.getResource("dictionaries/invalid/")!!.path).walk().forEach { dictionary ->
             if (dictionary.name.endsWith(YAML_FORMAT) || dictionary.name.endsWith(JSON_FORMAT)) {
                 Assertions.assertThrows(DictionaryValidationException::class.java) {
                     validator.validate(parser.readLocation(dictionary.path, null, parseOptions))
@@ -73,7 +73,7 @@ class ValidationTests {
 
     @Test
     fun `invalid dictionary in factory`() {
-        File(ValidationTests::class.java.classLoader.getResource("dictionaries/invalid/")!!.path).walk().forEach { dictionary ->
+        File(ValidationDictionaryTests::class.java.classLoader.getResource("dictionaries/invalid/")!!.path).walk().forEach { dictionary ->
             if (dictionary.name.endsWith(YAML_FORMAT) || dictionary.name.endsWith(JSON_FORMAT)) {
                 val factory = OpenApiCodecFactory().apply {
                     init { dictionary.inputStream() }

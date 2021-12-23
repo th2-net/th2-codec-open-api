@@ -32,7 +32,7 @@ class JsonArrayEncodeTests {
 
     @Test
     fun `simple test array json encode response`() {
-        val rawMessage = OpenApiCodec(openAPI, settings).testEncode(
+        val rawMessage = OpenApiCodec(openAPI).testEncode(
             "/test",
             "get",
             "200",
@@ -53,7 +53,7 @@ class JsonArrayEncodeTests {
 
     @Test
     fun `simple test array json encode request`() {
-        val rawMessage = OpenApiCodec(openAPI, settings).testEncode(
+        val rawMessage = OpenApiCodec(openAPI).testEncode(
             "/test",
             "get",
             null,
@@ -72,30 +72,10 @@ class JsonArrayEncodeTests {
         }
     }
 
-    @Test
-    fun `array json encode response empty body`() {
-        val rawMessage = OpenApiCodec(openAPI, settings).testEncode(
-            "/test",
-            "get",
-            "200",
-            "application/json")
-        Assertions.assertNull(rawMessage)
-    }
-
-    @Test
-    fun `array json encode request empty body`() {
-        val rawMessage = OpenApiCodec(openAPI, settings).testEncode(
-            "/test",
-            "get",
-            null,
-            null)
-        Assertions.assertNull(rawMessage)
-    }
-
-    companion object {
-        private val settings = OpenApiCodecSettings()
+    private companion object {
+        val settings = OpenApiCodecSettings()
         val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/array-json-tests.yml"), null, settings.dictionaryParseOption).openAPI
-        private val mapper = ObjectMapper()
+        val mapper = ObjectMapper()
     }
 
 }

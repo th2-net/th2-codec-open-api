@@ -31,7 +31,7 @@ class JsonObjectEncodeTests {
 
     @Test
     fun `json encode response`() {
-        val rawMessage = OpenApiCodec(openAPI, settings).testEncode("/test/object", "get", "200", "application/json") {
+        val rawMessage = OpenApiCodec(openAPI).testEncode("/test/object", "get", "200", "application/json") {
             addField("publicKey", "1234567")
             addField("testEnabled", true)
             addField("testStatus", "FAILED")
@@ -47,7 +47,7 @@ class JsonObjectEncodeTests {
 
     @Test
     fun `json encode request`() {
-        val rawMessage = OpenApiCodec(openAPI, settings).testEncode("/test", "get", null, "application/json") {
+        val rawMessage = OpenApiCodec(openAPI).testEncode("/test", "get", null, "application/json") {
             addField("publicKey", "1234567")
             addField("testEnabled", true)
             addField("testStatus", "FAILED")
@@ -59,16 +59,6 @@ class JsonObjectEncodeTests {
             Assertions.assertTrue(json.get("testEnabled").asBoolean())
             Assertions.assertEquals("FAILED", json.get("testStatus").asText())
         }
-    }
-
-    @Test
-    fun `json encode request empty body`() {
-        Assertions.assertNull(OpenApiCodec(openAPI, settings).testEncode("/test", "get", null, null))
-    }
-
-    @Test
-    fun `json encode response empty body`() {
-        Assertions.assertNull(OpenApiCodec(openAPI, settings).testEncode("/test", "get", null, null))
     }
 
     private companion object {

@@ -1,0 +1,64 @@
+openapi: 3.0.0
+info:
+  title: Test API
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:12345
+
+
+paths:
+  /test/{route}/?id={value0}&value={value1}:
+    get:
+      tags:
+        - test
+      summary: Store an object
+      parameters:
+        - name: route
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: value0
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: value1
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+  /test/{path}:
+    get:
+      tags:
+        - test
+      summary: Store an object
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+  /empty?path={path}:
+    get:
+      tags:
+        - test
+      summary: Store an object
+      parameters:
+        - name: path
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+
+
