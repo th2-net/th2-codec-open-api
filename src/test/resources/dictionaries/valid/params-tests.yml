@@ -61,6 +61,19 @@ paths:
         "200":
           description: OK
   /test/{label}/activate:
+    parameters:
+      - name: some-header
+        in: header
+        required: true
+        description: Test header.
+        schema:
+          type: string
+      - name: second-header
+        in: header
+        required: false
+        description: Test header.
+        schema:
+          type: string
     post:
       summary: Activate a test
       tags:

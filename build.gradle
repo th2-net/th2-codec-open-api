@@ -62,7 +62,7 @@ jar {
 dependencies {
     api platform('com.exactpro.th2:bom:3.0.0')
 
-    implementation 'com.exactpro.th2:common:3.31.4'
+    implementation "com.exactpro.th2:common:$common_version"
     implementation 'com.exactpro.th2:codec:4.2.0'
 
     implementation "com.exactpro.sf:sailfish-core:${sailfishVersion}"
@@ -82,7 +82,7 @@ dependencies {
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
     testImplementation group: 'org.jetbrains.kotlin', name: 'kotlin-test-junit5', version: kotlin_version
-    testImplementation testFixtures('com.exactpro.th2:common:3.31.1')
+    testImplementation testFixtures("com.exactpro.th2:common:$common_version")
 }
 
 test {

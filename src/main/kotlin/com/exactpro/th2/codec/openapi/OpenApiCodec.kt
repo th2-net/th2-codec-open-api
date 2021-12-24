@@ -35,11 +35,13 @@ import com.exactpro.th2.common.grpc.AnyMessage.KindCase.RAW_MESSAGE
 import com.exactpro.th2.common.grpc.Message
 import com.exactpro.th2.common.grpc.RawMessageMetadata
 import com.exactpro.th2.common.message.addField
+import com.exactpro.th2.common.message.get
 import com.exactpro.th2.common.message.getList
 import com.exactpro.th2.common.message.getMessage
 import com.exactpro.th2.common.message.getString
 import com.exactpro.th2.common.message.message
 import com.exactpro.th2.common.message.messageType
+import com.exactpro.th2.common.message.orEmpty
 import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.parameters.Parameter
 import mu.KotlinLogging
@@ -230,31 +232,43 @@ class OpenApiCodec(
             is ResponseContainer -> {
                 message(RESPONSE_MESSAGE).apply {
                     addField(CODE_FIELD, container.code)
-                    container.bodyFormat?.let {
-                        addField(HEADERS_FIELD, listOf(message().apply {
-                            addField("name", "Content-Type")
-                            addField("value", container.bodyFormat)
-                        }))
-                    }
                 }
             }
             is RequestContainer -> {
                 message(REQUEST_MESSAGE).apply {
                     if (container.params.isNotEmpty() ) {
-                        addField(URI_FIELD, container.uriPattern.resolve(container.params, message.getMessage(URI_PARAMS_FIELD)?.fieldsMap?.mapValues { it.value.simpleValue }))
+                        addField(URI_FIELD, container.uriPattern.resolve(container.params, message.getMessage(URI_PARAMS_FIELD).orEmpty().fieldsMap.mapValues { it.value.simpleValue }))
                     } else {
                         addField(URI_FIELD, container.uriPattern.pattern)
                     }
                     addField(METHOD_FIELD, container.method)
-                    container.bodyFormat?.let {
-                        addField(HEADERS_FIELD, listOf(message().apply {
-                            addField("name", CONTENT_TYPE_PROPERTY)
-                            addField("value", container.bodyFormat)
-                        }))
-                    }
                 }
             }
             else -> error("Wrong type of Http Route Container")
+        }.apply {
+            // create headers for both request and response
+            val headers = mutableListOf<Message.Builder>()
+
+            container.bodyFormat?.let {
+                headers.add(message().apply {
+                    addField("name", CONTENT_TYPE_PROPERTY)
+                    addField("value", container.bodyFormat)
+                })
+            }
+
+            if (container.headers.isNotEmpty()) {
+                val headerMessage = message.getMessage(HEADER_PARAMS_FIELD).orEmpty()
+                container.headers.forEach {
+                    headerMessage[it.key]?.let {  header ->
+                        headers.add(message().apply {
+                            addField("name", it.key)
+                            addField("value", header.simpleValue)
+                        })
+                    } ?: run { if (it.value.required) error("Header param [${it.key}] is required for ${message.messageType} message") }
+                }
+            }
+
+            addField(HEADERS_FIELD, headers)
         }
     }
 
@@ -281,8 +295,8 @@ class OpenApiCodec(
         const val CODE_FIELD = CODE_PROPERTY
         const val STATUS_CODE_FIELD = "statusCode"
         const val HEADERS_FIELD = "headers"
-        const val URI_PARAMS_FIELD = "UriParameters"
-
+        const val URI_PARAMS_FIELD = "uriParameters"
+        const val HEADER_PARAMS_FIELD = "headerParameters"
 
     }
 }

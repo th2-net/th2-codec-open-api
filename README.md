@@ -53,8 +53,8 @@ In result of encode will be sent two messages:
 1. **Request/Response** parsed message with all info about http part (required)
 2. **RawMessage** that contain encoded body (optional)
 
-If needed to specify in:query or in:path parameters: create message-field 'UriParameters' inside of encoding message. 
-In 'UriParameters' needs to be all required params that was mentioned in dictionary. 
+If needed to specify in:query or in:path parameters: please create message-field 'uriParameters' inside of encoding message. 
+In 'uriParameters' needs to be all required params that was mentioned in dictionary. \
 As example:
 
 ```yaml
@@ -74,17 +74,33 @@ As example:
           description: OK
 ```
 
-UriParameters:
+uriParameters:
 
 ```json
 {
   "message": {
-    "UriParameters": {
+    "uriParameters": {
       "path": "somePath"
     }
   }
 }
 ```
+
+If needed to specify in:header parameters: please create message-field 'headerParameters' inside of encoding message.
+In 'headerParameters' needs to be all required params that was mentioned in dictionary. \
+As example:
+
+```json
+{
+  "message": {
+    "headerParameters": {
+      "media": "picture"
+    }
+  }
+}
+```
+
+Please mention that right now only supports string params, all values will be converted into it.
 
 ### DECODE: 
 

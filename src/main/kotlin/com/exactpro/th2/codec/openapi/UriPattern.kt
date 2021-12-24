@@ -60,16 +60,16 @@ class UriPattern(val pattern: String) {
     /**
      * Resolves this URI pattern by substituting parameter placeholders with values from [paramValues]
      */
-    fun resolve(paramsFromSchema: Map<String, Parameter>, paramValues: Map<String, String>?): String {
+    fun resolve(paramsFromSchema: Map<String, Parameter>, paramValues: Map<String, String>): String {
         return PARAM_MATCHER.replace(pattern) {
-            if (paramValues == null || paramValues.isEmpty()) {
+            if (paramValues.isEmpty()) {
                 paramsFromSchema.values.firstOrNull { param -> param.required }?.let { param ->
-                    error("Message must have $param param as required for $pattern path")
+                    error("Param ${param.name} is required for $pattern path")
                 }
                 ""
             } else {
                 val paramName = it.groups[NAME_GROUP]!!.value
-                paramValues[paramName] ?: if (paramsFromSchema[paramName]!!.required) error("Message must have $it param as required for $pattern path") else ""
+                paramValues[paramName] ?: if (paramsFromSchema[paramName]!!.required) error("Message must contain $paramName param as required for $pattern path") else ""
             }.urlEncode()
         }
     }
