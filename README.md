@@ -53,8 +53,9 @@ In result of encode will be sent two messages:
 1. **Request/Response** parsed message with all info about http part (required)
 2. **RawMessage** that contain encoded body (optional)
 
-If path for message have in:query or in:path parameters: create message create message-field 'UriParameters' inside of incoming message for encode. 
-In 'UriParameters' needs to be all required params that was mentioned in dictionary. As example:
+If needed to specify in:query or in:path parameters: create message-field 'UriParameters' inside of encoding message. 
+In 'UriParameters' needs to be all required params that was mentioned in dictionary. 
+As example:
 
 ```yaml
   /test/{path}:
