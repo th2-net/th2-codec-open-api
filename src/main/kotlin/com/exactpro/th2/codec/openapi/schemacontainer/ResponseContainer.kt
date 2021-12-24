@@ -16,14 +16,17 @@
 
 package com.exactpro.th2.codec.openapi.schemacontainer
 
+import com.exactpro.th2.codec.openapi.UriPattern
 import io.swagger.v3.oas.models.media.Schema
+import io.swagger.v3.oas.models.parameters.Parameter
 
 class ResponseContainer(
-    val path: String,
-    val method: String,
+    uriPattern: UriPattern,
+    method: String,
     val code: String,
-    override val body: Schema<*>?,
-    override val bodyFormat: String?
-) : HttpContainer {
+    body: Schema<*>?,
+    bodyFormat: String?,
+    params: Map<String, Parameter>
+) : HttpRouteContainer(uriPattern, method, body, bodyFormat, params) {
 
 }

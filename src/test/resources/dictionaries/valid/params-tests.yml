@@ -8,7 +8,7 @@ servers:
 
 
 paths:
-  /test/{route}/?id={value0}&value={value1}:
+  /test/{route}/test?id={value0}&value={value1}:
     get:
       tags:
         - test
@@ -60,5 +60,19 @@ paths:
       responses:
         "200":
           description: OK
-
+  /test/{label}/activate:
+    post:
+      summary: Activate a test
+      tags:
+        - test
+      parameters:
+        - name: label
+          in: path
+          required: true
+          description: Test label.
+          schema:
+            type: string
+      responses:
+        "204":
+          description: "OK"
 

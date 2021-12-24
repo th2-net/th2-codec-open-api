@@ -156,7 +156,7 @@ class SchemaWriter private constructor(private val openApi: OpenAPI) {
         lateinit var instance: SchemaWriter
             private set
 
-        fun createInstance(openApi: OpenAPI): SchemaWriter{
+        fun createInstance(openApi: OpenAPI): SchemaWriter {
             instance = SchemaWriter(openApi)
             return instance
         }

@@ -26,5 +26,8 @@ class OpenApiCodecSettings : IPipelineCodecSettings {
     }
     var dictionaryParseOption: ParseOptions = ParseOptions().apply {
         isResolve = true
+        isResolveFully = true
+        isResolveCombinators = true
+        isFlattenComposedSchemas
     }
 }
