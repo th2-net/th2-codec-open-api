@@ -16,7 +16,7 @@ Valid format of dictionary can be found [here](https://swagger.io/specification/
 Each response or request from dictionary will generate message type according to the rules of camel case
 
 As example
-```
+```yaml
 paths:
   /test:
     get:
@@ -52,6 +52,38 @@ Decode accepts only raw messages, all parsed will be passed.
 In result of encode will be sent two messages:
 1. **Request/Response** parsed message with all info about http part (required)
 2. **RawMessage** that contain encoded body (optional)
+
+If path for message have in:query or in:path parameters: create message create message-field 'UriParameters' inside of incoming message for encode. 
+In 'UriParameters' needs to be all required params that was mentioned in dictionary. As example:
+
+```yaml
+  /test/{path}:
+    get:
+      tags:
+        - test
+      summary: Store an object
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+```
+
+UriParameters:
+
+```json
+{
+  "message": {
+    "UriParameters": {
+      "path": "somePath"
+    }
+  }
+}
+```
 
 ### DECODE: 
 
@@ -120,3 +152,4 @@ dictionaryParseOption:
   resolve: true
 ```
 
+May be empty due to missing required fields
