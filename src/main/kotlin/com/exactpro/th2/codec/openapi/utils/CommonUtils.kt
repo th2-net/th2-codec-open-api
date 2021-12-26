@@ -21,9 +21,6 @@ import com.exactpro.th2.common.grpc.Value
 import com.exactpro.th2.common.message.getField
 import com.exactpro.th2.common.message.messageType
 
-fun Message.getRequiredField(fieldName: String, required: Boolean): Value? {
-    val result = getField(fieldName)
-    return if (required) {
-        checkNotNull(result) {"Field [$fieldName] is required for message [$messageType]"}
-    } else result
+fun Message.getRequiredField(fieldName: String, required: Boolean): Value? = getField(fieldName).apply {
+    if (required) checkNotNull(this) {"Field [$fieldName] is required for message [$messageType]"}
 }

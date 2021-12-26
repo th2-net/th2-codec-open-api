@@ -60,34 +60,42 @@ class OpenApiCodec(
         dictionary.paths.forEach { pathKey, pathsValue ->
             val pattern = UriPattern(pathKey)
             mapForPatterns[pattern] = pathsValue
-            val pathParams = mutableMapOf<String, Parameter>().apply { putAll(pathsValue.parameters.orEmpty().map { it.name to it }) }
+
+            val pathParams = mutableMapOf<String, Parameter>().apply {
+                pathsValue.parameters?.associateByTo(this, Parameter::getName)
+            }
+
             pathsValue.getMethods().forEach { (methodKey, methodValue) ->
-                val resultParams = pathParams.apply { putAll(methodValue.parameters.orEmpty().map { it.name to it }) }
+
+                val resultParams = pathParams.apply {
+                    methodValue.parameters?.associateByTo(this, Parameter::getName)
+                }
+
                 mapForName[combineName(pathKey, methodKey)] = RequestContainer(pattern, methodKey, null, null, resultParams)
 
                 // Request
                 methodValue.requestBody?.content?.forEach { (typeKey, typeValue) ->
-                    mapForName[combineName(pathKey, methodKey, typeKey)] =
-                        RequestContainer(pattern, methodKey, dictionary.getEndPoint(typeValue.schema), typeKey, resultParams)
+                    mapForName[combineName(pathKey, methodKey, typeKey)] = RequestContainer(
+                        pattern, methodKey, dictionary.getEndPoint(typeValue.schema), typeKey, resultParams
+                    )
                 } ?: run {
-                    mapForName[combineName(pathKey, methodKey)] =
-                        RequestContainer(pattern, methodKey, null, null, resultParams)
+                    mapForName[combineName(pathKey, methodKey)] = RequestContainer(pattern, methodKey, null, null, resultParams)
                 }
 
                 // Response
                 methodValue.responses?.forEach { (responseKey, responseValue) ->
                     responseValue.content?.forEach { (typeKey, typeValue) ->
-                        mapForName[combineName(pathKey, methodKey, responseKey, typeKey)] =
-                            ResponseContainer(pattern, methodKey, responseKey, dictionary.getEndPoint(typeValue.schema), typeKey, resultParams)
+                        mapForName[combineName(pathKey, methodKey, responseKey, typeKey)] = ResponseContainer(
+                            pattern, methodKey, responseKey, dictionary.getEndPoint(typeValue.schema), typeKey, resultParams
+                        )
                     } ?: run {
-                        mapForName[combineName(pathKey, methodKey, responseKey)] =
-                            ResponseContainer( pattern, methodKey, responseKey,null, null, resultParams)
+                        mapForName[combineName(pathKey, methodKey, responseKey)] = ResponseContainer(pattern, methodKey, responseKey, null, null, resultParams)
                     }
                 }
             }
         }
-        LOGGER.info { "Schemas to map: ${mapForName.keys.joinToString(", ") { it }}" }
-        messagesToSchema = mapForName.toMap()
+        LOGGER.info { "Schemas to map: ${mapForName.keys.joinToString(", ")}" }
+        messagesToSchema = mapForName
         patternToPathItem = mapForPatterns.toList()
     }
 
@@ -113,38 +121,39 @@ class OpenApiCodec(
             val container = checkNotNull(messagesToSchema[messageType]) { "There no message $messageType in dictionary" }
 
             builder += createHeaderMessage(container, parsedMessage).apply {
-                parentEventId = parsedMessage.parentEventId
+                if (parsedMessage.hasParentEventId()) parentEventId = parsedMessage.parentEventId
                 metadataBuilder.putAllProperties(parsedMessage.metadata.propertiesMap)
             }
 
-            encodeBody(container, parsedMessage)?.let {
-                builder += it
+            runCatching {
+                encodeBody(container, parsedMessage)?.let(builder::plusAssign)
+            }.getOrElse {
+                throw DecodeException("Cannot encode body of message [${parsedMessage.messageType}]", it)
             }
+
         }
 
         return builder.build()
     }
 
-    private fun encodeBody(container: HttpRouteContainer, message: Message): RawMessage? {
-        return container.body?.let { messageSchema ->
-            val visitor = VisitorFactory.createEncodeVisitor(container.bodyFormat!!, messageSchema.type, message)
-            SchemaWriter.instance.traverse(visitor, messageSchema)
-            val result = visitor.getResult()
-            if (!result.isEmpty) {
-                RawMessage.newBuilder().apply {
-                    parentEventId = message.parentEventId
-                    metadataBuilder.putAllProperties(message.metadata.propertiesMap)
-                    container.fillHttpMetadata(metadataBuilder)
-                    metadataBuilder.apply {
-                        putAllProperties(metadata.propertiesMap)
-                        this.id = metadata.id
-                        this.timestamp = metadata.timestamp
-                        this.protocol = PROTOCOL
-                    }
-                    body = result
-                }.build()
-            } else null
-        }
+    private fun encodeBody(container: HttpRouteContainer, message: Message): RawMessage? = container.body?.let { messageSchema ->
+        val visitor = VisitorFactory.createEncodeVisitor(container.bodyFormat!!, messageSchema.type, message)
+        SchemaWriter.instance.traverse(visitor, messageSchema)
+        val result = visitor.getResult()
+        if (!result.isEmpty) {
+            RawMessage.newBuilder().apply {
+                parentEventId = message.parentEventId
+                metadataBuilder.putAllProperties(message.metadata.propertiesMap)
+                container.fillHttpMetadata(metadataBuilder)
+                metadataBuilder.apply {
+                    putAllProperties(metadata.propertiesMap)
+                    this.id = metadata.id
+                    this.timestamp = metadata.timestamp
+                    this.protocol = PROTOCOL
+                }
+                body = result
+            }.build()
+        } else null
     }
 
     override fun decode(messageGroup: MessageGroup): MessageGroup {
@@ -159,14 +168,11 @@ class OpenApiCodec(
 
         if (messages.size == 2) {
             require(messages[1].kindCase == RAW_MESSAGE) { "Message must be a raw message" }
-            runCatching {
-                builder += decodeBody(message, messages[1].rawMessage!!)
-            }.onFailure {
-                throw DecodeException(
-                    "Cannot parse body of http message",
-                    it
-                )
-            }.getOrThrow()
+            builder += runCatching {
+                decodeBody(message, messages[1].rawMessage!!)
+            }.getOrElse {
+                throw DecodeException("Cannot parse body of http message", it)
+            }
         }
 
         return builder.build()
@@ -175,15 +181,14 @@ class OpenApiCodec(
     private fun decodeBody(header: Message, rawMessage: RawMessage): Message {
         val body = rawMessage.body
 
-        val bodyFormat = header.getList(HEADERS_FIELD)?.first { it.messageValue.getString("name") == "Content-Type" }?.messageValue?.getString("value")
-            ?: "null"
+        val bodyFormat = header.getList(HEADERS_FIELD)?.first { it.messageValue.getString("name") == "Content-Type" }?.messageValue?.getString("value") ?: "null"
         val messageSchema = when (header.messageType) {
             RESPONSE_MESSAGE -> {
                 val uri = requireNotNull(rawMessage.metadata.propertiesMap[URI_PROPERTY]) { "URI property in metadata from response is required" }
                 val method = requireNotNull(rawMessage.metadata.propertiesMap[METHOD_PROPERTY]?.lowercase()) { "Method property in metadata from response is required" }
                 val code = requireNotNull(header.getString(STATUS_CODE_FIELD)) { "Code status field required inside of http response message" }
 
-                val pathItem = patternToPathItem.firstOrNull {it.first.matches(uri)}?.second
+                val pathItem = patternToPathItem.firstOrNull { it.first.matches(uri) }?.second
                 checkNotNull(pathItem?.getMethods()?.get(method)?.responses?.get(code)?.content?.get(bodyFormat)?.schema?.run {
                     dictionary.getEndPoint(this)
                 }) { "Response schema with path $uri, method $method, code $code and type $bodyFormat wasn't found" }
@@ -192,7 +197,7 @@ class OpenApiCodec(
                 val uri = requireNotNull(header.getString(URI_FIELD)) { "URI field in request is required" }
                 val method = requireNotNull(header.getString(METHOD_FIELD)) { "Method field in request is required" }
 
-                val pathItem = patternToPathItem.firstOrNull {it.first.matches(uri)}?.second
+                val pathItem = patternToPathItem.firstOrNull { it.first.matches(uri) }?.second
                 checkNotNull(pathItem?.getMethods()?.get(method)?.requestBody?.content?.get(bodyFormat)?.schema?.run {
                     dictionary.getEndPoint(this)
                 }) { "Request schema with path $uri, method $method and type $bodyFormat wasn't found" }
@@ -210,33 +215,24 @@ class OpenApiCodec(
 
     private fun HttpRouteContainer.fillHttpMetadata(metadata: RawMessageMetadata.Builder) {
         when (this) {
-            is ResponseContainer -> {
-                metadata.apply {
-                    putProperties(METHOD_PROPERTY, method)
-                    putProperties(URI_PROPERTY, uriPattern.pattern)
-                    putProperties(CODE_PROPERTY, code)
-                }
+            is ResponseContainer -> metadata.apply {
+                putProperties(METHOD_PROPERTY, method)
+                putProperties(URI_PROPERTY, uriPattern.pattern)
+                putProperties(CODE_PROPERTY, code)
             }
-            is RequestContainer -> {
-                metadata.apply {
-                    putProperties(METHOD_PROPERTY, method)
-                    putProperties(URI_PROPERTY, uriPattern.pattern)
-                }
-
+            is RequestContainer -> metadata.apply {
+                putProperties(METHOD_PROPERTY, method)
+                putProperties(URI_PROPERTY, uriPattern.pattern)
             }
         }
     }
 
-    private fun createHeaderMessage(container: HttpRouteContainer, message: Message) : Message.Builder {
+    private fun createHeaderMessage(container: HttpRouteContainer, message: Message): Message.Builder {
         return when (container) {
-            is ResponseContainer -> {
-                message(RESPONSE_MESSAGE).apply {
-                    addField(CODE_FIELD, container.code)
-                }
-            }
+            is ResponseContainer -> message(RESPONSE_MESSAGE).addField(CODE_FIELD, container.code)
             is RequestContainer -> {
                 message(REQUEST_MESSAGE).apply {
-                    if (container.params.isNotEmpty() ) {
+                    if (container.params.isNotEmpty()) {
                         addField(URI_FIELD, container.uriPattern.resolve(container.params, message.getMessage(URI_PARAMS_FIELD).orEmpty().fieldsMap.mapValues { it.value.simpleValue }))
                     } else {
                         addField(URI_FIELD, container.uriPattern.pattern)
@@ -258,13 +254,13 @@ class OpenApiCodec(
 
             if (container.headers.isNotEmpty()) {
                 val headerMessage = message.getMessage(HEADER_PARAMS_FIELD).orEmpty()
-                container.headers.forEach {
-                    headerMessage[it.key]?.let {  header ->
+                container.headers.forEach { (name, value) ->
+                    headerMessage[name]?.let { header ->
                         headers.add(message().apply {
-                            addField("name", it.key)
+                            addField("name", name)
                             addField("value", header.simpleValue)
                         })
-                    } ?: run { if (it.value.required) error("Header param [${it.key}] is required for ${message.messageType} message") }
+                    } ?: run { if (value.required) error("Header param [$name] is required for ${message.messageType} message") }
                 }
             }
 
@@ -272,25 +268,18 @@ class OpenApiCodec(
         }
     }
 
-    private fun combineName(vararg steps: String): String {
-        return buildString {
-            for (step in steps) {
-                step.split("""[^A-Za-z0-9]""".toRegex()).forEach { word ->
-                    append(word.capitalize())
-                }
-            }
-        }
-    }
+    private fun combineName(vararg steps: String) = steps.asSequence().flatMap { it.split(COMBINER_REGEX) }.joinToString("") { it.capitalize() }
 
     companion object {
         private val LOGGER = KotlinLogging.logger { }
+        private val COMBINER_REGEX = """[^A-Za-z0-9]""".toRegex()
         const val RESPONSE_MESSAGE = "Response"
         const val REQUEST_MESSAGE = "Request"
         const val METHOD_PROPERTY = "method"
         const val METHOD_FIELD = METHOD_PROPERTY
         const val CONTENT_TYPE_PROPERTY = "Content-Type"
         const val URI_PROPERTY = "uri"
-        const val URI_FIELD = "uri"
+        const val URI_FIELD = URI_PROPERTY
         const val CODE_PROPERTY = "code"
         const val CODE_FIELD = CODE_PROPERTY
         const val STATUS_CODE_FIELD = "statusCode"

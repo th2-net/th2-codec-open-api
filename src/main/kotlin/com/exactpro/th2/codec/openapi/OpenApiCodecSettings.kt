@@ -28,6 +28,5 @@ class OpenApiCodecSettings : IPipelineCodecSettings {
         isResolve = true
         isResolveFully = true
         isResolveCombinators = true
-        isFlattenComposedSchemas
     }
 }

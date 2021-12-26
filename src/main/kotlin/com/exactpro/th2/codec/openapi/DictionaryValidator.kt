@@ -32,32 +32,30 @@ class DictionaryValidator(val configuration: RuleConfiguration) {
         val validationResult = evaluator.validate(openAPI)
 
         if (validationResult.warnings.isNotEmpty()) {
-            logger.warn {"Spec has issues or recommendations.\nIssues:"}
+            LOGGER.warn {"Spec has issues or recommendations.\nIssues:"}
 
             validationResult.warnings.forEach {
-                logger.warn { "\t${it.message}|${it.details}" }
+                LOGGER.warn { "\t${it.message}|${it.details}" }
             }
         }
 
         if (messages.isNotEmpty() || validationResult.errors.isNotEmpty()) {
 
-            logger.error {"Spec is invalid.\nIssues:"}
+            LOGGER.error {"Spec is invalid.\nIssues:"}
 
-            messages.forEach {
-                logger.error { it }
-            }
+            messages.forEach(LOGGER::error)
 
             validationResult.errors.forEach {
-                logger.error { "${it.message}\t${it.details}" }
+                LOGGER.error { "${it.message}\t${it.details}" }
             }
 
             throw DictionaryValidationException("Provided dictionary-spec is not valid.", validationResult.errors, messages)
         } else {
-            logger.debug { "Provided dictionary-spec is valid" }
+            LOGGER.debug { "Provided dictionary-spec is valid" }
         }
     }
 
     companion object {
-        private val logger = KotlinLogging.logger {}
+        private val LOGGER = KotlinLogging.logger {}
     }
 }

@@ -17,101 +17,63 @@
 package com.exactpro.th2.codec.openapi.utils
 
 import com.exactpro.th2.common.grpc.Value
+import com.exactpro.th2.common.value.getBigDecimal
+import com.exactpro.th2.common.value.getInt
+import com.exactpro.th2.common.value.getLong
 import com.exactpro.th2.common.value.getString
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.NullNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 
-inline fun <reified T> ArrayNode.putAll(values: List<Value>) {
-    when (T::class) {
-        Int::class -> {
-            values.forEach {
-                add(it.getString()!!.toInt())
-            }
-        }
-        String::class -> {
-            values.forEach {
-                add(it.getString())
-            }
-        }
-        Double::class -> {
-            values.forEach {
-                add(it.getString()!!.toDouble())
-            }
-        }
-        Float::class -> {
-            values.forEach {
-                add(it.getString()!!.toFloat())
-            }
-        }
-        Boolean::class -> {
-            values.forEach {
-                add(it.getString()!!.toBoolean())
-            }
-        }
-        Long::class -> {
-            values.forEach {
-                add(it.getString()!!.toLong())
-            }
-        }
-        else -> {
-            error("Unsupported type of ArrayNode: ${T::class.simpleName}")
-        }
+inline fun <reified T> ArrayNode.putAll(values: List<Value>) = when (T::class) {
+    Int::class -> values.forEach { add(it.getInt()) }
+    String::class -> values.forEach { add(it.getString()) }
+    Float::class, Double::class -> values.forEach { add(it.getBigDecimal()) }
+    Boolean::class -> values.forEach { add(it.getString()!!.toBoolean()) }
+    Long::class -> values.forEach { add(it.getLong()) }
+    else -> error("Unsupported type of ArrayNode: ${T::class.simpleName}")
+}
+
+fun JsonNode.getRequiredField(fieldName: String, required: Boolean): JsonNode? = get(fieldName).also { node ->
+    if(required && node == null || node is NullNode) {
+        error("Field [$fieldName] is required for json [${this.asText()}]")
     }
 }
 
-fun JsonNode.getRequiredField(fieldName: String, required: Boolean): JsonNode? {
-    val result = get(fieldName)
-    return if (required) {
-        checkNotNull(result) {"Field [$fieldName] is required for json [${this.asText()}]"}
-    } else result
-}
-
-fun JsonNode.getRequiredArray(fieldName: String, required: Boolean) : ArrayNode? {
-    val field = get(fieldName)
-    if (required && field==null) {
-        error {"$fieldName array field was required!"}
+fun JsonNode.getRequiredArray(fieldName: String, required: Boolean) : ArrayNode? = getRequiredField(fieldName, required).apply {
+    if(this != null && !this.isArray) {
+        error("$fieldName field of json isn't array!")
     }
-    if (field!=null && !field.isArray) {
-        error {"$fieldName field of json isn't array!"}
-    }
-    return field as? ArrayNode
+} as? ArrayNode
+
+fun JsonNode.validateAsBoolean() : Boolean = when {
+    isBoolean -> asBoolean()
+    else -> error("Cannot convert $this to Boolean")
 }
 
-fun JsonNode.validateAsBoolean() : Boolean {
-    return if (isBoolean) {
-        asText().toBoolean()
-    } else error("Cannot convert $this to Boolean")
+fun JsonNode.validateAsLong() : Long = when {
+    isNumber -> asLong()
+    else -> error("Cannot convert $this to Long")
 }
 
-
-fun JsonNode.validateAsLong() : Long {
-    return if (isNumber) {
-        asLong()
-    } else error("Cannot convert $this to Long")
+fun JsonNode.validateAsInteger() : Int = when {
+    isNumber -> asInt()
+    else -> error("Cannot convert $this to Int")
 }
 
-fun JsonNode.validateAsInteger() : Int {
-    return if (isNumber) {
-        asInt()
-    } else error("Cannot convert $this to Int")
+fun JsonNode.validateAsDouble() : Double = when {
+    isNumber -> asDouble()
+    else -> error("Cannot convert $this to Double")
 }
 
-fun JsonNode.validateAsDouble() : Double {
-    return if (isNumber) {
-        asDouble()
-    } else error("Cannot convert $this to Double")
+fun JsonNode.validateAsFloat() : Float = when {
+    isNumber -> asText().toFloat()
+    else -> error("Cannot convert $this to Float")
 }
 
-fun JsonNode.validateAsFloat() : Float {
-    return if (isNumber) {
-        asText().toFloat()
-    } else error("Cannot convert $this to Float")
-}
-
-fun JsonNode.validateAsObject() : ObjectNode {
-    return if (isObject) {
-        this as ObjectNode
-    } else error("Cannot convert $this to Object")
+fun JsonNode.validateAsObject() : ObjectNode = when {
+    isObject -> this as ObjectNode
+    else -> error("Cannot convert $this to Object")
 }
 
