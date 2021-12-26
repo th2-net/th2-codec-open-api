@@ -66,66 +66,31 @@ class DecodeJsonArrayVisitor(override val from: ArrayNode) : DecodeVisitor<Array
         throw UnsupportedOperationException("Array visitor supports only collections")
     }
 
-    override fun visitBooleanCollection(
-        fieldName: String,
-        defaultValue: List<Boolean>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitBooleanCollection(fieldName: String, defaultValue: List<Boolean>?, fldStruct: ArraySchema, required: Boolean) {
         rootMessage.addField(fieldName, from.map { it.validateAsBoolean() })
     }
 
-    override fun visitIntegerCollection(
-        fieldName: String,
-        defaultValue: List<Int>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitIntegerCollection(fieldName: String, defaultValue: List<Int>?, fldStruct: ArraySchema, required: Boolean) {
         rootMessage.addField(fieldName, from.map { it.validateAsInteger() })
     }
 
-    override fun visitStringCollection(
-        fieldName: String,
-        defaultValue: List<String>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitStringCollection(fieldName: String, defaultValue: List<String>?, fldStruct: ArraySchema, required: Boolean) {
         rootMessage.addField(fieldName, from.map { it.asText() })
     }
 
-    override fun visitDoubleCollection(
-        fieldName: String,
-        defaultValue: List<Double>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitDoubleCollection(fieldName: String, defaultValue: List<Double>?, fldStruct: ArraySchema, required: Boolean) {
         rootMessage.addField(fieldName, from.map { it.validateAsDouble() })
     }
 
-    override fun visitFloatCollection(
-        fieldName: String,
-        defaultValue: List<Float>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitFloatCollection(fieldName: String, defaultValue: List<Float>?, fldStruct: ArraySchema, required: Boolean) {
         rootMessage.addField(fieldName, from.map { it.validateAsFloat() })
     }
 
-    override fun visitLongCollection(
-        fieldName: String,
-        defaultValue: List<Long>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitLongCollection(fieldName: String, defaultValue: List<Long>?, fldStruct: ArraySchema, required: Boolean) {
         rootMessage.addField(fieldName, from.map { it.validateAsLong() })
     }
 
-    override fun visitObjectCollection(
-        fieldName: String,
-        defaultValue: List<Any>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitObjectCollection(fieldName: String, defaultValue: List<Any>?, fldStruct: ArraySchema, required: Boolean) {
         rootMessage.addField(fieldName, from.map {
             DecodeJsonObjectVisitor(it.validateAsObject()).apply {
                 SchemaWriter.instance.traverse(this, fldStruct.items)

@@ -22,6 +22,7 @@ import com.exactpro.th2.codec.openapi.schemacontainer.HttpRouteContainer
 import com.exactpro.th2.codec.openapi.schemacontainer.RequestContainer
 import com.exactpro.th2.codec.openapi.schemacontainer.ResponseContainer
 import com.exactpro.th2.codec.openapi.throwable.DecodeException
+import com.exactpro.th2.codec.openapi.throwable.EncodeException
 import com.exactpro.th2.codec.openapi.utils.getEndPoint
 import com.exactpro.th2.codec.openapi.utils.getMethods
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter
@@ -46,9 +47,7 @@ import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.parameters.Parameter
 import mu.KotlinLogging
 
-class OpenApiCodec(
-    private val dictionary: OpenAPI
-) : IPipelineCodec {
+class OpenApiCodec(private val dictionary: OpenAPI) : IPipelineCodec {
 
     private val messagesToSchema: Map<String, HttpRouteContainer>
     private val patternToPathItem: List<Pair<UriPattern, PathItem>>
@@ -128,7 +127,7 @@ class OpenApiCodec(
             runCatching {
                 encodeBody(container, parsedMessage)?.let(builder::plusAssign)
             }.getOrElse {
-                throw DecodeException("Cannot encode body of message [${parsedMessage.messageType}]", it)
+                throw EncodeException("Cannot encode body of message [${parsedMessage.messageType}]", it)
             }
 
         }

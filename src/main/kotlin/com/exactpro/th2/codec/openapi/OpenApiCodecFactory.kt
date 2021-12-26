@@ -39,7 +39,7 @@ class OpenApiCodecFactory : IPipelineCodecFactory {
     }
 
     override fun create(settings: IPipelineCodecSettings?): IPipelineCodec {
-        check(this::context.isInitialized) {"Open api context was not loaded"}
+        check(this::context.isInitialized) { "Open api context was not loaded" }
         val openApiSettings = requireNotNull(settings as? OpenApiCodecSettings) {
             "settings is not an instance of ${OpenApiCodecSettings::class.java}: $settings"
         }

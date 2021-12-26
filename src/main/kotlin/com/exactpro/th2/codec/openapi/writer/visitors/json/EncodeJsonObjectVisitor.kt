@@ -39,12 +39,7 @@ import io.swagger.v3.oas.models.media.Schema
 class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Message>() {
     private val rootNode: ObjectNode = mapper.createObjectNode()
 
-    override fun visit(
-        fieldName: String,
-        defaultValue: Schema<*>?,
-        fldStruct: Schema<*>,
-        required: Boolean
-    ) {
+    override fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, required: Boolean) {
         from.getRequiredField(fieldName, required)?.getMessage()?.let { nextMessage ->
             val visitor = EncodeJsonObjectVisitor(nextMessage)
             SchemaWriter.instance.traverse(visitor, fldStruct)
@@ -88,78 +83,43 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
         rootNode.put(fieldName, value ?: defaultValue)
     }
 
-    override fun visitBooleanCollection(
-        fieldName: String,
-        defaultValue: List<Boolean>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitBooleanCollection(fieldName: String, defaultValue: List<Boolean>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putArray(fieldName).putAll<Boolean>(values)
         }
     }
 
-    override fun visitIntegerCollection(
-        fieldName: String,
-        defaultValue: List<Int>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitIntegerCollection(fieldName: String, defaultValue: List<Int>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putArray(fieldName).putAll<Int>(values)
         }
     }
 
-    override fun visitStringCollection(
-        fieldName: String,
-        defaultValue: List<String>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitStringCollection(fieldName: String, defaultValue: List<String>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putArray(fieldName).putAll<String>(values)
         }
     }
 
-    override fun visitDoubleCollection(
-        fieldName: String,
-        defaultValue: List<Double>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitDoubleCollection(fieldName: String, defaultValue: List<Double>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putArray(fieldName).putAll<Double>(values)
         }
     }
 
-    override fun visitFloatCollection(
-        fieldName: String,
-        defaultValue: List<Float>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitFloatCollection(fieldName: String, defaultValue: List<Float>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putArray(fieldName).putAll<Float>(values)
         }
     }
 
-    override fun visitLongCollection(
-        fieldName: String,
-        defaultValue: List<Long>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitLongCollection(fieldName: String, defaultValue: List<Long>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putArray(fieldName).putAll<Long>(values)
         }
     }
 
-    override fun visitObjectCollection(
-        fieldName: String,
-        defaultValue: List<Any>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitObjectCollection(fieldName: String, defaultValue: List<Any>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredField(fieldName, required)?.getList()?.map {
             if (!it.hasMessageValue()) error("Cannot convert $fieldName=${it.toJson(true)} to json object")
             EncodeJsonObjectVisitor(it.messageValue).apply {

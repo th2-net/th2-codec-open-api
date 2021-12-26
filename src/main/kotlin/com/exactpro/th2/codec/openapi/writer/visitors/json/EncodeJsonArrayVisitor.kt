@@ -36,12 +36,7 @@ class EncodeJsonArrayVisitor(override val from: Message) : EncodeVisitor<Message
         private var mapper = ObjectMapper()
     }
 
-    override fun visit(
-        fieldName: String,
-        defaultValue: Schema<*>?,
-        fldStruct: Schema<*>,
-        required: Boolean
-    ) {
+    override fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, required: Boolean) {
         throw UnsupportedOperationException("Array visitor supports only collections")
     }
 
@@ -69,78 +64,43 @@ class EncodeJsonArrayVisitor(override val from: Message) : EncodeVisitor<Message
         throw UnsupportedOperationException("Array visitor supports only collections")
     }
 
-    override fun visitBooleanCollection(
-        fieldName: String,
-        defaultValue: List<Boolean>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitBooleanCollection(fieldName: String, defaultValue: List<Boolean>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putAll<Boolean>(values)
         }
     }
 
-    override fun visitIntegerCollection(
-        fieldName: String,
-        defaultValue: List<Int>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitIntegerCollection(fieldName: String, defaultValue: List<Int>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putAll<Int>(values)
         }
     }
 
-    override fun visitStringCollection(
-        fieldName: String,
-        defaultValue: List<String>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitStringCollection(fieldName: String, defaultValue: List<String>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putAll<String>(values)
         }
     }
 
-    override fun visitDoubleCollection(
-        fieldName: String,
-        defaultValue: List<Double>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitDoubleCollection(fieldName: String, defaultValue: List<Double>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putAll<Double>(values)
         }
     }
 
-    override fun visitFloatCollection(
-        fieldName: String,
-        defaultValue: List<Float>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitFloatCollection(fieldName: String, defaultValue: List<Float>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putAll<Float>(values)
         }
     }
 
-    override fun visitLongCollection(
-        fieldName: String,
-        defaultValue: List<Long>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitLongCollection(fieldName: String, defaultValue: List<Long>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putAll<Long>(values)
         }
     }
 
-    override fun visitObjectCollection(
-        fieldName: String,
-        defaultValue: List<Any>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitObjectCollection(fieldName: String, defaultValue: List<Any>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredField(fieldName, required)?.getList()?.map {
             if (!it.hasMessageValue()) error("Cannot convert $fieldName=${it.toJson(true)} to json object")
             EncodeJsonObjectVisitor(it.messageValue).apply {
@@ -149,7 +109,7 @@ class EncodeJsonArrayVisitor(override val from: Message) : EncodeVisitor<Message
         }?.forEach(rootNode::add)
     }
 
-    override fun getResult(): ByteString  {
+    override fun getResult(): ByteString {
         return if (rootNode.isEmpty) {
             ByteString.EMPTY
         } else {

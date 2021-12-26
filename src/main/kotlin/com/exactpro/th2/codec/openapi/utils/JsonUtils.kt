@@ -36,43 +36,43 @@ inline fun <reified T> ArrayNode.putAll(values: List<Value>) = when (T::class) {
 }
 
 fun JsonNode.getRequiredField(fieldName: String, required: Boolean): JsonNode? = get(fieldName).also { node ->
-    if(required && node == null || node is NullNode) {
+    if (required && node == null || node is NullNode) {
         error("Field [$fieldName] is required for json [${this.asText()}]")
     }
 }
 
-fun JsonNode.getRequiredArray(fieldName: String, required: Boolean) : ArrayNode? = getRequiredField(fieldName, required).apply {
-    if(this != null && !this.isArray) {
+fun JsonNode.getRequiredArray(fieldName: String, required: Boolean): ArrayNode? = getRequiredField(fieldName, required).apply {
+    if (this != null && !this.isArray) {
         error("$fieldName field of json isn't array!")
     }
 } as? ArrayNode
 
-fun JsonNode.validateAsBoolean() : Boolean = when {
+fun JsonNode.validateAsBoolean(): Boolean = when {
     isBoolean -> asBoolean()
     else -> error("Cannot convert $this to Boolean")
 }
 
-fun JsonNode.validateAsLong() : Long = when {
+fun JsonNode.validateAsLong(): Long = when {
     isNumber -> asLong()
     else -> error("Cannot convert $this to Long")
 }
 
-fun JsonNode.validateAsInteger() : Int = when {
+fun JsonNode.validateAsInteger(): Int = when {
     isNumber -> asInt()
     else -> error("Cannot convert $this to Int")
 }
 
-fun JsonNode.validateAsDouble() : Double = when {
+fun JsonNode.validateAsDouble(): Double = when {
     isNumber -> asDouble()
     else -> error("Cannot convert $this to Double")
 }
 
-fun JsonNode.validateAsFloat() : Float = when {
+fun JsonNode.validateAsFloat(): Float = when {
     isNumber -> asText().toFloat()
     else -> error("Cannot convert $this to Float")
 }
 
-fun JsonNode.validateAsObject() : ObjectNode = when {
+fun JsonNode.validateAsObject(): ObjectNode = when {
     isObject -> this as ObjectNode
     else -> error("Cannot convert $this to Object")
 }

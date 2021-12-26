@@ -14,10 +14,7 @@ class UriPattern(val pattern: String) {
 
         pathMatcher = uri.path.urlDecode().replace(PARAM_PLACEHOLDER, ANY_VALUE_PATTERN).toRegex()
         queryParamMatchers = uri.query?.run {
-            split(PARAM_SEPARATOR)
-                .asSequence()
-                .map { it.split(NAME_VALUE_SEPARATOR, limit = 2) }
-                .associate { (name, value) ->
+            split(PARAM_SEPARATOR).asSequence().map { it.split(NAME_VALUE_SEPARATOR, limit = 2) }.associate { (name, value) ->
                     name to when (value) {
                         PARAM_PLACEHOLDER -> ANY_VALUE_PATTERN
                         else -> Regex.escape(value.urlDecode())
@@ -37,9 +34,7 @@ class UriPattern(val pattern: String) {
         }
 
         val uriQueryParams = parsedUri.query?.run {
-            split(PARAM_SEPARATOR)
-                .map { it.split(NAME_VALUE_SEPARATOR, limit = 2) }
-                .associate { (name, value) -> name to value.urlDecode() }
+            split(PARAM_SEPARATOR).map { it.split(NAME_VALUE_SEPARATOR, limit = 2) }.associate { (name, value) -> name to value.urlDecode() }
         } ?: emptyMap()
 
         if (!queryParamMatchers.keys.containsAll(uriQueryParams.keys)) {

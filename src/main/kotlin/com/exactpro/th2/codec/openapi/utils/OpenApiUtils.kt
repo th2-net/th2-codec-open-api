@@ -32,17 +32,17 @@ private fun PathItem.getByMethod(method: String) = when (method.lowercase()) {
     else -> error("Unsupported method inside message")
 }
 
-fun PathItem.getMethods() : Map<String, Operation> = METHODS.map {
+fun PathItem.getMethods(): Map<String, Operation> = METHODS.map {
     it to getByMethod(it)
 }.filter { it.second != null }.toMap()
 
-fun OpenAPI.findByRef(ref: String) : Schema<*>? {
+fun OpenAPI.findByRef(ref: String): Schema<*>? {
     if (ref.startsWith(RefType.SCHEMAS.internalPrefix)) {
         return this.components.schemas[ref.drop(RefType.SCHEMAS.internalPrefix.length)]
     } else error("Unsupported ref type: $ref")
 }
 
-fun OpenAPI.getEndPoint(schema: Schema<*>): Schema<*> = when(schema.`$ref`) {
+fun OpenAPI.getEndPoint(schema: Schema<*>): Schema<*> = when (schema.`$ref`) {
     null -> schema
     else -> findByRef(schema.`$ref`) ?: error("Unsupported schema, no reference was found: ${schema.`$ref`}")
 }
@@ -51,11 +51,11 @@ enum class JsonSchemaTypes(val type: String) {
     ARRAY("array"), OBJECT("object");
 
     companion object {
-        fun getType(type: String) : JsonSchemaTypes? = values().firstOrNull() { it.type == type }
+        fun getType(type: String): JsonSchemaTypes? = values().firstOrNull() { it.type == type }
     }
 }
 
-fun <T>Schema<*>.checkEnum(value: T?, name: String) {
+fun <T> Schema<*>.checkEnum(value: T?, name: String) {
     if (value != null && enum != null && enum.size > 0 && !enum.contains(value)) {
         error("Enum list of property $name doesn't contain $value")
     }

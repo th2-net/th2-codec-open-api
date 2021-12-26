@@ -22,7 +22,7 @@ import mu.KotlinLogging
 import org.openapitools.codegen.validations.oas.OpenApiEvaluator
 import org.openapitools.codegen.validations.oas.RuleConfiguration
 
-class DictionaryValidator(val configuration: RuleConfiguration) {
+class DictionaryValidator(private val configuration: RuleConfiguration) {
 
     fun validate(dictionary: SwaggerParseResult) {
         val openAPI = dictionary.openAPI
@@ -32,7 +32,7 @@ class DictionaryValidator(val configuration: RuleConfiguration) {
         val validationResult = evaluator.validate(openAPI)
 
         if (validationResult.warnings.isNotEmpty()) {
-            LOGGER.warn {"Spec has issues or recommendations.\nIssues:"}
+            LOGGER.warn { "Spec has issues or recommendations.\nIssues:" }
 
             validationResult.warnings.forEach {
                 LOGGER.warn { "\t${it.message}|${it.details}" }
@@ -41,7 +41,7 @@ class DictionaryValidator(val configuration: RuleConfiguration) {
 
         if (messages.isNotEmpty() || validationResult.errors.isNotEmpty()) {
 
-            LOGGER.error {"Spec is invalid.\nIssues:"}
+            LOGGER.error { "Spec is invalid.\nIssues:" }
 
             messages.forEach(LOGGER::error)
 

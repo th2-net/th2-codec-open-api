@@ -36,12 +36,7 @@ sealed class SchemaVisitor<FromType, ToType> {
     abstract fun visitDoubleCollection(fieldName: String, defaultValue: List<Double>?, fldStruct: ArraySchema, required: Boolean = false)
     abstract fun visitFloatCollection(fieldName: String, defaultValue: List<Float>?, fldStruct: ArraySchema, required: Boolean = false)
     abstract fun visitLongCollection(fieldName: String, defaultValue: List<Long>?, fldStruct: ArraySchema, required: Boolean = false)
-    abstract fun visitObjectCollection(
-        fieldName: String,
-        defaultValue: List<Any>?,
-        fldStruct: ArraySchema,
-        required: Boolean = false
-    )
+    abstract fun visitObjectCollection(fieldName: String, defaultValue: List<Any>?, fldStruct: ArraySchema, required: Boolean = false)
 
     abstract fun getResult(): ToType
 

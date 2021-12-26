@@ -41,12 +41,7 @@ class DecodeJsonObjectVisitor(override val from: ObjectNode) : DecodeVisitor<Obj
 
     constructor(jsonString: String) : this(mapper.readTree(jsonString) as ObjectNode)
 
-    override fun visit(
-        fieldName: String,
-        defaultValue: Schema<*>?,
-        fldStruct: Schema<*>,
-        required: Boolean
-    ) {
+    override fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, required: Boolean) {
         from.getRequiredField(fieldName, required)?.let {
             val visitor = DecodeJsonObjectVisitor(it.validateAsObject())
             SchemaWriter.instance.traverse(visitor, fldStruct)
@@ -90,78 +85,43 @@ class DecodeJsonObjectVisitor(override val from: ObjectNode) : DecodeVisitor<Obj
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
-    override fun visitBooleanCollection(
-        fieldName: String,
-        defaultValue: List<Boolean>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitBooleanCollection(fieldName: String, defaultValue: List<Boolean>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredArray(fieldName, required)?.let { array ->
             rootMessage.addField(fieldName, array.map { it.validateAsBoolean() })
         }
     }
 
-    override fun visitIntegerCollection(
-        fieldName: String,
-        defaultValue: List<Int>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitIntegerCollection(fieldName: String, defaultValue: List<Int>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredArray(fieldName, required)?.let { array ->
             rootMessage.addField(fieldName, array.map { it.validateAsInteger() })
         }
     }
 
-    override fun visitStringCollection(
-        fieldName: String,
-        defaultValue: List<String>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitStringCollection(fieldName: String, defaultValue: List<String>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredArray(fieldName, required)?.map { it.asText() }?.let {
             rootMessage.addField(fieldName, it)
         }
     }
 
-    override fun visitDoubleCollection(
-        fieldName: String,
-        defaultValue: List<Double>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitDoubleCollection(fieldName: String, defaultValue: List<Double>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredArray(fieldName, required)?.let { array ->
             rootMessage.addField(fieldName, array.map { it.validateAsDouble() })
         }
     }
 
-    override fun visitFloatCollection(
-        fieldName: String,
-        defaultValue: List<Float>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitFloatCollection(fieldName: String, defaultValue: List<Float>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredArray(fieldName, required)?.let { array ->
             rootMessage.addField(fieldName, array.map { it.validateAsFloat() })
         }
     }
 
-    override fun visitLongCollection(
-        fieldName: String,
-        defaultValue: List<Long>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitLongCollection(fieldName: String, defaultValue: List<Long>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredArray(fieldName, required)?.let { array ->
             rootMessage.addField(fieldName, array.map { it.validateAsLong() })
         }
     }
 
-    override fun visitObjectCollection(
-        fieldName: String,
-        defaultValue: List<Any>?,
-        fldStruct: ArraySchema,
-        required: Boolean
-    ) {
+    override fun visitObjectCollection(fieldName: String, defaultValue: List<Any>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredArray(fieldName, required)?.let { array ->
             rootMessage.addField(fieldName, array.map {
                 DecodeJsonObjectVisitor(it.validateAsObject()).apply {

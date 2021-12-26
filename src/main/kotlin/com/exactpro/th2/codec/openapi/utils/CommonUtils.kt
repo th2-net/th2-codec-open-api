@@ -22,5 +22,5 @@ import com.exactpro.th2.common.message.getField
 import com.exactpro.th2.common.message.messageType
 
 fun Message.getRequiredField(fieldName: String, required: Boolean): Value? = getField(fieldName).apply {
-    if (required) checkNotNull(this) {"Field [$fieldName] is required for message [$messageType]"}
+    if (required) checkNotNull(this) { "Field [$fieldName] is required for message [$messageType]" }
 }
