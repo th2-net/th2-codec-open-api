@@ -32,7 +32,7 @@ class ValidationDictionaryTests {
         Assertions.assertDoesNotThrow {
             File(ValidationDictionaryTests::class.java.classLoader.getResource("dictionaries/valid/")!!.path).walk().forEach { dictionary ->
                 if (dictionary.name.endsWith(YAML_FORMAT) || dictionary.name.endsWith(JSON_FORMAT)) {
-                    validator.validate(parser.readLocation(dictionary.path, null, parseOptions))
+                    validator.validate(parser.readLocation(dictionary.path, null, settings.dictionaryParseOption))
                     LOGGER.info { "Validated valid dictionary ${dictionary.name} from test method" }
                 }
             }
@@ -48,10 +48,7 @@ class ValidationDictionaryTests {
                         init { dictionary.inputStream() }
                     }
 
-                    factory.create(OpenApiCodecSettings().apply {
-                        dictionaryParseOption = parseOptions
-                        validationSettings = ObjectMapper().readValue(getJsonConfiguration().toURL(), RuleConfiguration::class.java)
-                    })
+                    factory.create(settings)
                     LOGGER.info { "Validated valid dictionary ${dictionary.name} inside of factory" }
                 }
             }
@@ -63,7 +60,7 @@ class ValidationDictionaryTests {
         File(ValidationDictionaryTests::class.java.classLoader.getResource("dictionaries/invalid/")!!.path).walk().forEach { dictionary ->
             if (dictionary.name.endsWith(YAML_FORMAT) || dictionary.name.endsWith(JSON_FORMAT)) {
                 Assertions.assertThrows(DictionaryValidationException::class.java) {
-                    validator.validate(parser.readLocation(dictionary.path, null, parseOptions))
+                    validator.validate(parser.readLocation(dictionary.path, null, settings.dictionaryParseOption))
                 }
 
                 LOGGER.info { "Validated invalid dictionary ${dictionary.name} from test method" }
@@ -79,11 +76,7 @@ class ValidationDictionaryTests {
                     init { dictionary.inputStream() }
                 }
                 Assertions.assertThrows(DictionaryValidationException::class.java) {
-                    factory.create(OpenApiCodecSettings().apply {
-                        dictionaryParseOption = parseOptions
-                        validationSettings =
-                            ObjectMapper().readValue(getJsonConfiguration().toURL(), RuleConfiguration::class.java)
-                    })
+                    factory.create(settings)
                 }
                 LOGGER.info { "Validated invalid dictionary ${dictionary.name} from factory" }
             }
@@ -95,7 +88,7 @@ class ValidationDictionaryTests {
         const val YAML_FORMAT = ".yml"
         val LOGGER = KotlinLogging.logger { }
         val parser = OpenAPIParser()
-        val parseOptions = ParseOptions().apply { isResolve = true }
+        val settings = OpenApiCodecSettings()
         val validator = DictionaryValidator(ObjectMapper().readValue(getJsonConfiguration().toURL(), RuleConfiguration::class.java))
         private fun getJsonConfiguration(): URI {
             return requireNotNull(this::class.java.classLoader.getResource("rule-config.json")) {"Rule configuration from resources required"}.toURI()
