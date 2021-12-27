@@ -1,0 +1,65 @@
+openapi: 3.0.0
+info:
+  title: Test API
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:12345
+
+
+paths:
+  /test:
+    get:
+      tags:
+        - test
+      summary: Store an object
+      responses:
+        "200":
+          description: OK
+  /testBody:
+    get:
+      tags:
+        - test
+      summary: Store an object
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestObject"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestObject"
+
+components:
+  schemas:
+    TestStatus:
+      type: string
+      description: |
+        Test status of a test object.
+        The possible values for a status state are:
+        - `PASSED`: passed test.
+        - `FAILED`: failed test.
+      enum:
+        - PASSED
+        - FAILED
+    TestObject:
+      type: object
+      description: |
+        Defines the test object.
+      required:
+        - publicKey
+        - testEnabled
+      properties:
+        publicKey:
+          type: string
+          example: "123qwer...12"
+        testEnabled:
+          type: boolean
+          example: false
+        testStatus:
+          $ref: "#/components/schemas/TestStatus"
+
