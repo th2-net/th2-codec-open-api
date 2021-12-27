@@ -62,7 +62,7 @@ dependencies {
     implementation "com.exactpro.th2:common:$common_version"
     implementation 'com.exactpro.th2:codec:4.2.0'
 
-    implementation 'org.slf4j:slf4j-simple'
+    implementation 'org.slf4j:slf4j-log4j12'
     implementation 'org.slf4j:slf4j-api'
 
     implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jdk8', version: kotlin_version
@@ -71,7 +71,9 @@ dependencies {
 
     implementation group: 'io.swagger.core.v3', name: 'swagger-jaxrs2', version: '2.1.10'
     implementation group: 'io.swagger.parser.v3', name: 'swagger-parser', version: '2.0.28'
-    implementation group: 'org.openapitools', name: 'openapi-generator', version: '5.3.0'
+    implementation('org.openapitools:openapi-generator:5.3.0') {
+        exclude group: 'org.slf4j', module: 'slf4j-simple'
+    }
 
 //    implementation group: 'org.openapitools', name: 'openapi-generator-maven-plugin', version: '5.3.0'
 
