@@ -48,11 +48,11 @@ class OpenApiCodecFactory : IPipelineCodecFactory {
         val content = context[DictionaryType.MAIN].readAllBytes().decodeToString()
         val result = OpenAPIParser().readContents(content, null, openApiSettings.dictionaryParseOption)
 
-        LOGGER.info { "Starting validation with settings: ${Gson().toJson(openApiSettings)}" }
+        LOGGER.debug { "Starting validation with settings: ${Gson().toJson(openApiSettings)}" }
 
         result.validate(openApiSettings.validationSettings)
 
-        LOGGER.info { "${result.openAPI.info.title} OpenApi dictionary was loaded and validated" }
+        LOGGER.debug { "${result.openAPI.info.title} OpenApi dictionary was loaded and validated" }
 
         return OpenApiCodec(result.openAPI)
     }
