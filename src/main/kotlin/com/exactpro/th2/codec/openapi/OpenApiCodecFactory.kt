@@ -42,9 +42,7 @@ class OpenApiCodecFactory : IPipelineCodecFactory {
 
     override fun create(settings: IPipelineCodecSettings?): IPipelineCodec {
         check(this::context.isInitialized) { "Open api context was not loaded" }
-        val openApiSettings = requireNotNull(settings as? OpenApiCodecSettings) {
-            "settings is not an instance of ${OpenApiCodecSettings::class.java}: $settings"
-        }
+        val openApiSettings = settings as? OpenApiCodecSettings ?: OpenApiCodecSettings()
         val content = context[DictionaryType.MAIN].readAllBytes().decodeToString()
         val result = OpenAPIParser().readContents(content, null, openApiSettings.dictionaryParseOption)
 
