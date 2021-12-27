@@ -60,9 +60,9 @@ dependencies {
     api platform('com.exactpro.th2:bom:3.0.0')
 
     implementation "com.exactpro.th2:common:$common_version"
-    implementation 'com.exactpro.th2:codec:4.1.1'
+    implementation 'com.exactpro.th2:codec:4.2.0'
 
-    implementation 'org.slf4j:slf4j-log4j12'
+    implementation 'org.slf4j:slf4j-simple'
     implementation 'org.slf4j:slf4j-api'
 
     implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jdk8', version: kotlin_version
