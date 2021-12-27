@@ -37,6 +37,7 @@ class OpenApiCodecFactory : IPipelineCodecFactory {
 
     override fun init(pipelineCodecContext: IPipelineCodecContext) {
         context = pipelineCodecContext
+        LOGGER.debug { "Context settled" }
     }
 
     override fun create(settings: IPipelineCodecSettings?): IPipelineCodec {
@@ -44,7 +45,7 @@ class OpenApiCodecFactory : IPipelineCodecFactory {
         val openApiSettings = requireNotNull(settings as? OpenApiCodecSettings) {
             "settings is not an instance of ${OpenApiCodecSettings::class.java}: $settings"
         }
-        val content = context[DictionaryType.MAIN].bufferedReader().use(BufferedReader::readText)
+        val content = context[DictionaryType.MAIN].readAllBytes().decodeToString()
         val result = OpenAPIParser().readContents(content, null, openApiSettings.dictionaryParseOption)
 
         LOGGER.info { "Starting validation with settings: ${Gson().toJson(openApiSettings)}" }
