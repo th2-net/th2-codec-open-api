@@ -21,6 +21,7 @@ import com.exactpro.th2.codec.api.IPipelineCodecContext
 import com.exactpro.th2.codec.api.IPipelineCodecFactory
 import com.exactpro.th2.codec.api.IPipelineCodecSettings
 import com.exactpro.th2.common.schema.dictionary.DictionaryType
+import com.google.gson.Gson
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.parser.core.models.SwaggerParseResult
 import mu.KotlinLogging
@@ -45,6 +46,9 @@ class OpenApiCodecFactory : IPipelineCodecFactory {
         }
         val content = context[DictionaryType.MAIN].bufferedReader().use(BufferedReader::readText)
         val result = OpenAPIParser().readContents(content, null, openApiSettings.dictionaryParseOption)
+
+        LOGGER.info { "Starting validation with settings: ${Gson().toJson(openApiSettings)}" }
+
         result.validate(openApiSettings.validationSettings)
 
         LOGGER.info { "${result.openAPI.info.title} OpenApi dictionary was loaded and validated" }
