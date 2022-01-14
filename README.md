@@ -1,5 +1,5 @@
 # OpenApi Codec 
-![version](https://img.shields.io/badge/version-0.1.0-blue.svg) 
+![version](https://img.shields.io/badge/version-0.2.0-blue.svg) 
 
 This microservice can validate open api dictionary, encode th2 messages or decode http body.
 
@@ -140,7 +140,7 @@ Result of decode:
 
 ### Codec configs:
 
-Config contain two main types of options.
+* warnUndefinedFields - Enable or Disable warnings for all undefined fields inside object structures, false by default.
 
 **validationSettings (open api dictionary)**
 * enableRecommendations - Enable or Disable recommendations, true by default.
@@ -163,6 +163,7 @@ Config contain two main types of options.
 ### Configuration example
 
 ```yaml
+warnUndefinedFields: true
 validationSettings:
   enableRecommendations: true
 dictionaryParseOption:
