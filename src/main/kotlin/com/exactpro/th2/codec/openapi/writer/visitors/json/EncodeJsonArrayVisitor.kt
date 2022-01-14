@@ -109,6 +109,8 @@ class EncodeJsonArrayVisitor(override val from: Message) : EncodeVisitor<Message
         }?.forEach(rootNode::add)
     }
 
+    override fun visitUndefinedFields(fields: MutableSet<String>): Nothing? = null
+
     override fun getResult(): ByteString {
         return if (rootNode.isEmpty) {
             ByteString.EMPTY

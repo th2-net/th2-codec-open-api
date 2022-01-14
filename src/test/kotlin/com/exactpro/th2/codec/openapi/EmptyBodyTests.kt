@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 class EmptyBodyTests {
     @Test
     fun `simple request test encode`() {
-        val rawMessage = OpenApiCodec(openAPI).testEncode(
+        val rawMessage = OpenApiCodec(openAPI, settings).testEncode(
             "/test",
             "get",
             null,
@@ -18,7 +18,7 @@ class EmptyBodyTests {
 
     @Test
     fun `simple request test decode`() {
-        val rawMessage = OpenApiCodec(openAPI).testDecode(
+        val rawMessage = OpenApiCodec(openAPI, settings).testDecode(
             "/test",
             "get",
             null,
@@ -28,7 +28,7 @@ class EmptyBodyTests {
 
     @Test
     fun `simple response test encode`() {
-        val rawMessage = OpenApiCodec(openAPI).testEncode(
+        val rawMessage = OpenApiCodec(openAPI, settings).testEncode(
             "/test",
             "get",
             "200",
@@ -38,7 +38,7 @@ class EmptyBodyTests {
 
     @Test
     fun `simple response test decode`() {
-        val rawMessage = OpenApiCodec(openAPI).testDecode(
+        val rawMessage = OpenApiCodec(openAPI, settings).testDecode(
             "/test",
             "get",
             "200",
@@ -48,7 +48,7 @@ class EmptyBodyTests {
 
     @Test
     fun `test json array decode request without body`() {
-        val decodedResult = OpenApiCodec(openAPI).testDecode(
+        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
             "/testBody",
             "get",
             null,
@@ -58,7 +58,7 @@ class EmptyBodyTests {
 
     @Test
     fun `test json array decode response without body`() {
-        val decodedResult = OpenApiCodec(openAPI).testDecode(
+        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
             "/testBody",
             "get",
             "200",

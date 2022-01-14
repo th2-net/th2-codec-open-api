@@ -32,7 +32,7 @@ class JsonArrayDecodeTests {
     @Test
     fun `simple test json array decode response`() {
         val jsonData = """["test1", "test2", "test3"]"""
-        val decodedResult = OpenApiCodec(openAPI).testDecode(
+        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
             "/test",
             "get",
             "200",
@@ -44,7 +44,7 @@ class JsonArrayDecodeTests {
     @Test
     fun `simple test json array decode request`() {
         val jsonData = """["test1", "test2", "test3"]"""
-        val decodedResult = OpenApiCodec(openAPI).testDecode(
+        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
             "/test",
             "get",
             null,

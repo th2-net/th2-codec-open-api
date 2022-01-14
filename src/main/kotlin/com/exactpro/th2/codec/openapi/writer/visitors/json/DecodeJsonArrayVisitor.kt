@@ -98,6 +98,8 @@ class DecodeJsonArrayVisitor(override val from: ArrayNode) : DecodeVisitor<Array
         })
     }
 
+    override fun visitUndefinedFields(fields: MutableSet<String>): Nothing? = null
+
     override fun getResult(): Message.Builder = rootMessage
 
     private companion object {

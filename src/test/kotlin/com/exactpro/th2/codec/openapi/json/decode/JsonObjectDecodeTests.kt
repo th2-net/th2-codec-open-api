@@ -35,7 +35,7 @@ class JsonObjectDecodeTests {
                       "testEnabled" : true,
                       "testStatus" : "FAILED"
                     }""".trimIndent()
-        val decodedResult = OpenApiCodec(openAPI).testDecode(
+        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
             "/test",
             "get",
             "200",
@@ -54,7 +54,7 @@ class JsonObjectDecodeTests {
                       "testEnabled" : true,
                       "testStatus" : "FAILED"
                     }""".trimIndent()
-        val decodedResult = OpenApiCodec(openAPI).testDecode(
+        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
             "/test",
             "get",
             null,

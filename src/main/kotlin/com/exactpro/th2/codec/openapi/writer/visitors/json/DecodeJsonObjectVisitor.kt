@@ -131,6 +131,8 @@ class DecodeJsonObjectVisitor(override val from: ObjectNode) : DecodeVisitor<Obj
         }
     }
 
+    override fun visitUndefinedFields(fields: MutableSet<String>): Set<String> = this.from.fieldNames().asSequence().toMutableSet().apply { removeAll(fields) }
+
     override fun getResult(): Message.Builder = rootMessage
 
     private companion object {

@@ -128,6 +128,8 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
         }?.run(rootNode.putArray(fieldName)::addAll)
     }
 
+    override fun visitUndefinedFields(fields: MutableSet<String>): Set<String> = this.from.fieldsMap.keys.apply { removeAll(fields) }
+
     override fun getResult(): ByteString = ByteString.copyFrom(rootNode.toString().toByteArray())
 
     fun getNode() = rootNode

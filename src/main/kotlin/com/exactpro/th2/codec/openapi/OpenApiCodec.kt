@@ -47,7 +47,7 @@ import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.parameters.Parameter
 import mu.KotlinLogging
 
-class OpenApiCodec(private val dictionary: OpenAPI) : IPipelineCodec {
+class OpenApiCodec(private val dictionary: OpenAPI, private val settings: OpenApiCodecSettings) : IPipelineCodec {
 
     private val messagesToSchema: Map<String, HttpRouteContainer>
     private val patternToPathItem: List<Pair<UriPattern, PathItem>>

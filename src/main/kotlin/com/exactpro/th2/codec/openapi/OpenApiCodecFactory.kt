@@ -52,7 +52,7 @@ class OpenApiCodecFactory : IPipelineCodecFactory {
 
         LOGGER.debug { "${result.openAPI.info.title} OpenApi dictionary was loaded and validated" }
 
-        return OpenApiCodec(result.openAPI)
+        return OpenApiCodec(result.openAPI, openApiSettings)
     }
 
     private fun SwaggerParseResult.validate(validationSettings: RuleConfiguration) {

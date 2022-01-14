@@ -118,6 +118,6 @@ class ParametersTests {
     private companion object {
         val settings = OpenApiCodecSettings()
         val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/params-tests.yml"), null, settings.dictionaryParseOption).openAPI
-        val codec = OpenApiCodec(openAPI)
+        val codec = OpenApiCodec(openAPI, settings)
     }
 }
