@@ -27,10 +27,9 @@ import io.swagger.v3.parser.util.SchemaTypeUtil.INTEGER_TYPE
 import io.swagger.v3.parser.util.SchemaTypeUtil.NUMBER_TYPE
 import io.swagger.v3.parser.util.SchemaTypeUtil.OBJECT_TYPE
 import io.swagger.v3.parser.util.SchemaTypeUtil.STRING_TYPE
-import mu.KotlinLogging
 
 
-class SchemaWriter private constructor(private val openApi: OpenAPI, private val warnUndefined: Boolean) {
+class SchemaWriter private constructor(private val openApi: OpenAPI, private val exceptionUndefined: Boolean) {
 
     fun traverse(
         schemaVisitor: SchemaVisitor<*, *>,
@@ -44,9 +43,9 @@ class SchemaWriter private constructor(private val openApi: OpenAPI, private val
             }
             OBJECT_TYPE -> {
                 requireNotNull(schema.properties) {"Properties in object are required: $schema"}
-                if (warnUndefined) {
+                if (exceptionUndefined) {
                     schemaVisitor.visitUndefinedFields(schema.properties.keys)?.let {
-                        if (it.isNotEmpty()) LOGGER.warn { "Undefined fields was found inside of ${schema.name}: ${it.joinToString(", ")}" }
+                        if (it.isNotEmpty()) error { "Undefined fields was found inside of ${schema.name}: ${it.joinToString(", ")}" }
                     }
                 }
 
@@ -159,13 +158,12 @@ class SchemaWriter private constructor(private val openApi: OpenAPI, private val
     }
 
     companion object {
-        private val LOGGER = KotlinLogging.logger { }
         const val ARRAY_TYPE = "array"
         lateinit var instance: SchemaWriter
             private set
 
-        fun createInstance(openApi: OpenAPI, warnUndefined: Boolean = false): SchemaWriter {
-            instance = SchemaWriter(openApi, warnUndefined)
+        fun createInstance(openApi: OpenAPI, exceptionUndefined: Boolean = false): SchemaWriter {
+            instance = SchemaWriter(openApi, exceptionUndefined)
             return instance
         }
     }
