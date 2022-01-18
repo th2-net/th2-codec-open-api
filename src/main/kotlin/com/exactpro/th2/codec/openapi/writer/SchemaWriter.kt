@@ -148,7 +148,7 @@ class SchemaWriter private constructor(private val openApi: OpenAPI, private val
                     visitor.visitStringCollection(name, property.default as? List<String>, property, required)
                 }
                 OBJECT_TYPE -> {
-                    visitor.visitObjectCollection(name, property.default as List<Any>, property, required)
+                    visitor.visitObjectCollection(name, property.default as? List<Any>, property, required)
                 }
                 else -> error("Unsupported type of property")
             }
