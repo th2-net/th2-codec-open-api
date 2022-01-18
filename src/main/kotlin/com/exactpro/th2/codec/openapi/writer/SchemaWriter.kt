@@ -100,7 +100,7 @@ class SchemaWriter private constructor(private val openApi: OpenAPI, private val
                 OBJECT_TYPE -> {
                     visitor.visit(name, property.default as? Schema<*>, property, required)
                 }
-                else -> error("Unsupported type of property $name: null")
+                else -> error("Unsupported type of property")
             }
         }.onFailure {
             throw CodecException("Cannot parse field [$name] inside of schema with type ${property.type}", it)
@@ -121,7 +121,7 @@ class SchemaWriter private constructor(private val openApi: OpenAPI, private val
                             visitor.visitIntegerCollection(name, property.default as? List<Int>, property, required)
                         }
                         else -> {
-                            error("Unsupported format of property $name: ${property.format}")
+                            error("Unsupported format of '$INTEGER_TYPE' property: ${property.format}")
                         }
                     }
                 }
@@ -140,7 +140,7 @@ class SchemaWriter private constructor(private val openApi: OpenAPI, private val
                             visitor.visitStringCollection(name, property.default as? List<String>, property, required)
                         }
                         else -> {
-                            error("Unsupported format of property $name: ${property.format}")
+                            error("Unsupported format of '$NUMBER_TYPE' property: ${property.format}")
                         }
                     }
                 }
@@ -150,7 +150,7 @@ class SchemaWriter private constructor(private val openApi: OpenAPI, private val
                 OBJECT_TYPE -> {
                     visitor.visitObjectCollection(name, property.default as List<Any>, property, required)
                 }
-                else -> error("Unsupported type of property $name: null")
+                else -> error("Unsupported type of property")
             }
         }.onFailure {
             throw CodecException("Cannot parse array field [$name] inside of schema with type ${property.type}", it)

@@ -136,6 +136,8 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
     }
 
     private fun encodeBody(container: HttpRouteContainer, message: Message): RawMessage? = container.body?.let { messageSchema ->
+        checkNotNull(messageSchema.type) {"Type of schema [${messageSchema.name}] wasn't filled"}
+
         val visitor = VisitorFactory.createEncodeVisitor(container.bodyFormat!!, messageSchema.type, message)
         SchemaWriter.instance.traverse(visitor, messageSchema)
         val result = visitor.getResult()
@@ -203,6 +205,8 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
             }
             else -> error("Unsupported message type: ${header.messageType}")
         }
+
+        checkNotNull(messageSchema.type) {"Type of schema [${messageSchema.name}] wasn't filled"}
 
         val visitor = VisitorFactory.createDecodeVisitor(bodyFormat, messageSchema.type, body)
         SchemaWriter.instance.traverse(visitor, messageSchema)
