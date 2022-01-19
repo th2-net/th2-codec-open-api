@@ -43,6 +43,7 @@ import com.exactpro.th2.common.message.getString
 import com.exactpro.th2.common.message.message
 import com.exactpro.th2.common.message.messageType
 import com.exactpro.th2.common.message.orEmpty
+import com.exactpro.th2.common.message.sessionAlias
 import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.parameters.Parameter
 import mu.KotlinLogging
@@ -144,13 +145,13 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
         if (!result.isEmpty) {
             RawMessage.newBuilder().apply {
                 parentEventId = message.parentEventId
-                metadataBuilder.putAllProperties(message.metadata.propertiesMap)
+                sessionAlias = message.sessionAlias
                 container.fillHttpMetadata(metadataBuilder)
                 metadataBuilder.apply {
-                    putAllProperties(metadata.propertiesMap)
+                    putAllProperties(message.metadata.propertiesMap)
                     this.id = metadata.id
                     this.timestamp = metadata.timestamp
-                    this.protocol = PROTOCOL
+                    protocol = message.metadata.protocol
                 }
                 body = result
             }.build()
@@ -212,7 +213,14 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
         SchemaWriter.instance.traverse(visitor, messageSchema)
         return visitor.getResult().apply {
             parentEventId = rawMessage.parentEventId
-            metadataBuilder.putAllProperties(rawMessage.metadata.propertiesMap)
+            sessionAlias = rawMessage.sessionAlias
+            metadataBuilder.apply {
+                id = rawMessage.metadata.id
+                timestamp = metadata.timestamp
+                protocol = rawMessage.metadata.protocol
+                putAllProperties(rawMessage.metadata.propertiesMap)
+            }
+
         }.build()
     }
 
