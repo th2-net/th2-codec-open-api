@@ -122,6 +122,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
 
             builder += createHeaderMessage(container, parsedMessage).apply {
                 if (parsedMessage.hasParentEventId()) parentEventId = parsedMessage.parentEventId
+                sessionAlias = parsedMessage.sessionAlias
                 metadataBuilder.putAllProperties(parsedMessage.metadata.propertiesMap)
             }
 
