@@ -10,12 +10,14 @@ import com.exactpro.th2.common.grpc.MessageGroup
 import com.exactpro.th2.common.message.addField
 import com.exactpro.th2.common.message.getString
 import com.exactpro.th2.common.message.message
+import com.exactpro.th2.common.message.sessionAlias
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
 class ParametersTests {
+
     @Test
     fun `simple params test encode request`() {
         val testPath = "123"

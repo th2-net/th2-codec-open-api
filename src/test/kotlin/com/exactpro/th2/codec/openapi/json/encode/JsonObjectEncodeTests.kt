@@ -42,6 +42,7 @@ class JsonObjectEncodeTests {
             Assertions.assertEquals("1234567", json.get("publicKey").asText())
             Assertions.assertTrue(json.get("testEnabled").asBoolean())
             Assertions.assertEquals("FAILED", json.get("testStatus").asText())
+            Assertions.assertEquals(null, json.get("nullField")?.asText())
         }
     }
 

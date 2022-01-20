@@ -35,9 +35,14 @@ inline fun <reified T> ArrayNode.putAll(values: List<Value>) = when (T::class) {
     else -> error("Unsupported type of ArrayNode: ${T::class.simpleName}")
 }
 
-fun JsonNode.getRequiredField(fieldName: String, required: Boolean): JsonNode? = get(fieldName).also { node ->
-    if (required && node == null || node is NullNode) {
-        error("Field [$fieldName] is required for json [${this.asText()}]")
+fun JsonNode.getRequiredField(fieldName: String, required: Boolean): JsonNode? = get(fieldName).let { node ->
+    if (node == null || node is NullNode) {
+        if (required) {
+            error("Field [$fieldName] is required for json [${this.asText()}]")
+        }
+        null
+    } else {
+        node
     }
 }
 

@@ -48,39 +48,57 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
     }
 
     override fun visit(fieldName: String, defaultValue: String?, fldStruct: Schema<*>, required: Boolean) {
-        val value = from.getRequiredField(fieldName, required)?.getString()
-        fldStruct.checkEnum(value, fieldName)
-        rootNode.put(fieldName, value ?: defaultValue)
+        from.getRequiredField(fieldName, required)?.getString()?.let { value ->
+            fldStruct.checkEnum(value, fieldName)
+            rootNode.put(fieldName, value)
+        } ?: defaultValue?.let {
+            rootNode.put(fieldName, defaultValue)
+        }
     }
 
     override fun visit(fieldName: String, defaultValue: Boolean?, fldStruct: Schema<*>, required: Boolean) {
-        val value = from.getRequiredField(fieldName, required)?.getString()?.toBoolean()
-        fldStruct.checkEnum(value, fieldName)
-        rootNode.put(fieldName, value ?: defaultValue)
+        from.getRequiredField(fieldName, required)?.getString()?.toBoolean()?.let { value ->
+            fldStruct.checkEnum(value, fieldName)
+            rootNode.put(fieldName, value)
+        } ?: defaultValue?.let {
+            rootNode.put(fieldName, defaultValue)
+        }
     }
 
     override fun visit(fieldName: String, defaultValue: Int?, fldStruct: Schema<*>, required: Boolean) {
-        val value = from.getRequiredField(fieldName, required)?.getInt()
-        fldStruct.checkEnum(value, fieldName)
-        rootNode.put(fieldName, value ?: defaultValue)
+        from.getRequiredField(fieldName, required)?.getInt()?.let { value ->
+            fldStruct.checkEnum(value, fieldName)
+            rootNode.put(fieldName, value)
+        } ?: defaultValue?.let {
+            rootNode.put(fieldName, defaultValue)
+        }
     }
 
     override fun visit(fieldName: String, defaultValue: Float?, fldStruct: Schema<*>, required: Boolean) {
-        val value = from.getRequiredField(fieldName, required)?.getString()?.toFloat()
-        fldStruct.checkEnum(value, fieldName)
-        rootNode.put(fieldName, value ?: defaultValue)
+        from.getRequiredField(fieldName, required)?.getString()?.toFloat()?.let { value ->
+            fldStruct.checkEnum(value, fieldName)
+            rootNode.put(fieldName, value)
+        } ?: defaultValue?.let {
+            rootNode.put(fieldName, defaultValue)
+        }
     }
 
     override fun visit(fieldName: String, defaultValue: Double?, fldStruct: Schema<*>, required: Boolean) {
-        val value = from.getRequiredField(fieldName, required)?.getDouble()
-        fldStruct.checkEnum(value, fieldName)
-        rootNode.put(fieldName, value ?: defaultValue)
+        from.getRequiredField(fieldName, required)?.getDouble()?.let { value ->
+            fldStruct.checkEnum(value, fieldName)
+            rootNode.put(fieldName, value)
+        } ?: defaultValue?.let {
+            rootNode.put(fieldName, defaultValue)
+        }
     }
 
     override fun visit(fieldName: String, defaultValue: Long?, fldStruct: Schema<*>, required: Boolean) {
-        val value = from.getRequiredField(fieldName, required)?.getLong()
-        fldStruct.checkEnum(value, fieldName)
-        rootNode.put(fieldName, value ?: defaultValue)
+        from.getRequiredField(fieldName, required)?.getLong()?.let { value ->
+            fldStruct.checkEnum(value, fieldName)
+            rootNode.put(fieldName, value)
+        } ?: defaultValue?.let {
+            rootNode.put(fieldName, defaultValue)
+        }
     }
 
     override fun visitBooleanCollection(fieldName: String, defaultValue: List<Boolean>?, fldStruct: ArraySchema, required: Boolean) {
