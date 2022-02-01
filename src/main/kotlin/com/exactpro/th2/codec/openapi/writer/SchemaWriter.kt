@@ -29,7 +29,7 @@ import io.swagger.v3.parser.util.SchemaTypeUtil.OBJECT_TYPE
 import io.swagger.v3.parser.util.SchemaTypeUtil.STRING_TYPE
 
 
-class SchemaWriter private constructor(private val openApi: OpenAPI, private val exceptionUndefined: Boolean) {
+class SchemaWriter constructor(private val openApi: OpenAPI, private val exceptionUndefined: Boolean = true) {
 
     fun traverse(
         schemaVisitor: SchemaVisitor<*, *>,
@@ -45,7 +45,7 @@ class SchemaWriter private constructor(private val openApi: OpenAPI, private val
                 requireNotNull(schema.properties) {"Properties in object are required: $schema"}
                 if (exceptionUndefined) {
                     schemaVisitor.visitUndefinedFields(schema.properties.keys)?.let {
-                        if (it.isNotEmpty()) error { "Undefined fields was found inside of ${schema.name}: ${it.joinToString(", ")}" }
+                        if (it.isNotEmpty()) error("Undefined fields was found inside of ${schema.name}: ${it.joinToString(", ")}")
                     }
                 }
 
@@ -98,7 +98,7 @@ class SchemaWriter private constructor(private val openApi: OpenAPI, private val
                     visitor.visit(name, property.default as? String, property, required)
                 }
                 OBJECT_TYPE -> {
-                    visitor.visit(name, property.default as? Schema<*>, property, required)
+                    visitor.visit(name, property.default as? Schema<*>, property, required, this)
                 }
                 else -> error("Unsupported type of property")
             }
@@ -148,7 +148,7 @@ class SchemaWriter private constructor(private val openApi: OpenAPI, private val
                     visitor.visitStringCollection(name, property.default as? List<String>, property, required)
                 }
                 OBJECT_TYPE -> {
-                    visitor.visitObjectCollection(name, property.default as? List<Any>, property, required)
+                    visitor.visitObjectCollection(name, property.default as? List<Any>, property, required, this)
                 }
                 else -> error("Unsupported type of property")
             }
@@ -159,12 +159,5 @@ class SchemaWriter private constructor(private val openApi: OpenAPI, private val
 
     companion object {
         const val ARRAY_TYPE = "array"
-        lateinit var instance: SchemaWriter
-            private set
-
-        fun createInstance(openApi: OpenAPI, exceptionUndefined: Boolean = false): SchemaWriter {
-            instance = SchemaWriter(openApi, exceptionUndefined)
-            return instance
-        }
     }
 }

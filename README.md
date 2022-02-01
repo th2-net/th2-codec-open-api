@@ -140,7 +140,7 @@ Result of decode:
 
 ### Codec configs:
 
-* warnUndefinedFields - Enable or Disable warnings for all undefined fields inside object structures, false by default.
+* warnUndefinedFields - Enable or Disable warnings for all undefined fields inside object structures, true by default.
 
 **validationSettings (open api dictionary)**
 * enableRecommendations - Enable or Disable recommendations, true by default.

@@ -36,7 +36,7 @@ class EncodeJsonArrayVisitor(override val from: Message) : EncodeVisitor<Message
         private var mapper = ObjectMapper()
     }
 
-    override fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, required: Boolean) {
+    override fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, required: Boolean, schemaWriter: SchemaWriter) {
         throw UnsupportedOperationException("Array visitor supports only collections")
     }
 
@@ -100,11 +100,11 @@ class EncodeJsonArrayVisitor(override val from: Message) : EncodeVisitor<Message
         }
     }
 
-    override fun visitObjectCollection(fieldName: String, defaultValue: List<Any>?, fldStruct: ArraySchema, required: Boolean) {
+    override fun visitObjectCollection(fieldName: String, defaultValue: List<Any>?, fldStruct: ArraySchema, required: Boolean, schemaWriter: SchemaWriter) {
         from.getRequiredField(fieldName, required)?.getList()?.map {
             if (!it.hasMessageValue()) error("Cannot convert $fieldName=${it.toJson(true)} to json object")
             EncodeJsonObjectVisitor(it.messageValue).apply {
-                SchemaWriter.instance.traverse(this, fldStruct.items)
+                schemaWriter.traverse(this, fldStruct.items)
             }.getNode()
         }?.forEach(rootNode::add)
     }

@@ -39,10 +39,10 @@ import io.swagger.v3.oas.models.media.Schema
 class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Message>() {
     private val rootNode: ObjectNode = mapper.createObjectNode()
 
-    override fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, required: Boolean) {
+    override fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, required: Boolean, schemaWriter: SchemaWriter) {
         from.getRequiredField(fieldName, required)?.getMessage()?.let { nextMessage ->
             val visitor = EncodeJsonObjectVisitor(nextMessage)
-            SchemaWriter.instance.traverse(visitor, fldStruct)
+            schemaWriter.traverse(visitor, fldStruct)
             rootNode.set<ObjectNode>(fieldName, visitor.rootNode)
         }
     }
@@ -137,16 +137,16 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
         }
     }
 
-    override fun visitObjectCollection(fieldName: String, defaultValue: List<Any>?, fldStruct: ArraySchema, required: Boolean) {
+    override fun visitObjectCollection(fieldName: String, defaultValue: List<Any>?, fldStruct: ArraySchema, required: Boolean, schemaWriter: SchemaWriter) {
         from.getRequiredField(fieldName, required)?.getList()?.map {
             if (!it.hasMessageValue()) error("Cannot convert $fieldName=${it.toJson(true)} to json object")
             EncodeJsonObjectVisitor(it.messageValue).apply {
-                SchemaWriter.instance.traverse(this, fldStruct.items)
+                schemaWriter.traverse(this, fldStruct.items)
             }.getNode()
         }?.run(rootNode.putArray(fieldName)::addAll)
     }
 
-    override fun visitUndefinedFields(fields: MutableSet<String>): Set<String> = this.from.fieldsMap.keys.apply { removeAll(fields) }
+    override fun visitUndefinedFields(fields: MutableSet<String>): Set<String> = this.from.fieldsMap.keys.minus(fields)
 
     override fun getResult(): ByteString = ByteString.copyFrom(rootNode.toString().toByteArray())
 

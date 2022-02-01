@@ -41,10 +41,10 @@ class DecodeJsonObjectVisitor(override val from: ObjectNode) : DecodeVisitor<Obj
 
     constructor(jsonString: String) : this(mapper.readTree(jsonString) as ObjectNode)
 
-    override fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, required: Boolean) {
+    override fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, required: Boolean, schemaWriter: SchemaWriter) {
         from.getRequiredField(fieldName, required)?.let {
             val visitor = DecodeJsonObjectVisitor(it.validateAsObject())
-            SchemaWriter.instance.traverse(visitor, fldStruct)
+            schemaWriter.traverse(visitor, fldStruct)
             rootMessage.addFields(fieldName, visitor.rootMessage.build())
         }
     }
@@ -121,11 +121,11 @@ class DecodeJsonObjectVisitor(override val from: ObjectNode) : DecodeVisitor<Obj
         }
     }
 
-    override fun visitObjectCollection(fieldName: String, defaultValue: List<Any>?, fldStruct: ArraySchema, required: Boolean) {
+    override fun visitObjectCollection(fieldName: String, defaultValue: List<Any>?, fldStruct: ArraySchema, required: Boolean, schemaWriter: SchemaWriter) {
         from.getRequiredArray(fieldName, required)?.let { array ->
             rootMessage.addField(fieldName, array.map {
                 DecodeJsonObjectVisitor(it.validateAsObject()).apply {
-                    SchemaWriter.instance.traverse(this, fldStruct.items)
+                    schemaWriter.traverse(this, fldStruct.items)
                 }.getResult()
             })
         }

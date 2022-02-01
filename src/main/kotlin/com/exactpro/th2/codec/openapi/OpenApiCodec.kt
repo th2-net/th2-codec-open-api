@@ -52,9 +52,9 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
 
     private val messagesToSchema: Map<String, HttpRouteContainer>
     private val patternToPathItem: List<Pair<UriPattern, PathItem>>
+    private val schemaWriter = SchemaWriter(dictionary, settings.checkUndefinedFields)
 
     init {
-        SchemaWriter.createInstance(dictionary, settings.checkUndefinedFields)
         val mapForName = mutableMapOf<String, HttpRouteContainer>()
         val mapForPatterns = mutableMapOf<UriPattern, PathItem>()
         dictionary.paths.forEach { pathKey, pathsValue ->
@@ -141,7 +141,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
         checkNotNull(messageSchema.type) {"Type of schema [${messageSchema.name}] wasn't filled"}
 
         val visitor = VisitorFactory.createEncodeVisitor(container.bodyFormat!!, messageSchema.type, message)
-        SchemaWriter.instance.traverse(visitor, messageSchema)
+        schemaWriter.traverse(visitor, messageSchema)
         val result = visitor.getResult()
         if (!result.isEmpty) {
             RawMessage.newBuilder().apply {
@@ -211,7 +211,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
         checkNotNull(messageSchema.type) {"Type of schema [${messageSchema.name}] wasn't filled"}
 
         val visitor = VisitorFactory.createDecodeVisitor(bodyFormat, messageSchema.type, body)
-        SchemaWriter.instance.traverse(visitor, messageSchema)
+        schemaWriter.traverse(visitor, messageSchema)
         return visitor.getResult().apply {
             parentEventId = rawMessage.parentEventId
             sessionAlias = rawMessage.sessionAlias

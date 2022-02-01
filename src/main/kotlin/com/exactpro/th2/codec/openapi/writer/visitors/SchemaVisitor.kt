@@ -16,6 +16,7 @@
 
 package com.exactpro.th2.codec.openapi.writer.visitors
 
+import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.common.grpc.Message
 import com.google.protobuf.ByteString
 import io.swagger.v3.oas.models.media.ArraySchema
@@ -23,7 +24,7 @@ import io.swagger.v3.oas.models.media.Schema
 
 sealed class SchemaVisitor<FromType, ToType> {
     abstract val from: FromType
-    abstract fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, required: Boolean = false)
+    abstract fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, required: Boolean = false, schemaWriter: SchemaWriter)
     abstract fun visit(fieldName: String, defaultValue: String?, fldStruct: Schema<*>, required: Boolean = false)
     abstract fun visit(fieldName: String, defaultValue: Boolean?, fldStruct: Schema<*>, required: Boolean = false)
     abstract fun visit(fieldName: String, defaultValue: Int?, fldStruct: Schema<*>, required: Boolean = false)
@@ -36,7 +37,7 @@ sealed class SchemaVisitor<FromType, ToType> {
     abstract fun visitDoubleCollection(fieldName: String, defaultValue: List<Double>?, fldStruct: ArraySchema, required: Boolean = false)
     abstract fun visitFloatCollection(fieldName: String, defaultValue: List<Float>?, fldStruct: ArraySchema, required: Boolean = false)
     abstract fun visitLongCollection(fieldName: String, defaultValue: List<Long>?, fldStruct: ArraySchema, required: Boolean = false)
-    abstract fun visitObjectCollection(fieldName: String, defaultValue: List<Any>?, fldStruct: ArraySchema, required: Boolean = false)
+    abstract fun visitObjectCollection(fieldName: String, defaultValue: List<Any>?, fldStruct: ArraySchema, required: Boolean = false, schemaWriter: SchemaWriter)
     abstract fun visitUndefinedFields(fields: MutableSet<String>): Set<String>?
 
     abstract fun getResult(): ToType

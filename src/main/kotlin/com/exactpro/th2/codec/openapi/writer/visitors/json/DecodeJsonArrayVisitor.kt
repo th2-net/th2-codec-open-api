@@ -38,7 +38,7 @@ class DecodeJsonArrayVisitor(override val from: ArrayNode) : DecodeVisitor<Array
 
     private val rootMessage = message()
 
-    override fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, required: Boolean) {
+    override fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, required: Boolean, schemaWriter: SchemaWriter) {
         throw UnsupportedOperationException("Array visitor supports only collections")
     }
 
@@ -90,10 +90,10 @@ class DecodeJsonArrayVisitor(override val from: ArrayNode) : DecodeVisitor<Array
         rootMessage.addField(fieldName, from.map { it.validateAsLong() })
     }
 
-    override fun visitObjectCollection(fieldName: String, defaultValue: List<Any>?, fldStruct: ArraySchema, required: Boolean) {
+    override fun visitObjectCollection(fieldName: String, defaultValue: List<Any>?, fldStruct: ArraySchema, required: Boolean, schemaWriter: SchemaWriter) {
         rootMessage.addField(fieldName, from.map {
             DecodeJsonObjectVisitor(it.validateAsObject()).apply {
-                SchemaWriter.instance.traverse(this, fldStruct.items)
+                schemaWriter.traverse(this, fldStruct.items)
             }.getResult()
         })
     }

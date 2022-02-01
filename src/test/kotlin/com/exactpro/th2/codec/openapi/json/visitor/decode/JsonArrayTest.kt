@@ -44,32 +44,33 @@ class JsonArrayTest {
     @Test
     fun `not supported decode`() {
         val node = mapper.createArrayNode()
+        val visitor = DecodeJsonArrayVisitor(node)
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            DecodeJsonArrayVisitor(node).visit("", null as? String, StringSchema(), true)
+            visitor.visit("", null as? String, StringSchema(), true)
         }
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            DecodeJsonArrayVisitor(node).visit("", null as? Int, StringSchema(), true)
+            visitor.visit("", null as? Int, StringSchema(), true)
         }
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            DecodeJsonArrayVisitor(node).visit("", null as? Double, StringSchema(), true)
+            visitor.visit("", null as? Double, StringSchema(), true)
         }
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            DecodeJsonArrayVisitor(node).visit("", null as? Long, StringSchema(), true)
+            visitor.visit("", null as? Long, StringSchema(), true)
         }
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            DecodeJsonArrayVisitor(node).visit("", null as? Float, StringSchema(), true)
+            visitor.visit("", null as? Float, StringSchema(), true)
         }
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            DecodeJsonArrayVisitor(node).visit("", null as? Boolean, StringSchema(), true)
+            visitor.visit("", null as? Boolean, StringSchema(), true)
         }
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            DecodeJsonArrayVisitor(node).visit("", null as? Schema<*>, StringSchema(), true)
+            visitor.visit("", null as? Schema<*>, StringSchema(), true, SchemaWriter(openAPI))
         }
     }
 
@@ -118,7 +119,7 @@ class JsonArrayTest {
         }
 
         val result = DecodeJsonArrayVisitor(jsonArrayNode).apply {
-            visitObjectCollection(fieldName, null, openAPI.components.schemas["ArrayObjectTest"]!! as ArraySchema, true)
+            visitObjectCollection(fieldName, null, openAPI.components.schemas["ArrayObjectTest"]!! as ArraySchema, true, SchemaWriter(openAPI))
         }.getResult()
 
         (result[fieldName]!!).let { listValue ->
@@ -210,9 +211,7 @@ class JsonArrayTest {
     }
 
     private companion object {
-        val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/visitorTests.yml"), null, OpenApiCodecSettings().dictionaryParseOption).openAPI.apply {
-            SchemaWriter.createInstance(this)
-        }
+        val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/visitorTests.yml"), null, OpenApiCodecSettings().dictionaryParseOption).openAPI
         private val mapper = ObjectMapper()
     }
 }

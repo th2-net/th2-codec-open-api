@@ -70,7 +70,7 @@ class JsonObjectTest {
         }).build()
 
         val result = EncodeJsonObjectVisitor(message).apply {
-            visit(fieldName, null as? Schema<*>, openAPI.components.schemas["ObjectTest"]!!, true)
+            visit(fieldName, null as? Schema<*>, openAPI.components.schemas["ObjectTest"]!!, true, SchemaWriter(openAPI))
         }.getResult().toStringUtf8()
 
         mapper.readTree(result).get(fieldName).let { objectNode ->
@@ -269,7 +269,7 @@ class JsonObjectTest {
         val message = message().addField(fieldName, listValue).build()
 
         val result = EncodeJsonObjectVisitor(message).apply {
-            visitObjectCollection(fieldName, null, openAPI.components.schemas["ArrayObjectTest"]!! as ArraySchema, true)
+            visitObjectCollection(fieldName, null, openAPI.components.schemas["ArrayObjectTest"]!! as ArraySchema, true, SchemaWriter(openAPI))
         }.getResult().toStringUtf8()
 
         mapper.readTree(result).let { objectNode ->
@@ -291,9 +291,7 @@ class JsonObjectTest {
     }
 
     private companion object {
-        val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/visitorTests.yml"), null, OpenApiCodecSettings().dictionaryParseOption).openAPI.apply {
-            SchemaWriter.createInstance(this)
-        }
+        val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/visitorTests.yml"), null, OpenApiCodecSettings().dictionaryParseOption).openAPI
         val mapper = ObjectMapper()
     }
 }

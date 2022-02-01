@@ -69,11 +69,11 @@ class JsonObjectTest {
             this.put(floatName, floatValue)
             this.set<ObjectNode>(includedObject, includedObjectValue)
         }
-        val json =  mapper.createObjectNode().apply {
+        val json = mapper.createObjectNode().apply {
             this.set<ObjectNode>(fieldName, objectValue)
         }
         val result = DecodeJsonObjectVisitor(json).apply {
-            visit(fieldName, null as? Schema<*>, openAPI.components.schemas["ObjectTest"]!!, true)
+            visit(fieldName, null as? Schema<*>, openAPI.components.schemas["ObjectTest"]!!, true, SchemaWriter(openAPI))
         }.getResult()
         result[fieldName]!!.messageValue.let { bigMessage ->
             bigMessage.assertString(stringName, stringValue)
@@ -296,7 +296,7 @@ class JsonObjectTest {
         }
 
         val result = DecodeJsonObjectVisitor(json).apply {
-            visitObjectCollection(fieldName, null, openAPI.components.schemas["ArrayObjectTest"]!! as ArraySchema, true)
+            visitObjectCollection(fieldName, null, openAPI.components.schemas["ArrayObjectTest"]!! as ArraySchema, true, SchemaWriter(openAPI))
         }.getResult()
 
         (result[fieldName]!!).let { listValue ->
@@ -317,9 +317,7 @@ class JsonObjectTest {
 
 
     private companion object {
-        val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/visitorTests.yml"), null, OpenApiCodecSettings().dictionaryParseOption).openAPI.apply {
-            SchemaWriter.createInstance(this)
-        }
+        val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/visitorTests.yml"), null, OpenApiCodecSettings().dictionaryParseOption).openAPI
         private val mapper = ObjectMapper()
     }
 }
