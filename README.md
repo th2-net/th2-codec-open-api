@@ -163,7 +163,7 @@ Result of decode:
 ### Configuration example
 
 ```yaml
-warnUndefinedFields: true
+checkUndefinedFields: true
 validationSettings:
   enableRecommendations: true
 dictionaryParseOption:
@@ -171,3 +171,12 @@ dictionaryParseOption:
 ```
 
 May be empty due to missing required fields
+
+
+## Release notes
+
+### 0.2.0
+
++ Feature: check undefined fields and throws errors if they are found
++ Fix: protocol loss on decode
++ Fix: null values in fields if no value was found
