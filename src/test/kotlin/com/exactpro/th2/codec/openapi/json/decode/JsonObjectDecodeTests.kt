@@ -57,7 +57,7 @@ class JsonObjectDecodeTests {
                     }""".trimIndent()
         val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
             "/test",
-            "get",
+            "GET",
             null,
             "application/json",
             jsonData)

@@ -203,7 +203,7 @@ fun OpenApiCodec.testEncode(path: String, method: String, code: String?, type: S
             code?.let {
                 Assertions.assertEquals(it, rawMessage.metadata.propertiesMap[OpenApiCodec.CODE_PROPERTY])
             }
-            Assertions.assertEquals(method, rawMessage.metadata.propertiesMap[OpenApiCodec.METHOD_PROPERTY])
+            Assertions.assertEquals(method.lowercase(), rawMessage.metadata.propertiesMap[OpenApiCodec.METHOD_PROPERTY]?.lowercase())
             Assertions.assertEquals(path, rawMessage.metadata.propertiesMap[OpenApiCodec.URI_PROPERTY])
         }
     } else {

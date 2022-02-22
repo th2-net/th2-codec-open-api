@@ -34,7 +34,7 @@ class JsonArrayDecodeTests {
         val jsonData = """["test1", "test2", "test3"]"""
         val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
             "/test",
-            "get",
+            "GET",
             "200",
             "application/json",
             jsonData)

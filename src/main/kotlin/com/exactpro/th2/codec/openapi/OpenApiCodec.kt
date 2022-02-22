@@ -23,6 +23,7 @@ import com.exactpro.th2.codec.openapi.schemacontainer.RequestContainer
 import com.exactpro.th2.codec.openapi.schemacontainer.ResponseContainer
 import com.exactpro.th2.codec.openapi.throwable.DecodeException
 import com.exactpro.th2.codec.openapi.throwable.EncodeException
+import com.exactpro.th2.codec.openapi.utils.getByMethod
 import com.exactpro.th2.codec.openapi.utils.getEndPoint
 import com.exactpro.th2.codec.openapi.utils.getMethods
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter
@@ -47,10 +48,11 @@ import com.exactpro.th2.common.message.sessionAlias
 import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.parameters.Parameter
 import mu.KotlinLogging
+import java.util.Locale
 
 class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettings) : IPipelineCodec {
 
-    private val messagesToSchema: Map<String, HttpRouteContainer>
+    private val typeToSchema: Map<String, HttpRouteContainer>
     private val patternToPathItem: List<Pair<UriPattern, PathItem>>
     private val schemaWriter = SchemaWriter(dictionary, settings.checkUndefinedFields)
 
@@ -95,7 +97,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
             }
         }
         LOGGER.info { "Schemas to map: ${mapForName.keys.joinToString(", ")}" }
-        messagesToSchema = mapForName
+        typeToSchema = mapForName
         patternToPathItem = mapForPatterns.toList()
     }
 
@@ -118,7 +120,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
             val metadata = parsedMessage.metadata
             val messageType = metadata.messageType
 
-            val container = checkNotNull(messagesToSchema[messageType]) { "There no message $messageType in dictionary" }
+            val container = checkNotNull(typeToSchema[messageType]) { "There no message $messageType in dictionary" }
 
             builder += createHeaderMessage(container, parsedMessage).apply {
                 if (parsedMessage.hasParentEventId()) parentEventId = parsedMessage.parentEventId
@@ -192,7 +194,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
                 val code = requireNotNull(header.getString(STATUS_CODE_FIELD)) { "Code status field required inside of http response message" }
 
                 val pathItem = patternToPathItem.firstOrNull { it.first.matches(uri) }?.second
-                checkNotNull(pathItem?.getMethods()?.get(method)?.responses?.get(code)?.content?.get(bodyFormat)?.schema?.run {
+                checkNotNull(pathItem?.getByMethod(method)?.responses?.get(code)?.content?.get(bodyFormat)?.schema?.run {
                     dictionary.getEndPoint(this)
                 }) { "Response schema with path $uri, method $method, code $code and type $bodyFormat wasn't found" }
             }
@@ -201,7 +203,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
                 val method = requireNotNull(header.getString(METHOD_FIELD)) { "Method field in request is required" }
 
                 val pathItem = patternToPathItem.firstOrNull { it.first.matches(uri) }?.second
-                checkNotNull(pathItem?.getMethods()?.get(method)?.requestBody?.content?.get(bodyFormat)?.schema?.run {
+                checkNotNull(pathItem?.getByMethod(method)?.requestBody?.content?.get(bodyFormat)?.schema?.run {
                     dictionary.getEndPoint(this)
                 }) { "Request schema with path $uri, method $method and type $bodyFormat wasn't found" }
             }
@@ -228,12 +230,12 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
     private fun HttpRouteContainer.fillHttpMetadata(metadata: RawMessageMetadata.Builder) {
         when (this) {
             is ResponseContainer -> metadata.apply {
-                putProperties(METHOD_PROPERTY, method)
+                method?.let { putProperties(METHOD_PROPERTY, it.uppercase(Locale.getDefault())) }
                 putProperties(URI_PROPERTY, uriPattern.pattern)
                 putProperties(CODE_PROPERTY, code)
             }
             is RequestContainer -> metadata.apply {
-                putProperties(METHOD_PROPERTY, method)
+                method?.let { putProperties(METHOD_PROPERTY, it.uppercase(Locale.getDefault())) }
                 putProperties(URI_PROPERTY, uriPattern.pattern)
             }
         }
@@ -298,6 +300,6 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
         const val HEADERS_FIELD = "headers"
         const val URI_PARAMS_FIELD = "uriParameters"
         const val HEADER_PARAMS_FIELD = "headerParameters"
-
     }
+
 }

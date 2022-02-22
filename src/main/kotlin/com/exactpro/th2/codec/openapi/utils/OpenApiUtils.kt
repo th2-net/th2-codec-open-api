@@ -24,7 +24,7 @@ import io.swagger.v3.parser.models.RefType
 
 private val METHODS = listOf("get", "put", "delete", "post")
 
-private fun PathItem.getByMethod(method: String) = when (method.lowercase()) {
+fun PathItem.getByMethod(method: String) = when (method.lowercase()) {
     "get" -> get
     "put" -> put
     "delete" -> delete
