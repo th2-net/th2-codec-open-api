@@ -180,3 +180,4 @@ May be empty due to missing required fields
 + Feature: check undefined fields and throws errors if they are found
 + Fix: protocol loss on decode
 + Fix: null values in fields if no value was found
++ Fix: case-sensitive search for methods inside path items
