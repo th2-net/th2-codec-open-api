@@ -3,6 +3,8 @@ package com.exactpro.th2.codec.openapi
 import com.exactpro.th2.codec.openapi.OpenApiCodec.Companion.HEADERS_FIELD
 import com.exactpro.th2.codec.openapi.OpenApiCodec.Companion.HEADER_PARAMS_FIELD
 import com.exactpro.th2.codec.openapi.OpenApiCodec.Companion.URI_PARAMS_FIELD
+import com.exactpro.th2.codec.openapi.utils.encode
+import com.exactpro.th2.codec.openapi.utils.getResourceAsText
 import com.exactpro.th2.common.assertList
 import com.exactpro.th2.common.assertString
 import com.exactpro.th2.common.grpc.AnyMessage
@@ -10,7 +12,6 @@ import com.exactpro.th2.common.grpc.MessageGroup
 import com.exactpro.th2.common.message.addField
 import com.exactpro.th2.common.message.getString
 import com.exactpro.th2.common.message.message
-import com.exactpro.th2.common.message.sessionAlias
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import org.junit.jupiter.api.Assertions

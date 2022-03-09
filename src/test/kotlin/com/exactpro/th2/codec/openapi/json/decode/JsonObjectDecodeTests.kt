@@ -19,12 +19,12 @@ package com.exactpro.th2.codec.openapi.json.decode
 import com.exactpro.th2.codec.openapi.OpenApiCodec
 import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
 import com.exactpro.th2.common.message.getString
-import com.exactpro.th2.codec.openapi.getResourceAsText
+import com.exactpro.th2.codec.openapi.utils.getResourceAsText
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import com.exactpro.th2.codec.openapi.testDecode
+import com.exactpro.th2.codec.openapi.utils.testDecode
 
 class JsonObjectDecodeTests {
     

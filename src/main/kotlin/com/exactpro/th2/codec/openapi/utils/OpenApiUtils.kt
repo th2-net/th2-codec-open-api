@@ -60,3 +60,5 @@ fun <T> Schema<*>.checkEnum(value: T?, name: String) {
         error("Enum list of property $name doesn't contain $value")
     }
 }
+
+fun String.extractType() = this.split(";")[0].trim()

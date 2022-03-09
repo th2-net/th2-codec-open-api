@@ -23,6 +23,7 @@ import com.exactpro.th2.codec.openapi.schemacontainer.RequestContainer
 import com.exactpro.th2.codec.openapi.schemacontainer.ResponseContainer
 import com.exactpro.th2.codec.openapi.throwable.DecodeException
 import com.exactpro.th2.codec.openapi.throwable.EncodeException
+import com.exactpro.th2.codec.openapi.utils.extractType
 import com.exactpro.th2.codec.openapi.utils.getByMethod
 import com.exactpro.th2.codec.openapi.utils.getEndPoint
 import com.exactpro.th2.codec.openapi.utils.getMethods
@@ -111,7 +112,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
                 continue
             }
 
-            if (message.message.metadata.run { protocol.isNotEmpty() && PROTOCOLS.contains(protocol) }) {
+            if (message.message.metadata.run { protocol.isNotEmpty() && !PROTOCOLS.contains(protocol) }) {
                 builder.addMessages(message)
                 continue
             }
@@ -186,7 +187,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
     private fun decodeBody(header: Message, rawMessage: RawMessage): Message {
         val body = rawMessage.body
 
-        val bodyFormat = header.getList(HEADERS_FIELD)?.first { it.messageValue.getString("name") == "Content-Type" }?.messageValue?.getString("value")?.split(";")?.get(0)?.trim() ?: "null"
+        val bodyFormat = header.getList(HEADERS_FIELD)?.first { it.messageValue.getString("name") == "Content-Type" }?.messageValue?.getString("value")?.extractType() ?: "null"
         val messageSchema = when (header.messageType) {
             RESPONSE_MESSAGE -> {
                 val uri = requireNotNull(rawMessage.metadata.propertiesMap[URI_PROPERTY]) { "URI property in metadata from response is required" }

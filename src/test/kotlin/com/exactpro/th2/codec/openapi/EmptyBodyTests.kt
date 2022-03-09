@@ -1,5 +1,8 @@
 package com.exactpro.th2.codec.openapi
 
+import com.exactpro.th2.codec.openapi.utils.getResourceAsText
+import com.exactpro.th2.codec.openapi.utils.testDecode
+import com.exactpro.th2.codec.openapi.utils.testEncode
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import org.junit.jupiter.api.Assertions
@@ -12,7 +15,8 @@ class EmptyBodyTests {
             "/test",
             "get",
             null,
-            null)
+            null,
+            "http")
         Assertions.assertNull(rawMessage)
     }
 
@@ -32,7 +36,8 @@ class EmptyBodyTests {
             "/test",
             "get",
             "200",
-            null)
+            null,
+            "http")
         Assertions.assertNull(rawMessage)
     }
 

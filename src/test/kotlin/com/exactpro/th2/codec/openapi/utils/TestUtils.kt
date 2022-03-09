@@ -1,4 +1,4 @@
-package com.exactpro.th2.codec.openapi/*
+package com.exactpro.th2.codec.openapi.utils/*
  * Copyright 2021-2022 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +14,7 @@ package com.exactpro.th2.codec.openapi/*
  * limitations under the License.
  */
 
+import com.exactpro.th2.codec.openapi.OpenApiCodec
 import com.exactpro.th2.common.assertEqualMessages
 import com.exactpro.th2.common.assertString
 import com.exactpro.th2.common.grpc.AnyMessage
@@ -34,7 +35,6 @@ import java.util.Locale
 import kotlin.test.fail
 
 
-const val PROTOCOL = "openapi"
 const val REQUEST_MESSAGE_TYPE = "Request"
 const val RESPONSE_MESSAGE_TYPE = "Response"
 const val FORMAT_HEADER_NAME = "Content-Type"
@@ -137,14 +137,14 @@ fun OpenApiCodec.testDecode(path: String, method: String, code: String?, type: S
     return null
 }
 
-fun OpenApiCodec.testEncode(path: String, method: String, code: String?, type: String?, fillMessage: (Message.Builder.() -> Unit)? = null): RawMessage? {
+fun OpenApiCodec.testEncode(path: String, method: String, code: String?, type: String?, protocol: String, fillMessage: (Message.Builder.() -> Unit)? = null): RawMessage? {
     val rawParentID = EventID.newBuilder().apply {
         id = "123"
     }.build()
 
     val messageType = combineName(path, method, code?:"", type?:"")
     val messageToEncode = message(messageType).apply {
-        metadataBuilder.protocol = PROTOCOL
+        metadataBuilder.protocol = protocol
         metadataBuilder.putProperties("testProperty", "testValue")
         parentEventId = rawParentID
         if (fillMessage != null) {

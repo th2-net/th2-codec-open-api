@@ -21,11 +21,11 @@ import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter.Companion.ARRAY_TYPE
 import com.exactpro.th2.common.assertList
 import com.exactpro.th2.common.value.toValue
-import com.exactpro.th2.codec.openapi.getResourceAsText
+import com.exactpro.th2.codec.openapi.utils.getResourceAsText
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import org.junit.jupiter.api.Test
-import com.exactpro.th2.codec.openapi.testDecode
+import com.exactpro.th2.codec.openapi.utils.testDecode
 
 class JsonArrayDecodeTests {
 
