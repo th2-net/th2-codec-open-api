@@ -26,13 +26,14 @@ import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.parser.core.models.SwaggerParseResult
 import mu.KotlinLogging
 import org.openapitools.codegen.validations.oas.RuleConfiguration
-import java.io.BufferedReader
 
 @Suppress("unused")
 class OpenApiCodecFactory : IPipelineCodecFactory {
 
     override val settingsClass: Class<out IPipelineCodecSettings> = OpenApiCodecSettings::class.java
-    override val protocol: String = PROTOCOL
+    override val protocols: Set<String>
+        get() = PROTOCOLS
+    override val protocol: String = ""
     private lateinit var context: IPipelineCodecContext
 
     override fun init(pipelineCodecContext: IPipelineCodecContext) {
@@ -60,7 +61,7 @@ class OpenApiCodecFactory : IPipelineCodecFactory {
     }
 
     companion object {
-        const val PROTOCOL = "openapi"
+        val PROTOCOLS = setOf("json", "binary")
         private val LOGGER = KotlinLogging.logger { }
     }
 

@@ -42,6 +42,18 @@ class JsonArrayDecodeTests {
     }
 
     @Test
+    fun `simple test json array decode with charset`() {
+        val jsonData = """["test1", "test2", "test3"]"""
+        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
+            "/test",
+            "GET",
+            "200",
+            "application/json; charset=utf-8",
+            jsonData)
+        decodedResult!!.assertList(ARRAY_TYPE, listOf("test1".toValue(), "test2".toValue(), "test3".toValue()))
+    }
+
+    @Test
     fun `simple test json array decode request`() {
         val jsonData = """["test1", "test2", "test3"]"""
         val decodedResult = OpenApiCodec(openAPI, settings).testDecode(

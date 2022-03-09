@@ -14,15 +14,18 @@ package com.exactpro.th2.codec.openapi/*
  * limitations under the License.
  */
 
+import com.exactpro.th2.codec.api.DictionaryAlias
+import com.exactpro.th2.codec.api.IPipelineCodecContext
 import com.exactpro.th2.codec.openapi.throwable.DictionaryValidationException
+import com.exactpro.th2.common.schema.dictionary.DictionaryType
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.parser.OpenAPIParser
-import io.swagger.v3.parser.core.models.ParseOptions
 import mu.KotlinLogging
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.openapitools.codegen.validations.oas.RuleConfiguration
 import java.io.File
+import java.io.InputStream
 import java.net.URI
 
 class ValidationDictionaryTests {
@@ -45,7 +48,13 @@ class ValidationDictionaryTests {
             File(ValidationDictionaryTests::class.java.classLoader.getResource("dictionaries/valid/")!!.path).walk().forEach { dictionary ->
                 if (dictionary.name.endsWith(YAML_FORMAT) || dictionary.name.endsWith(JSON_FORMAT)) {
                     val factory = OpenApiCodecFactory().apply {
-                        init { dictionary.inputStream() }
+                        init(object : IPipelineCodecContext {
+                            override fun get(alias: DictionaryAlias): InputStream = TODO("Not yet implemented")
+
+                            override fun get(type: DictionaryType): InputStream = dictionary.inputStream()
+
+                            override fun getDictionaryAliases(): Set<String> = TODO("Not yet implemented")
+                        })
                     }
 
                     factory.create(settings)
@@ -73,7 +82,13 @@ class ValidationDictionaryTests {
         File(ValidationDictionaryTests::class.java.classLoader.getResource("dictionaries/invalid/")!!.path).walk().forEach { dictionary ->
             if (dictionary.name.endsWith(YAML_FORMAT) || dictionary.name.endsWith(JSON_FORMAT)) {
                 val factory = OpenApiCodecFactory().apply {
-                    init { dictionary.inputStream() }
+                    init(object : IPipelineCodecContext {
+                        override fun get(alias: DictionaryAlias): InputStream = TODO("Not yet implemented")
+
+                        override fun get(type: DictionaryType): InputStream = dictionary.inputStream()
+
+                        override fun getDictionaryAliases(): Set<String> = TODO("Not yet implemented")
+                    })
                 }
                 Assertions.assertThrows(DictionaryValidationException::class.java) {
                     factory.create(settings)
