@@ -25,6 +25,7 @@ import io.swagger.v3.oas.models.OpenAPI
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import com.exactpro.th2.codec.openapi.utils.testDecode
+import com.exactpro.th2.common.message.messageType
 
 class JsonObjectDecodeTests {
     
@@ -40,9 +41,10 @@ class JsonObjectDecodeTests {
             "get",
             "200",
             "application/json",
-            jsonData)
+            jsonData)!!
 
-        Assertions.assertEquals("1234567", decodedResult!!.getString("publicKey"))
+        Assertions.assertEquals("TestGet200ApplicationJson", decodedResult.messageType)
+        Assertions.assertEquals("1234567", decodedResult.getString("publicKey"))
         Assertions.assertEquals(true, decodedResult.getString("testEnabled").toBoolean())
         Assertions.assertEquals("FAILED", decodedResult.getString("testStatus"))
         Assertions.assertEquals(null, decodedResult.getString("nullField"))
@@ -60,9 +62,10 @@ class JsonObjectDecodeTests {
             "GET",
             null,
             "application/json",
-            jsonData)
+            jsonData)!!
 
-        Assertions.assertEquals("1234567", decodedResult!!.getString("publicKey"))
+        Assertions.assertEquals("TestGetApplicationJson", decodedResult.messageType)
+        Assertions.assertEquals("1234567", decodedResult.getString("publicKey"))
         Assertions.assertEquals(true, decodedResult.getString("testEnabled").toBoolean())
         Assertions.assertEquals("FAILED", decodedResult.getString("testStatus"))
     }

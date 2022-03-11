@@ -26,6 +26,8 @@ import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import org.junit.jupiter.api.Test
 import com.exactpro.th2.codec.openapi.utils.testDecode
+import com.exactpro.th2.common.message.messageType
+import org.junit.jupiter.api.Assertions
 
 class JsonArrayDecodeTests {
 
@@ -37,8 +39,9 @@ class JsonArrayDecodeTests {
             "GET",
             "200",
             "application/json",
-            jsonData)
-        decodedResult!!.assertList(ARRAY_TYPE, listOf("test1".toValue(), "test2".toValue(), "test3".toValue()))
+            jsonData)!!
+        Assertions.assertEquals("TestGet200ApplicationJson", decodedResult.messageType)
+        decodedResult.assertList(ARRAY_TYPE, listOf("test1".toValue(), "test2".toValue(), "test3".toValue()))
     }
 
     @Test
@@ -49,8 +52,9 @@ class JsonArrayDecodeTests {
             "GET",
             "200",
             "application/json; charset=utf-8",
-            jsonData)
-        decodedResult!!.assertList(ARRAY_TYPE, listOf("test1".toValue(), "test2".toValue(), "test3".toValue()))
+            jsonData)!!
+        Assertions.assertEquals("TestGet200ApplicationJson", decodedResult.messageType)
+        decodedResult.assertList(ARRAY_TYPE, listOf("test1".toValue(), "test2".toValue(), "test3".toValue()))
     }
 
     @Test
@@ -61,8 +65,9 @@ class JsonArrayDecodeTests {
             "get",
             null,
             "application/json",
-            jsonData)
-        decodedResult!!.assertList(ARRAY_TYPE, listOf("test1".toValue(), "test2".toValue(), "test3".toValue()))
+            jsonData)!!
+        Assertions.assertEquals("TestGetApplicationJson", decodedResult.messageType)
+        decodedResult.assertList(ARRAY_TYPE, listOf("test1".toValue(), "test2".toValue(), "test3".toValue()))
     }
 
     private companion object {

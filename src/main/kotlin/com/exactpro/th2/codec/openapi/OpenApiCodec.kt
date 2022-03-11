@@ -188,23 +188,30 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
         val body = rawMessage.body
 
         val bodyFormat = header.getList(HEADERS_FIELD)?.first { it.messageValue.getString("name") == "Content-Type" }?.messageValue?.getString("value")?.extractType() ?: "null"
+
+        val uri: String
+        val method: String
+        var code = ""
+
+        val pairFound: Pair<UriPattern, PathItem>
+
         val messageSchema = when (header.messageType) {
             RESPONSE_MESSAGE -> {
-                val uri = requireNotNull(rawMessage.metadata.propertiesMap[URI_PROPERTY]) { "URI property in metadata from response is required" }
-                val method = requireNotNull(rawMessage.metadata.propertiesMap[METHOD_PROPERTY]?.lowercase()) { "Method property in metadata from response is required" }
-                val code = requireNotNull(header.getString(STATUS_CODE_FIELD)) { "Code status field required inside of http response message" }
+                uri = requireNotNull(rawMessage.metadata.propertiesMap[URI_PROPERTY]) { "URI property in metadata from response is required" }
+                method = requireNotNull(rawMessage.metadata.propertiesMap[METHOD_PROPERTY]?.lowercase()) { "Method property in metadata from response is required" }
+                code = requireNotNull(header.getString(STATUS_CODE_FIELD)) { "Code status field required inside of http response message" }
 
-                val pathItem = patternToPathItem.firstOrNull { it.first.matches(uri) }?.second
-                checkNotNull(pathItem?.getByMethod(method)?.responses?.get(code)?.content?.get(bodyFormat)?.schema?.run {
+                pairFound = checkNotNull(patternToPathItem.firstOrNull { it.first.matches(uri) }) {"Cannot find path-item by uri: $uri"}
+                checkNotNull(pairFound.second.getByMethod(method)?.responses?.get(code)?.content?.get(bodyFormat)?.schema?.run {
                     dictionary.getEndPoint(this)
                 }) { "Response schema with path $uri, method $method, code $code and type $bodyFormat wasn't found" }
             }
             REQUEST_MESSAGE -> {
-                val uri = requireNotNull(header.getString(URI_FIELD)) { "URI field in request is required" }
-                val method = requireNotNull(header.getString(METHOD_FIELD)) { "Method field in request is required" }
+                uri = requireNotNull(header.getString(URI_FIELD)) { "URI field in request is required" }
+                method = requireNotNull(header.getString(METHOD_FIELD)) { "Method field in request is required" }
 
-                val pathItem = patternToPathItem.firstOrNull { it.first.matches(uri) }?.second
-                checkNotNull(pathItem?.getByMethod(method)?.requestBody?.content?.get(bodyFormat)?.schema?.run {
+                pairFound = checkNotNull(patternToPathItem.firstOrNull { it.first.matches(uri) }) {"Cannot find path-item by uri: $uri"}
+                checkNotNull(pairFound.second.getByMethod(method)?.requestBody?.content?.get(bodyFormat)?.schema?.run {
                     dictionary.getEndPoint(this)
                 }) { "Request schema with path $uri, method $method and type $bodyFormat wasn't found" }
             }
@@ -213,11 +220,14 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
 
         checkNotNull(messageSchema.type) {"Type of schema [${messageSchema.name}] wasn't filled"}
 
+        val type = combineName(pairFound.first.pattern, method, code, bodyFormat)
+
         val visitor = VisitorFactory.createDecodeVisitor(bodyFormat, messageSchema.type, body)
         schemaWriter.traverse(visitor, messageSchema)
         return visitor.getResult().apply {
             parentEventId = rawMessage.parentEventId
             sessionAlias = rawMessage.sessionAlias
+            this.messageType = type
             metadataBuilder.apply {
                 id = rawMessage.metadata.id
                 timestamp = metadata.timestamp
@@ -283,7 +293,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
         }
     }
 
-    private fun combineName(vararg steps: String) = steps.asSequence().flatMap { it.split(COMBINER_REGEX) }.joinToString("") { it.capitalize() }
+    private fun combineName(vararg steps: String) = steps.asSequence().flatMap { it.split(COMBINER_REGEX) }.joinToString("") { it.lowercase().capitalize() }
 
     companion object {
         private val LOGGER = KotlinLogging.logger { }
