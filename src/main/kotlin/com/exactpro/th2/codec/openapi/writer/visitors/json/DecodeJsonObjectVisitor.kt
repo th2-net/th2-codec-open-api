@@ -19,6 +19,7 @@ package com.exactpro.th2.codec.openapi.writer.visitors.json
 import com.exactpro.th2.codec.openapi.utils.checkEnum
 import com.exactpro.th2.codec.openapi.utils.getRequiredArray
 import com.exactpro.th2.codec.openapi.utils.getRequiredField
+import com.exactpro.th2.codec.openapi.utils.validateAsBigDecimal
 import com.exactpro.th2.codec.openapi.utils.validateAsBoolean
 import com.exactpro.th2.codec.openapi.utils.validateAsDouble
 import com.exactpro.th2.codec.openapi.utils.validateAsFloat
@@ -35,6 +36,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
+import java.math.BigDecimal
 
 class DecodeJsonObjectVisitor(override val from: ObjectNode) : DecodeVisitor<ObjectNode>() {
     private val rootMessage = message()
@@ -79,6 +81,12 @@ class DecodeJsonObjectVisitor(override val from: ObjectNode) : DecodeVisitor<Obj
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
+    override fun visit(fieldName: String, defaultValue: BigDecimal?, fldStruct: Schema<*>, required: Boolean) {
+        val value = from.getRequiredField(fieldName, required)?.validateAsBigDecimal()
+        fldStruct.checkEnum(value, fieldName)
+        rootMessage.addFields(fieldName, value ?: defaultValue)
+    }
+
     override fun visit(fieldName: String, defaultValue: Long?, fldStruct: Schema<*>, required: Boolean) {
         val value = from.getRequiredField(fieldName, required)?.validateAsLong()
         fldStruct.checkEnum(value, fieldName)
@@ -118,6 +126,12 @@ class DecodeJsonObjectVisitor(override val from: ObjectNode) : DecodeVisitor<Obj
     override fun visitLongCollection(fieldName: String, defaultValue: List<Long>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredArray(fieldName, required)?.let { array ->
             rootMessage.addField(fieldName, array.map { it.validateAsLong() })
+        }
+    }
+
+    override fun visitBigDecimalCollection(fieldName: String, defaultValue: List<BigDecimal>?, fldStruct: ArraySchema, required: Boolean) {
+        from.getRequiredArray(fieldName, required)?.let { array ->
+            rootMessage.addField(fieldName, array.map { it.validateAsBigDecimal() })
         }
     }
 

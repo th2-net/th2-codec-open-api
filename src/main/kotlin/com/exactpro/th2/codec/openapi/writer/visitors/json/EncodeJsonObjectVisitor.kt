@@ -23,6 +23,7 @@ import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.codec.openapi.writer.visitors.SchemaVisitor.EncodeVisitor
 import com.exactpro.th2.common.grpc.Message
 import com.exactpro.th2.common.message.toJson
+import com.exactpro.th2.common.value.getBigDecimal
 import com.exactpro.th2.common.value.getDouble
 import com.exactpro.th2.common.value.getInt
 import com.exactpro.th2.common.value.getList
@@ -34,6 +35,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.google.protobuf.ByteString
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
+import java.math.BigDecimal
 
 
 class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Message>() {
@@ -101,6 +103,15 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
         }
     }
 
+    override fun visit(fieldName: String, defaultValue: BigDecimal?, fldStruct: Schema<*>, required: Boolean) {
+        from.getRequiredField(fieldName, required)?.getBigDecimal()?.let { value ->
+            fldStruct.checkEnum(value, fieldName)
+            rootNode.put(fieldName, value)
+        } ?: defaultValue?.let {
+            rootNode.put(fieldName, defaultValue)
+        }
+    }
+
     override fun visitBooleanCollection(fieldName: String, defaultValue: List<Boolean>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putArray(fieldName).putAll<Boolean>(values)
@@ -134,6 +145,12 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
     override fun visitLongCollection(fieldName: String, defaultValue: List<Long>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putArray(fieldName).putAll<Long>(values)
+        }
+    }
+
+    override fun visitBigDecimalCollection(fieldName: String, defaultValue: List<BigDecimal>?, fldStruct: ArraySchema, required: Boolean) {
+        from.getRequiredField(fieldName, required)?.getList()?.let { values ->
+            rootNode.putArray(fieldName).putAll<BigDecimal>(values)
         }
     }
 

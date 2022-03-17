@@ -16,6 +16,7 @@
 
 package com.exactpro.th2.codec.openapi.writer.visitors.json
 
+import com.exactpro.th2.codec.openapi.utils.validateAsBigDecimal
 import com.exactpro.th2.codec.openapi.utils.validateAsBoolean
 import com.exactpro.th2.codec.openapi.utils.validateAsDouble
 import com.exactpro.th2.codec.openapi.utils.validateAsFloat
@@ -31,6 +32,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
+import java.math.BigDecimal
 
 class DecodeJsonArrayVisitor(override val from: ArrayNode) : DecodeVisitor<ArrayNode>() {
 
@@ -66,6 +68,10 @@ class DecodeJsonArrayVisitor(override val from: ArrayNode) : DecodeVisitor<Array
         throw UnsupportedOperationException("Array visitor supports only collections")
     }
 
+    override fun visit(fieldName: String, defaultValue: BigDecimal?, fldStruct: Schema<*>, required: Boolean) {
+        throw UnsupportedOperationException("Array visitor supports only collections")
+    }
+
     override fun visitBooleanCollection(fieldName: String, defaultValue: List<Boolean>?, fldStruct: ArraySchema, required: Boolean) {
         rootMessage.addField(fieldName, from.map { it.validateAsBoolean() })
     }
@@ -90,6 +96,10 @@ class DecodeJsonArrayVisitor(override val from: ArrayNode) : DecodeVisitor<Array
         rootMessage.addField(fieldName, from.map { it.validateAsLong() })
     }
 
+    override fun visitBigDecimalCollection(fieldName: String, defaultValue: List<BigDecimal>?, fldStruct: ArraySchema, required: Boolean) {
+        rootMessage.addField(fieldName, from.map { it.validateAsBigDecimal() })
+    }
+
     override fun visitObjectCollection(fieldName: String, defaultValue: List<Any>?, fldStruct: ArraySchema, required: Boolean, schemaWriter: SchemaWriter) {
         rootMessage.addField(fieldName, from.map {
             DecodeJsonObjectVisitor(it.validateAsObject()).apply {
@@ -105,4 +115,5 @@ class DecodeJsonArrayVisitor(override val from: ArrayNode) : DecodeVisitor<Array
     private companion object {
         val mapper = ObjectMapper()
     }
+
 }

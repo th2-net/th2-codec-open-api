@@ -24,9 +24,9 @@ import com.exactpro.th2.codec.openapi.schemacontainer.ResponseContainer
 import com.exactpro.th2.codec.openapi.throwable.DecodeException
 import com.exactpro.th2.codec.openapi.throwable.EncodeException
 import com.exactpro.th2.codec.openapi.utils.extractType
-import com.exactpro.th2.codec.openapi.utils.getByMethod
 import com.exactpro.th2.codec.openapi.utils.getEndPoint
 import com.exactpro.th2.codec.openapi.utils.getMethods
+import com.exactpro.th2.codec.openapi.utils.getSchema
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.codec.openapi.writer.visitors.VisitorFactory
 import com.exactpro.th2.common.grpc.MessageGroup
@@ -202,18 +202,14 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
                 code = requireNotNull(header.getString(STATUS_CODE_FIELD)) { "Code status field required inside of http response message" }
 
                 pairFound = checkNotNull(patternToPathItem.firstOrNull { it.first.matches(uri) }) {"Cannot find path-item by uri: $uri"}
-                checkNotNull(pairFound.second.getByMethod(method)?.responses?.get(code)?.content?.get(bodyFormat)?.schema?.run {
-                    dictionary.getEndPoint(this)
-                }) { "Response schema with path $uri, method $method, code $code and type $bodyFormat wasn't found" }
+                dictionary.getEndPoint(pairFound.second.getSchema(method, code, bodyFormat))
             }
             REQUEST_MESSAGE -> {
                 uri = requireNotNull(header.getString(URI_FIELD)) { "URI field in request is required" }
                 method = requireNotNull(header.getString(METHOD_FIELD)) { "Method field in request is required" }
 
                 pairFound = checkNotNull(patternToPathItem.firstOrNull { it.first.matches(uri) }) {"Cannot find path-item by uri: $uri"}
-                checkNotNull(pairFound.second.getByMethod(method)?.requestBody?.content?.get(bodyFormat)?.schema?.run {
-                    dictionary.getEndPoint(this)
-                }) { "Request schema with path $uri, method $method and type $bodyFormat wasn't found" }
+                dictionary.getEndPoint(pairFound.second.getSchema(method, null, bodyFormat))
             }
             else -> error("Unsupported message type: ${header.messageType}")
         }
@@ -234,9 +230,9 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
                 protocol = rawMessage.metadata.protocol
                 putAllProperties(rawMessage.metadata.propertiesMap)
             }
-
         }.build()
     }
+
 
     private fun HttpRouteContainer.fillHttpMetadata(metadata: RawMessageMetadata.Builder) {
         when (this) {

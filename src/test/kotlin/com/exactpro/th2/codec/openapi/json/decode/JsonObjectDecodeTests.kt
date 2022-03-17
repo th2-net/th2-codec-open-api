@@ -34,7 +34,8 @@ class JsonObjectDecodeTests {
         val jsonData = """{
                       "publicKey" : "1234567",
                       "testEnabled" : true,
-                      "testStatus" : "FAILED"
+                      "testStatus" : "FAILED",
+                      "testBigDecimal": 100000000000
                     }""".trimIndent()
         val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
             "/test",
@@ -48,6 +49,8 @@ class JsonObjectDecodeTests {
         Assertions.assertEquals(true, decodedResult.getString("testEnabled").toBoolean())
         Assertions.assertEquals("FAILED", decodedResult.getString("testStatus"))
         Assertions.assertEquals(null, decodedResult.getString("nullField"))
+        Assertions.assertEquals("100000000000", decodedResult.getString("testBigDecimal"))
+
     }
 
     @Test

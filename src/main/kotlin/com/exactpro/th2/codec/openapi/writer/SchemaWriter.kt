@@ -27,6 +27,7 @@ import io.swagger.v3.parser.util.SchemaTypeUtil.INTEGER_TYPE
 import io.swagger.v3.parser.util.SchemaTypeUtil.NUMBER_TYPE
 import io.swagger.v3.parser.util.SchemaTypeUtil.OBJECT_TYPE
 import io.swagger.v3.parser.util.SchemaTypeUtil.STRING_TYPE
+import java.math.BigDecimal
 
 
 class SchemaWriter constructor(private val openApi: OpenAPI, private val exceptionUndefined: Boolean = true) {
@@ -86,6 +87,9 @@ class SchemaWriter constructor(private val openApi: OpenAPI, private val excepti
                         "double" -> {
                             visitor.visit(name, property.default as? Double, property, required)
                         }
+                        "-" -> {
+                            visitor.visit(name, property.default as? BigDecimal, property, required)
+                        }
                         null, "" -> {
                             visitor.visit(name, property.default as? String, property, required)
                         }
@@ -138,6 +142,9 @@ class SchemaWriter constructor(private val openApi: OpenAPI, private val excepti
                         }
                         null, "" -> {
                             visitor.visitStringCollection(name, property.default as? List<String>, property, required)
+                        }
+                        "-" -> {
+                            visitor.visitBigDecimalCollection(name, property.default as? List<BigDecimal>, property, required)
                         }
                         else -> {
                             error("Unsupported format of '$NUMBER_TYPE' property: ${property.format}")

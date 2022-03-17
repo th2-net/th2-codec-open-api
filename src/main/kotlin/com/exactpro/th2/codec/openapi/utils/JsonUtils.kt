@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.NullNode
 import com.fasterxml.jackson.databind.node.ObjectNode
+import java.math.BigDecimal
 
 inline fun <reified T> ArrayNode.putAll(values: List<Value>) = when (T::class) {
     Int::class -> values.forEach { add(it.getInt()) }
@@ -32,6 +33,7 @@ inline fun <reified T> ArrayNode.putAll(values: List<Value>) = when (T::class) {
     Float::class, Double::class -> values.forEach { add(it.getBigDecimal()) }
     Boolean::class -> values.forEach { add(it.getString()!!.toBoolean()) }
     Long::class -> values.forEach { add(it.getLong()) }
+    BigDecimal::class -> values.forEach { add(it.getString()!!.toBigDecimal()) }
     else -> error("Unsupported type of ArrayNode: ${T::class.simpleName}")
 }
 
@@ -60,6 +62,11 @@ fun JsonNode.validateAsBoolean(): Boolean = when {
 fun JsonNode.validateAsLong(): Long = when {
     isNumber -> asLong()
     else -> error("Cannot convert $this to Long")
+}
+
+fun JsonNode.validateAsBigDecimal(): BigDecimal = when {
+    isNumber -> asText().toBigDecimal()
+    else -> error("Cannot convert $this to BigDecimal")
 }
 
 fun JsonNode.validateAsInteger(): Int = when {

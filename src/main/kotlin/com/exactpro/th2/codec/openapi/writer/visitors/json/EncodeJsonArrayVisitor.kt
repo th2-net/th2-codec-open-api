@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode
 import com.google.protobuf.ByteString
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
+import java.math.BigDecimal
 
 class EncodeJsonArrayVisitor(override val from: Message) : EncodeVisitor<Message>() {
     private val rootNode: ArrayNode = mapper.createArrayNode()
@@ -57,6 +58,10 @@ class EncodeJsonArrayVisitor(override val from: Message) : EncodeVisitor<Message
     }
 
     override fun visit(fieldName: String, defaultValue: Double?, fldStruct: Schema<*>, required: Boolean) {
+        throw UnsupportedOperationException("Array visitor supports only collections")
+    }
+
+    override fun visit(fieldName: String, defaultValue: BigDecimal?, fldStruct: Schema<*>, required: Boolean) {
         throw UnsupportedOperationException("Array visitor supports only collections")
     }
 
@@ -97,6 +102,12 @@ class EncodeJsonArrayVisitor(override val from: Message) : EncodeVisitor<Message
     override fun visitLongCollection(fieldName: String, defaultValue: List<Long>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredField(fieldName, required)?.getList()?.let { values ->
             rootNode.putAll<Long>(values)
+        }
+    }
+
+    override fun visitBigDecimalCollection(fieldName: String, defaultValue: List<BigDecimal>?, fldStruct: ArraySchema, required: Boolean) {
+        from.getRequiredField(fieldName, required)?.getList()?.let { values ->
+            rootNode.putAll<BigDecimal>(values)
         }
     }
 
