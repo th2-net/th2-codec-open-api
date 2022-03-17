@@ -47,7 +47,7 @@ Path that contains parameters inside will be converted as:
 
 All messages processing by encode must contain those types.
 
-Decode accepts only raw messages, all parsed will be passed.
+Encode accepts only parsed messages, all raw will be passed.
 
 In result of encode will be sent two messages:
 1. **Request/Response** parsed message with all info about http part (required)

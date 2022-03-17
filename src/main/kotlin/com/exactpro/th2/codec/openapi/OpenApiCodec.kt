@@ -107,12 +107,9 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
         val builder = MessageGroup.newBuilder()
 
         for (message in messages) {
-            if (message.kindCase != MESSAGE) {
-                builder.addMessages(message)
-                continue
-            }
-
-            if (message.message.metadata.run { protocol.isNotEmpty() && !PROTOCOLS.contains(protocol) }) {
+            if (message.kindCase != MESSAGE ||
+                message.message.metadata.run { protocol.isNotEmpty() && !PROTOCOLS.contains(protocol) } ||
+                message.message.messageType == REQUEST_MESSAGE || message.message.messageType == RESPONSE_MESSAGE) {
                 builder.addMessages(message)
                 continue
             }
