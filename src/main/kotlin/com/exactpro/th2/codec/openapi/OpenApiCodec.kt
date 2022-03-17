@@ -283,6 +283,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
             }
 
             addField(HEADERS_FIELD, headers)
+            this.metadataBuilder.protocol = HEADER_PROTOCOL
         }
     }
 
@@ -304,6 +305,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
         const val HEADERS_FIELD = "headers"
         const val URI_PARAMS_FIELD = "uriParameters"
         const val HEADER_PARAMS_FIELD = "headerParameters"
+        const val HEADER_PROTOCOL = "http"
     }
 
 }
