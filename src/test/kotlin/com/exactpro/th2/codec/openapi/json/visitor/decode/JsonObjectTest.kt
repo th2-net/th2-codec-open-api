@@ -37,6 +37,7 @@ import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 import org.junit.jupiter.api.Test
+import java.math.BigDecimal
 
 @Suppress("CAST_NEVER_SUCCEEDS")
 class JsonObjectTest {
@@ -164,6 +165,19 @@ class JsonObjectTest {
     }
 
     @Test
+    fun `big decimal test decode`() {
+        val fieldName = "decimalField"
+        val simpleValue = 100000000000
+        val json =  mapper.createObjectNode().apply {
+            put(fieldName, simpleValue)
+        }
+        val result = DecodeJsonObjectVisitor(json).apply {
+            visit(fieldName, null as? BigDecimal, createTestSchema(simpleValue), true)
+        }.getResult()
+        result.build().assertString(fieldName, simpleValue.toString())
+    }
+
+    @Test
     fun `string array test decode`() {
         val fieldName = "stringArrayField"
         val collection = listOf("stringValue1", "stringValue3", "stringValue2", "stringValue4")
@@ -243,6 +257,20 @@ class JsonObjectTest {
         }
         val result = DecodeJsonObjectVisitor(json).apply {
             visitLongCollection(fieldName, null, createArrayTestSchema("string"), true)
+        }.getResult()
+        result.build().assertList(fieldName, collection.map { it.toValue() })
+    }
+
+    @Test
+    fun `big decimal array test decode`() {
+        val fieldName = "decimalArrayField"
+        val collection = listOf(100000400000, 100003000000, 100000001000, 100000020000)
+        val json =  mapper.createObjectNode().apply {
+            val arrayNode = putArray(fieldName)
+            collection.forEach(arrayNode::add)
+        }
+        val result = DecodeJsonObjectVisitor(json).apply {
+            visitBigDecimalCollection(fieldName, null, createArrayTestSchema("string"), true)
         }.getResult()
         result.build().assertList(fieldName, collection.map { it.toValue() })
     }

@@ -61,7 +61,7 @@ class OpenApiCodecFactory : IPipelineCodecFactory {
     }
 
     companion object {
-        val PROTOCOLS = setOf("json", "binary", "http")
+        val PROTOCOLS = setOf("json", "binary")
         private val LOGGER = KotlinLogging.logger { }
     }
 

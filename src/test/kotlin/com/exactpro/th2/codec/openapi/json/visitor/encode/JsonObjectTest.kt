@@ -38,6 +38,7 @@ import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import java.math.BigDecimal
 
 @Suppress("CAST_NEVER_SUCCEEDS")
 class JsonObjectTest {
@@ -150,6 +151,17 @@ class JsonObjectTest {
     }
 
     @Test
+    fun `big decimal test encode`() {
+        val fieldName = "decimalField"
+        val simpleValue = BigDecimal(100000000000)
+        val visitor = EncodeJsonObjectVisitor(message().addField(fieldName, simpleValue).build())
+        val schema = createTestSchema(simpleValue)
+        visitor.visit(fieldName, null as? BigDecimal, schema, true)
+        val result = mapper.readTree(visitor.getResult().toStringUtf8()).get(fieldName)?.asText()?.toBigDecimal()
+        Assertions.assertEquals(simpleValue, result)
+    }
+
+    @Test
     fun `string array test encode`() {
         val fieldName = "stringField"
         val collection = listOf("stringValue1", "stringValue2", "stringValue3", "stringValue4")
@@ -230,6 +242,20 @@ class JsonObjectTest {
         Assertions.assertEquals(4, result.size())
         collection.forEachIndexed { index, value ->
             Assertions.assertEquals(value, result.get(index).asLong())
+        }
+    }
+
+    @Test
+    fun `big decimal array test encode`() {
+        val fieldName = "decimalField"
+        val collection = listOf(BigDecimal(100000000010), BigDecimal(100000002000), BigDecimal(100300000000), BigDecimal(100004000000))
+        val visitor = EncodeJsonObjectVisitor(message().addField(fieldName, collection).build())
+        val schema = createArrayTestSchema("number", "-")
+        visitor.visitBigDecimalCollection(fieldName, null, schema, true)
+        val result = requireNotNull(mapper.readTree(visitor.getResult().toStringUtf8()).get(fieldName) as? ArrayNode)
+        Assertions.assertEquals(4, result.size())
+        collection.forEachIndexed { index, value ->
+            Assertions.assertEquals(value, result.get(index).asText().toBigDecimal())
         }
     }
 

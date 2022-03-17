@@ -33,6 +33,7 @@ import com.exactpro.th2.common.message.addField
 import com.exactpro.th2.common.message.addFields
 import com.exactpro.th2.common.message.message
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
@@ -150,6 +151,8 @@ class DecodeJsonObjectVisitor(override val from: ObjectNode) : DecodeVisitor<Obj
     override fun getResult(): Message.Builder = rootMessage
 
     private companion object {
-        val mapper = ObjectMapper()
+        val mapper = ObjectMapper().apply {
+            nodeFactory = JsonNodeFactory.withExactBigDecimals(true)
+        }
     }
 }

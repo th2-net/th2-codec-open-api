@@ -38,6 +38,7 @@ import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import java.math.BigDecimal
 
 class JsonArrayTest {
 
@@ -204,6 +205,19 @@ class JsonArrayTest {
         val result = (mapper.readTree(visitor.getResult().toStringUtf8()) as ArrayNode)
         collection.forEachIndexed { index, value ->
             Assertions.assertEquals(value, result.get(index).asLong())
+        }
+    }
+
+    @Test
+    fun `big decimal array test encode`() {
+        val fieldName = "decimalField"
+        val collection = listOf(BigDecimal(100044000000), BigDecimal(100000030000), BigDecimal(100000001000), BigDecimal(100000022000))
+        val visitor = EncodeJsonArrayVisitor(message().addField(fieldName, collection).build())
+        val schema = createArrayTestSchema("number", "-")
+        visitor.visitLongCollection(fieldName, null, schema, true)
+        val result = (mapper.readTree(visitor.getResult().toStringUtf8()) as ArrayNode)
+        collection.forEachIndexed { index, value ->
+            Assertions.assertEquals(value, result.get(index).asText().toBigDecimal())
         }
     }
 

@@ -31,6 +31,7 @@ import com.exactpro.th2.common.value.getLong
 import com.exactpro.th2.common.value.getMessage
 import com.exactpro.th2.common.value.getString
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.google.protobuf.ByteString
 import io.swagger.v3.oas.models.media.ArraySchema
@@ -170,6 +171,8 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
     fun getNode() = rootNode
 
     private companion object {
-        val mapper = ObjectMapper()
+        val mapper = ObjectMapper().apply {
+            nodeFactory = JsonNodeFactory.withExactBigDecimals(true)
+        }
     }
 }

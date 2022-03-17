@@ -16,7 +16,7 @@ class EmptyBodyTests {
             "get",
             null,
             null,
-            "http")
+            "")
         Assertions.assertNull(rawMessage)
     }
 
@@ -37,7 +37,7 @@ class EmptyBodyTests {
             "get",
             "200",
             null,
-            "http")
+            "")
         Assertions.assertNull(rawMessage)
     }
 

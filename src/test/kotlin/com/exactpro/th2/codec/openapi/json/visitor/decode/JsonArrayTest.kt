@@ -37,6 +37,7 @@ import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import java.math.BigDecimal
 
 class JsonArrayTest {
 
@@ -71,6 +72,10 @@ class JsonArrayTest {
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
             visitor.visit("", null as? Schema<*>, StringSchema(), true, SchemaWriter(openAPI))
+        }
+
+        Assertions.assertThrows(UnsupportedOperationException::class.java) {
+            visitor.visit("", null as? BigDecimal, StringSchema(), true)
         }
     }
 
@@ -207,6 +212,18 @@ class JsonArrayTest {
         }
         val visitor = DecodeJsonArrayVisitor(jsonArrayNode)
         visitor.visitLongCollection(fieldName, null, createArrayTestSchema("integer", "int64"), true)
+        visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
+    }
+
+    @Test
+    fun `big decimal array test decode`() {
+        val fieldName = "decimalField"
+        val collection = listOf(100000000000, 100003330000, 100000220000, 100000001100)
+        val jsonArrayNode = mapper.createArrayNode().apply {
+            collection.forEach(this::add)
+        }
+        val visitor = DecodeJsonArrayVisitor(jsonArrayNode)
+        visitor.visitBigDecimalCollection(fieldName, null, createArrayTestSchema("integer", "int64"), true)
         visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
     }
 
