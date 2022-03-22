@@ -120,11 +120,13 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
 
             val container = checkNotNull(typeToSchema[messageType]) { "There no message $messageType in dictionary" }
 
-            builder += createHeaderMessage(container, parsedMessage).apply {
+            val header =  createHeaderMessage(container, parsedMessage).apply {
                 if (parsedMessage.hasParentEventId()) parentEventId = parsedMessage.parentEventId
                 sessionAlias = parsedMessage.sessionAlias
                 metadataBuilder.putAllProperties(parsedMessage.metadata.propertiesMap)
             }
+
+            LOGGER.trace { "Created header message for ${parsedMessage.messageType}: ${header.messageType}" }
 
             runCatching {
                 encodeBody(container, parsedMessage)?.let(builder::plusAssign)
@@ -138,6 +140,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
     }
 
     private fun encodeBody(container: HttpRouteContainer, message: Message): RawMessage? = container.body?.let { messageSchema ->
+        LOGGER.debug { "Start of message encoding: ${message.messageType}" }
         checkNotNull(messageSchema.type) {"Type of schema [${messageSchema.name}] wasn't filled"}
 
         val visitor = VisitorFactory.createEncodeVisitor(container.bodyFormat!!, messageSchema.type, message)
