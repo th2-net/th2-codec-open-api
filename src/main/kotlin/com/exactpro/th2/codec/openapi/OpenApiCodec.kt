@@ -141,12 +141,10 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
     }
 
     private fun encodeBody(container: HttpRouteContainer, message: Message): RawMessage? {
-        if (container.body == null) {
-            if (message.fieldsCount > 0) throw IllegalStateException("Container body wasn't found for nonempty message: ${message.messageType}")
+        val messageSchema = container.body ?: run {
+            LOGGER.trace { "Body wasn't found for message: ${message.messageType}" }
             return null
         }
-
-        val messageSchema = container.body
 
         LOGGER.debug { "Start of message encoding: ${message.messageType}" }
         checkNotNull(messageSchema.type) {"Type of schema [${messageSchema.name}] wasn't filled"}
