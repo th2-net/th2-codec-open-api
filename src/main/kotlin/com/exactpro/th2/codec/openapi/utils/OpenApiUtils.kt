@@ -64,15 +64,15 @@ fun <T> Schema<*>.checkEnum(value: T?, name: String) {
 fun String.extractType() = this.split(";")[0].trim()
 
 fun PathItem.getSchema(method: String, code: String?, bodyFormat: String): Schema<*> {
-    val methodRoot = this.getByMethod(method)
+    val methodRootSchema = this.getByMethod(method)
 
     val schema = if (code!=null) {
-        methodRoot?.responses?.get(code)?.content?.get(bodyFormat)?.schema
+        methodRootSchema?.responses?.get(code)?.content?.get(bodyFormat)?.schema
     } else {
-        methodRoot?.requestBody?.content?.get(bodyFormat)?.schema
+        methodRootSchema?.requestBody?.content?.get(bodyFormat)?.schema
     }
 
     return checkNotNull(schema) {
-        "Schema with method: [$methodRoot], code: [$code] and type [$bodyFormat] wasn't found\" }"
+        "Schema with method: [$method], code: [$code] and type [$bodyFormat] wasn't found"
     }
 }
