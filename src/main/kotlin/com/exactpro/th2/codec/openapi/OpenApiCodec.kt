@@ -126,6 +126,8 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
                 metadataBuilder.putAllProperties(parsedMessage.metadata.propertiesMap)
             }
 
+            builder+=header
+
             LOGGER.trace { "Created header message for ${parsedMessage.messageType}: ${header.messageType}" }
 
             runCatching {
