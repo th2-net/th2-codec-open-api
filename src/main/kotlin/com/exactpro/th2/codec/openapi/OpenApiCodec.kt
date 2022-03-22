@@ -49,6 +49,7 @@ import com.exactpro.th2.common.message.sessionAlias
 import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.parameters.Parameter
 import mu.KotlinLogging
+import java.lang.IllegalStateException
 import java.util.Locale
 
 class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettings) : IPipelineCodec {
@@ -107,9 +108,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
         val builder = MessageGroup.newBuilder()
 
         for (message in messages) {
-            if (message.kindCase != MESSAGE ||
-                message.message.metadata.run { protocol.isNotEmpty() && !PROTOCOLS.contains(protocol) } ||
-                message.message.messageType == REQUEST_MESSAGE || message.message.messageType == RESPONSE_MESSAGE) {
+            if (message.kindCase != MESSAGE || message.message.metadata.run { protocol.isNotEmpty() && !PROTOCOLS.contains(protocol) } || message.message.messageType == REQUEST_MESSAGE || message.message.messageType == RESPONSE_MESSAGE) {
                 builder.addMessages(message)
                 continue
             }
@@ -120,22 +119,18 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
 
             val container = checkNotNull(typeToSchema[messageType]) { "There no message $messageType in dictionary" }
 
-            val header =  createHeaderMessage(container, parsedMessage).apply {
+            val header = createHeaderMessage(container, parsedMessage).apply {
                 if (parsedMessage.hasParentEventId()) parentEventId = parsedMessage.parentEventId
                 sessionAlias = parsedMessage.sessionAlias
                 metadataBuilder.putAllProperties(parsedMessage.metadata.propertiesMap)
             }
 
-            builder+=header
+            builder += header
 
             LOGGER.trace { "Created header message for ${parsedMessage.messageType}: ${header.messageType}" }
 
             try {
-                encodeBody(container, parsedMessage)?.let {
-                    builder+=it
-                } ?: run {
-                    LOGGER.trace { "Encoded message [${parsedMessage.messageType}] had no body in it" }
-                }
+                encodeBody(container, parsedMessage)?.let(builder::plusAssign)
             } catch (e: Exception) {
                 throw EncodeException("Cannot encode body of message [${parsedMessage.messageType}]", e)
             }
@@ -145,7 +140,14 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
         return builder.build()
     }
 
-    private fun encodeBody(container: HttpRouteContainer, message: Message): RawMessage? = container.body?.let { messageSchema ->
+    private fun encodeBody(container: HttpRouteContainer, message: Message): RawMessage? {
+        if (container.body == null) {
+            if (message.fieldsCount > 0) throw IllegalStateException("Container body wasn't found for nonempty message: ${message.messageType}")
+            return null
+        }
+
+        val messageSchema = container.body
+
         LOGGER.debug { "Start of message encoding: ${message.messageType}" }
         checkNotNull(messageSchema.type) {"Type of schema [${messageSchema.name}] wasn't filled"}
 
@@ -155,7 +157,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
 
         LOGGER.trace { "Result of encoded message ${message.messageType}: $result" }
 
-        if (!result.isEmpty) {
+        return if (!result.isEmpty) {
             RawMessage.newBuilder().apply {
                 parentEventId = message.parentEventId
                 sessionAlias = message.sessionAlias
@@ -210,20 +212,20 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
                 method = requireNotNull(rawMessage.metadata.propertiesMap[METHOD_PROPERTY]?.lowercase()) { "Method property in metadata from response is required" }
                 code = requireNotNull(header.getString(STATUS_CODE_FIELD)) { "Code status field required inside of http response message" }
 
-                pairFound = checkNotNull(patternToPathItem.firstOrNull { it.first.matches(uri) }) {"Cannot find path-item by uri: $uri"}
+                pairFound = checkNotNull(patternToPathItem.firstOrNull { it.first.matches(uri) }) { "Cannot find path-item by uri: $uri" }
                 dictionary.getEndPoint(pairFound.second.getSchema(method, code, bodyFormat))
             }
             REQUEST_MESSAGE -> {
                 uri = requireNotNull(header.getString(URI_FIELD)) { "URI field in request is required" }
                 method = requireNotNull(header.getString(METHOD_FIELD)) { "Method field in request is required" }
 
-                pairFound = checkNotNull(patternToPathItem.firstOrNull { it.first.matches(uri) }) {"Cannot find path-item by uri: $uri"}
+                pairFound = checkNotNull(patternToPathItem.firstOrNull { it.first.matches(uri) }) { "Cannot find path-item by uri: $uri" }
                 dictionary.getEndPoint(pairFound.second.getSchema(method, null, bodyFormat))
             }
             else -> error("Unsupported message type: ${header.messageType}")
         }
 
-        checkNotNull(messageSchema.type) {"Type of schema [${messageSchema.name}] wasn't filled"}
+        checkNotNull(messageSchema.type) { "Type of schema [${messageSchema.name}] wasn't filled" }
 
         val type = combineName(pairFound.first.pattern, method, code, bodyFormat)
 
@@ -321,5 +323,4 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
         const val HEADER_PARAMS_FIELD = "headerParameters"
         const val HEADER_PROTOCOL = "http"
     }
-
 }
