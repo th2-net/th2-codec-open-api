@@ -130,10 +130,14 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
 
             LOGGER.trace { "Created header message for ${parsedMessage.messageType}: ${header.messageType}" }
 
-            runCatching {
-                encodeBody(container, parsedMessage)?.let(builder::plusAssign)
-            }.getOrElse {
-                throw EncodeException("Cannot encode body of message [${parsedMessage.messageType}]", it)
+            try {
+                encodeBody(container, parsedMessage)?.let {
+                    builder+=it
+                } ?: run {
+                    LOGGER.trace { "Encoded message [${parsedMessage.messageType}] had no body in it" }
+                }
+            } catch (e: Exception) {
+                throw EncodeException("Cannot encode body of message [${parsedMessage.messageType}]", e)
             }
 
         }
