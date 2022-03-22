@@ -143,6 +143,9 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
         val visitor = VisitorFactory.createEncodeVisitor(container.bodyFormat!!, messageSchema.type, message)
         schemaWriter.traverse(visitor, messageSchema)
         val result = visitor.getResult()
+
+        LOGGER.trace { "Result of encoded message ${message.messageType}: $result" }
+
         if (!result.isEmpty) {
             RawMessage.newBuilder().apply {
                 parentEventId = message.parentEventId
@@ -214,6 +217,8 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
         checkNotNull(messageSchema.type) {"Type of schema [${messageSchema.name}] wasn't filled"}
 
         val type = combineName(pairFound.first.pattern, method, code, bodyFormat)
+
+        LOGGER.debug { "Schema for message was found: ${messageSchema.name} with type-name: $type" }
 
         val visitor = VisitorFactory.createDecodeVisitor(bodyFormat, messageSchema.type, body)
         schemaWriter.traverse(visitor, messageSchema)
