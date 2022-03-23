@@ -49,7 +49,6 @@ import com.exactpro.th2.common.message.sessionAlias
 import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.parameters.Parameter
 import mu.KotlinLogging
-import java.lang.IllegalStateException
 import java.util.Locale
 
 class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettings) : IPipelineCodec {
@@ -75,13 +74,16 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
                     methodValue.parameters?.associateByTo(this, Parameter::getName)
                 }
 
-                mapForName[combineName(pathKey, methodKey)] = RequestContainer(pattern, methodKey, null, null, resultParams)
 
                 // Request
                 methodValue.requestBody?.content?.forEach { (typeKey, typeValue) ->
                     mapForName[combineName(pathKey, methodKey, typeKey)] = RequestContainer(
                         pattern, methodKey, dictionary.getEndPoint(typeValue.schema), typeKey, resultParams
                     )
+
+                    if (methodValue.requestBody.required /*nullable*/ == false) {
+                        mapForName[combineName(pathKey, methodKey)] = RequestContainer(pattern, methodKey, null, null, resultParams)
+                    }
                 } ?: run {
                     mapForName[combineName(pathKey, methodKey)] = RequestContainer(pattern, methodKey, null, null, resultParams)
                 }
@@ -227,7 +229,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
 
         val type = combineName(pairFound.first.pattern, method, code, bodyFormat)
 
-        LOGGER.debug { "Schema for message was found: ${messageSchema.name} with type-name: $type" }
+        LOGGER.debug { "Schema for ${header.messageType} with type-name: $type was found" }
 
         val visitor = VisitorFactory.createDecodeVisitor(bodyFormat, messageSchema.type, body)
         schemaWriter.traverse(visitor, messageSchema)
@@ -301,7 +303,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
         }
     }
 
-    private fun combineName(vararg steps: String) = steps.asSequence().flatMap { it.split(COMBINER_REGEX) }.joinToString("") { it.lowercase().capitalize() }
+    fun combineName(vararg steps: String) = steps.asSequence().flatMap { it.split(COMBINER_REGEX) }.joinToString("") { it.lowercase().capitalize() }
 
     companion object {
         private val LOGGER = KotlinLogging.logger { }

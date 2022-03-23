@@ -31,7 +31,6 @@ import com.exactpro.th2.common.message.plusAssign
 import com.exactpro.th2.common.message.sessionAlias
 import com.google.protobuf.ByteString
 import org.junit.jupiter.api.Assertions
-import java.util.Locale
 import kotlin.test.fail
 
 
@@ -211,16 +210,6 @@ fun OpenApiCodec.testEncode(path: String, method: String, code: String?, type: S
     }
 
     return body
-}
-
-private fun combineName(vararg steps : String): String {
-    return buildString {
-        for (step in steps) {
-            step.split("{", "}", "-", "/", "_").forEach { word ->
-                append(word.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() })
-            }
-        }
-    }
 }
 
 fun OpenApiCodec.encode(message: Message) = encode(MessageGroup.newBuilder().addMessages(AnyMessage.newBuilder().setMessage(message).build()).build())

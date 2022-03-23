@@ -85,7 +85,7 @@ class DecodeJsonObjectVisitor(override val from: ObjectNode) : DecodeVisitor<Obj
     override fun visit(fieldName: String, defaultValue: BigDecimal?, fldStruct: Schema<*>, required: Boolean) {
         val value = from.getRequiredField(fieldName, required)?.validateAsBigDecimal()
         fldStruct.checkEnum(value, fieldName)
-        rootMessage.addFields(fieldName, value ?: defaultValue)
+        rootMessage.addFields(fieldName, value?.toPlainString() ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Long?, fldStruct: Schema<*>, required: Boolean) {
@@ -132,7 +132,7 @@ class DecodeJsonObjectVisitor(override val from: ObjectNode) : DecodeVisitor<Obj
 
     override fun visitBigDecimalCollection(fieldName: String, defaultValue: List<BigDecimal>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredArray(fieldName, required)?.let { array ->
-            rootMessage.addField(fieldName, array.map { it.validateAsBigDecimal() })
+            rootMessage.addField(fieldName, array.map { it.validateAsBigDecimal().toPlainString() })
         }
     }
 

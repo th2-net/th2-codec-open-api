@@ -97,7 +97,7 @@ class DecodeJsonArrayVisitor(override val from: ArrayNode) : DecodeVisitor<Array
     }
 
     override fun visitBigDecimalCollection(fieldName: String, defaultValue: List<BigDecimal>?, fldStruct: ArraySchema, required: Boolean) {
-        rootMessage.addField(fieldName, from.map { it.validateAsBigDecimal() })
+        rootMessage.addField(fieldName, from.map { it.validateAsBigDecimal().toPlainString() })
     }
 
     override fun visitObjectCollection(fieldName: String, defaultValue: List<Any>?, fldStruct: ArraySchema, required: Boolean, schemaWriter: SchemaWriter) {
