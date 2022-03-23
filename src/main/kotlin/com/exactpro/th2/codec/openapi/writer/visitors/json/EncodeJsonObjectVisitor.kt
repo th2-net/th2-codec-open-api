@@ -17,7 +17,7 @@
 package com.exactpro.th2.codec.openapi.writer.visitors.json
 
 import com.exactpro.th2.codec.openapi.utils.checkEnum
-import com.exactpro.th2.codec.openapi.utils.getRequiredField
+import com.exactpro.th2.codec.openapi.utils.getField
 import com.exactpro.th2.codec.openapi.utils.putAll
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.codec.openapi.writer.visitors.SchemaVisitor.EncodeVisitor
@@ -40,10 +40,11 @@ import java.math.BigDecimal
 
 
 class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Message>() {
+
     private val rootNode: ObjectNode = mapper.createObjectNode()
 
     override fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, required: Boolean, schemaWriter: SchemaWriter) {
-        from.getRequiredField(fieldName, required)?.getMessage()?.let { nextMessage ->
+        from.getField(fieldName, required)?.getMessage()?.let { nextMessage ->
             val visitor = EncodeJsonObjectVisitor(nextMessage)
             schemaWriter.traverse(visitor, fldStruct)
             rootNode.set<ObjectNode>(fieldName, visitor.rootNode)
@@ -51,7 +52,7 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
     }
 
     override fun visit(fieldName: String, defaultValue: String?, fldStruct: Schema<*>, required: Boolean) {
-        from.getRequiredField(fieldName, required)?.getString()?.let { value ->
+        from.getField(fieldName, required)?.getString()?.let { value ->
             fldStruct.checkEnum(value, fieldName)
             rootNode.put(fieldName, value)
         } ?: defaultValue?.let {
@@ -60,7 +61,7 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
     }
 
     override fun visit(fieldName: String, defaultValue: Boolean?, fldStruct: Schema<*>, required: Boolean) {
-        from.getRequiredField(fieldName, required)?.getString()?.toBoolean()?.let { value ->
+        from.getField(fieldName, required)?.getString()?.toBoolean()?.let { value ->
             fldStruct.checkEnum(value, fieldName)
             rootNode.put(fieldName, value)
         } ?: defaultValue?.let {
@@ -69,7 +70,7 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
     }
 
     override fun visit(fieldName: String, defaultValue: Int?, fldStruct: Schema<*>, required: Boolean) {
-        from.getRequiredField(fieldName, required)?.getInt()?.let { value ->
+        from.getField(fieldName, required)?.getInt()?.let { value ->
             fldStruct.checkEnum(value, fieldName)
             rootNode.put(fieldName, value)
         } ?: defaultValue?.let {
@@ -78,7 +79,7 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
     }
 
     override fun visit(fieldName: String, defaultValue: Float?, fldStruct: Schema<*>, required: Boolean) {
-        from.getRequiredField(fieldName, required)?.getString()?.toFloat()?.let { value ->
+        from.getField(fieldName, required)?.getString()?.toFloat()?.let { value ->
             fldStruct.checkEnum(value, fieldName)
             rootNode.put(fieldName, value)
         } ?: defaultValue?.let {
@@ -87,7 +88,7 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
     }
 
     override fun visit(fieldName: String, defaultValue: Double?, fldStruct: Schema<*>, required: Boolean) {
-        from.getRequiredField(fieldName, required)?.getDouble()?.let { value ->
+        from.getField(fieldName, required)?.getDouble()?.let { value ->
             fldStruct.checkEnum(value, fieldName)
             rootNode.put(fieldName, value)
         } ?: defaultValue?.let {
@@ -96,7 +97,7 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
     }
 
     override fun visit(fieldName: String, defaultValue: Long?, fldStruct: Schema<*>, required: Boolean) {
-        from.getRequiredField(fieldName, required)?.getLong()?.let { value ->
+        from.getField(fieldName, required)?.getLong()?.let { value ->
             fldStruct.checkEnum(value, fieldName)
             rootNode.put(fieldName, value)
         } ?: defaultValue?.let {
@@ -105,7 +106,7 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
     }
 
     override fun visit(fieldName: String, defaultValue: BigDecimal?, fldStruct: Schema<*>, required: Boolean) {
-        from.getRequiredField(fieldName, required)?.getBigDecimal()?.let { value ->
+        from.getField(fieldName, required)?.getBigDecimal()?.let { value ->
             fldStruct.checkEnum(value, fieldName)
             rootNode.put(fieldName, value)
         } ?: defaultValue?.let {
@@ -113,50 +114,22 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
         }
     }
 
-    override fun visitBooleanCollection(fieldName: String, defaultValue: List<Boolean>?, fldStruct: ArraySchema, required: Boolean) {
-        from.getRequiredField(fieldName, required)?.getList()?.let { values ->
-            rootNode.putArray(fieldName).putAll<Boolean>(values)
-        }
-    }
+    override fun visitBooleanCollection(fieldName: String, defaultValue: List<Boolean>?, fldStruct: ArraySchema, required: Boolean) = rootNode.putListFrom(from, fieldName, defaultValue, required)
 
-    override fun visitIntegerCollection(fieldName: String, defaultValue: List<Int>?, fldStruct: ArraySchema, required: Boolean) {
-        from.getRequiredField(fieldName, required)?.getList()?.let { values ->
-            rootNode.putArray(fieldName).putAll<Int>(values)
-        }
-    }
+    override fun visitIntegerCollection(fieldName: String, defaultValue: List<Int>?, fldStruct: ArraySchema, required: Boolean) = rootNode.putListFrom(from, fieldName, defaultValue, required)
 
-    override fun visitStringCollection(fieldName: String, defaultValue: List<String>?, fldStruct: ArraySchema, required: Boolean) {
-        from.getRequiredField(fieldName, required)?.getList()?.let { values ->
-            rootNode.putArray(fieldName).putAll<String>(values)
-        }
-    }
+    override fun visitStringCollection(fieldName: String, defaultValue: List<String>?, fldStruct: ArraySchema, required: Boolean) = rootNode.putListFrom(from, fieldName, defaultValue, required)
 
-    override fun visitDoubleCollection(fieldName: String, defaultValue: List<Double>?, fldStruct: ArraySchema, required: Boolean) {
-        from.getRequiredField(fieldName, required)?.getList()?.let { values ->
-            rootNode.putArray(fieldName).putAll<Double>(values)
-        }
-    }
+    override fun visitDoubleCollection(fieldName: String, defaultValue: List<Double>?, fldStruct: ArraySchema, required: Boolean) = rootNode.putListFrom(from, fieldName, defaultValue, required)
 
-    override fun visitFloatCollection(fieldName: String, defaultValue: List<Float>?, fldStruct: ArraySchema, required: Boolean) {
-        from.getRequiredField(fieldName, required)?.getList()?.let { values ->
-            rootNode.putArray(fieldName).putAll<Float>(values)
-        }
-    }
+    override fun visitFloatCollection(fieldName: String, defaultValue: List<Float>?, fldStruct: ArraySchema, required: Boolean) = rootNode.putListFrom(from, fieldName, defaultValue, required)
 
-    override fun visitLongCollection(fieldName: String, defaultValue: List<Long>?, fldStruct: ArraySchema, required: Boolean) {
-        from.getRequiredField(fieldName, required)?.getList()?.let { values ->
-            rootNode.putArray(fieldName).putAll<Long>(values)
-        }
-    }
+    override fun visitLongCollection(fieldName: String, defaultValue: List<Long>?, fldStruct: ArraySchema, required: Boolean) = rootNode.putListFrom(from, fieldName, defaultValue, required)
 
-    override fun visitBigDecimalCollection(fieldName: String, defaultValue: List<BigDecimal>?, fldStruct: ArraySchema, required: Boolean) {
-        from.getRequiredField(fieldName, required)?.getList()?.let { values ->
-            rootNode.putArray(fieldName).putAll<BigDecimal>(values)
-        }
-    }
+    override fun visitBigDecimalCollection(fieldName: String, defaultValue: List<BigDecimal>?, fldStruct: ArraySchema, required: Boolean) = rootNode.putListFrom(from, fieldName, defaultValue, required)
 
     override fun visitObjectCollection(fieldName: String, defaultValue: List<Any>?, fldStruct: ArraySchema, required: Boolean, schemaWriter: SchemaWriter) {
-        from.getRequiredField(fieldName, required)?.getList()?.map {
+        from.getField(fieldName, required)?.getList()?.map {
             if (!it.hasMessageValue()) error("Cannot convert $fieldName=${it.toJson(true)} to json object")
             EncodeJsonObjectVisitor(it.messageValue).apply {
                 schemaWriter.traverse(this, fldStruct.items)
@@ -164,15 +137,24 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
         }?.run(rootNode.putArray(fieldName)::addAll)
     }
 
-    override fun visitUndefinedFields(fields: MutableSet<String>): Set<String> = this.from.fieldsMap.keys.minus(fields)
+    override fun getUndefinedFields(fields: MutableSet<String>): Set<String> = this.from.fieldsMap.keys - fields
 
     override fun getResult(): ByteString = ByteString.copyFrom(rootNode.toString().toByteArray())
 
     fun getNode() = rootNode
+
+    private inline fun <reified T> ObjectNode.putListFrom(message: Message, name: String, defaultValue: List<T>?, required: Boolean) {
+        message.getField(name, required)?.getList()?.let { values ->
+            this.putArray(name).putAll<T>(values)
+        } ?: defaultValue?.let { list ->
+            this.putArray(name).putAll(list)
+        }
+    }
 
     private companion object {
         val mapper = ObjectMapper().apply {
             nodeFactory = JsonNodeFactory.withExactBigDecimals(true)
         }
     }
+
 }

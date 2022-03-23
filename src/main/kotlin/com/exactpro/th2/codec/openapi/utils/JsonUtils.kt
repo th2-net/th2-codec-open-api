@@ -30,14 +30,25 @@ import java.math.BigDecimal
 inline fun <reified T> ArrayNode.putAll(values: List<Value>) = when (T::class) {
     Int::class -> values.forEach { add(it.getInt()) }
     String::class -> values.forEach { add(it.getString()) }
-    Float::class, Double::class -> values.forEach { add(it.getBigDecimal()) }
-    Boolean::class -> values.forEach { add(it.getString()!!.toBoolean()) }
+    Float::class, Double::class -> values.forEach { add(it.getFloat()) }
+    Boolean::class -> values.forEach { add(it.getBoolean()) }
     Long::class -> values.forEach { add(it.getLong()) }
-    BigDecimal::class -> values.forEach { add(it.getString()!!.toBigDecimal()) }
+    BigDecimal::class -> values.forEach { add(it.getBigDecimal()) }
     else -> error("Unsupported type of ArrayNode: ${T::class.simpleName}")
 }
 
-fun JsonNode.getRequiredField(fieldName: String, required: Boolean): JsonNode? = get(fieldName).let { node ->
+@JvmName("putAllSimple")
+inline fun <reified T> ArrayNode.putAll(values: List<T>) = when (T::class) {
+    Int::class -> values.forEach { add(it as Int) }
+    String::class -> values.forEach { add(it as String) }
+    Float::class, Double::class -> values.forEach { add(it as Float) }
+    Boolean::class -> values.forEach { add(it as Boolean) }
+    Long::class -> values.forEach { add(it as Long) }
+    BigDecimal::class -> values.forEach { add(it as BigDecimal) }
+    else -> error("Unsupported type of ArrayNode: ${T::class.simpleName}")
+}
+
+fun JsonNode.getField(fieldName: String, required: Boolean): JsonNode? = get(fieldName).let { node ->
     if (node == null || node is NullNode) {
         if (required) {
             error("Field [$fieldName] is required for json [${this.asText()}]")
@@ -48,7 +59,7 @@ fun JsonNode.getRequiredField(fieldName: String, required: Boolean): JsonNode? =
     }
 }
 
-fun JsonNode.getRequiredArray(fieldName: String, required: Boolean): ArrayNode? = getRequiredField(fieldName, required).apply {
+fun JsonNode.getRequiredArray(fieldName: String, required: Boolean): ArrayNode? = getField(fieldName, required).apply {
     if (this != null && !this.isArray) {
         error("$fieldName field of json isn't array!")
     }

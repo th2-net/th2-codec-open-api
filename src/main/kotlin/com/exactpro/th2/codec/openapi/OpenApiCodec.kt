@@ -49,7 +49,6 @@ import com.exactpro.th2.common.message.sessionAlias
 import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.parameters.Parameter
 import mu.KotlinLogging
-import java.util.Locale
 
 class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettings) : IPipelineCodec {
 
@@ -110,7 +109,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
         val builder = MessageGroup.newBuilder()
 
         for (message in messages) {
-            if (message.kindCase != MESSAGE || message.message.metadata.run { protocol.isNotEmpty() && !PROTOCOLS.contains(protocol) } || message.message.messageType == REQUEST_MESSAGE || message.message.messageType == RESPONSE_MESSAGE) {
+            if (!message.hasMessage()) {
                 builder.addMessages(message)
                 continue
             }
@@ -119,17 +118,19 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
             val metadata = parsedMessage.metadata
             val messageType = metadata.messageType
 
+            if(messageType == REQUEST_MESSAGE || messageType == RESPONSE_MESSAGE || metadata.protocol.run { isNotEmpty() && this !in PROTOCOLS }) {
+                builder.addMessages(message)
+                continue
+            }
+
             val container = checkNotNull(typeToSchema[messageType]) { "There no message $messageType in dictionary" }
 
-            val header = createHeaderMessage(container, parsedMessage).apply {
+            builder += createHeaderMessage(container, parsedMessage).apply {
                 if (parsedMessage.hasParentEventId()) parentEventId = parsedMessage.parentEventId
                 sessionAlias = parsedMessage.sessionAlias
                 metadataBuilder.putAllProperties(parsedMessage.metadata.propertiesMap)
+                LOGGER.trace { "Created header message for ${parsedMessage.messageType}: ${this.messageType}" }
             }
-
-            builder += header
-
-            LOGGER.trace { "Created header message for ${parsedMessage.messageType}: ${header.messageType}" }
 
             try {
                 encodeBody(container, parsedMessage)?.let(builder::plusAssign)
@@ -144,7 +145,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
 
     private fun encodeBody(container: HttpRouteContainer, message: Message): RawMessage? {
         val messageSchema = container.body ?: run {
-            LOGGER.trace { "Body wasn't found for message: ${message.messageType}" }
+            LOGGER.debug { "Body wasn't found for message: ${message.messageType}" }
             return null
         }
 
@@ -198,7 +199,11 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
     private fun decodeBody(header: Message, rawMessage: RawMessage): Message {
         val body = rawMessage.body
 
-        val bodyFormat = header.getList(HEADERS_FIELD)?.first { it.messageValue.getString("name") == "Content-Type" }?.messageValue?.getString("value")?.extractType() ?: "null"
+        val bodyFormat = header.getList(HEADERS_FIELD)
+            ?.first { it.messageValue.getString("name") == "Content-Type" }
+            ?.messageValue
+            ?.getString("value")
+            ?.extractType() ?: "null"
 
         val uri: String
         val method: String
@@ -234,7 +239,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
         val visitor = VisitorFactory.createDecodeVisitor(bodyFormat, messageSchema.type, body)
         schemaWriter.traverse(visitor, messageSchema)
         return visitor.getResult().apply {
-            parentEventId = rawMessage.parentEventId
+            if(rawMessage.hasParentEventId()) parentEventId = rawMessage.parentEventId
             sessionAlias = rawMessage.sessionAlias
             this.messageType = type
             metadataBuilder.apply {
@@ -250,12 +255,12 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
     private fun HttpRouteContainer.fillHttpMetadata(metadata: RawMessageMetadata.Builder) {
         when (this) {
             is ResponseContainer -> metadata.apply {
-                method?.let { putProperties(METHOD_PROPERTY, it.uppercase(Locale.getDefault())) }
+                method?.let { putProperties(METHOD_PROPERTY, it.uppercase()) }
                 putProperties(URI_PROPERTY, uriPattern.pattern)
                 putProperties(CODE_PROPERTY, code)
             }
             is RequestContainer -> metadata.apply {
-                method?.let { putProperties(METHOD_PROPERTY, it.uppercase(Locale.getDefault())) }
+                method?.let { putProperties(METHOD_PROPERTY, it.uppercase()) }
                 putProperties(URI_PROPERTY, uriPattern.pattern)
             }
         }

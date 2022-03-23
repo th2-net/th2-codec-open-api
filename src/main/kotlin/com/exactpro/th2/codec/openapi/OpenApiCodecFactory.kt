@@ -31,8 +31,7 @@ import org.openapitools.codegen.validations.oas.RuleConfiguration
 class OpenApiCodecFactory : IPipelineCodecFactory {
 
     override val settingsClass: Class<out IPipelineCodecSettings> = OpenApiCodecSettings::class.java
-    override val protocols: Set<String>
-        get() = PROTOCOLS
+    override val protocols: Set<String> = PROTOCOLS
     override val protocol: String = ""
     private lateinit var context: IPipelineCodecContext
 

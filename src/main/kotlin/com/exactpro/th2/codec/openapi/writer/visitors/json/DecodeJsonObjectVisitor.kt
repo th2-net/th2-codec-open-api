@@ -18,7 +18,7 @@ package com.exactpro.th2.codec.openapi.writer.visitors.json
 
 import com.exactpro.th2.codec.openapi.utils.checkEnum
 import com.exactpro.th2.codec.openapi.utils.getRequiredArray
-import com.exactpro.th2.codec.openapi.utils.getRequiredField
+import com.exactpro.th2.codec.openapi.utils.getField
 import com.exactpro.th2.codec.openapi.utils.validateAsBigDecimal
 import com.exactpro.th2.codec.openapi.utils.validateAsBoolean
 import com.exactpro.th2.codec.openapi.utils.validateAsDouble
@@ -40,12 +40,13 @@ import io.swagger.v3.oas.models.media.Schema
 import java.math.BigDecimal
 
 class DecodeJsonObjectVisitor(override val from: ObjectNode) : DecodeVisitor<ObjectNode>() {
+
     private val rootMessage = message()
 
     constructor(jsonString: String) : this(mapper.readTree(jsonString) as ObjectNode)
 
     override fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, required: Boolean, schemaWriter: SchemaWriter) {
-        from.getRequiredField(fieldName, required)?.let {
+        from.getField(fieldName, required)?.let {
             val visitor = DecodeJsonObjectVisitor(it.validateAsObject())
             schemaWriter.traverse(visitor, fldStruct)
             rootMessage.addFields(fieldName, visitor.rootMessage.build())
@@ -53,43 +54,43 @@ class DecodeJsonObjectVisitor(override val from: ObjectNode) : DecodeVisitor<Obj
     }
 
     override fun visit(fieldName: String, defaultValue: String?, fldStruct: Schema<*>, required: Boolean) {
-        val value = from.getRequiredField(fieldName, required)?.asText()
+        val value = from.getField(fieldName, required)?.asText()
         fldStruct.checkEnum(value, fieldName)
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Boolean?, fldStruct: Schema<*>, required: Boolean) {
-        val value = from.getRequiredField(fieldName, required)?.validateAsBoolean()
+        val value = from.getField(fieldName, required)?.validateAsBoolean()
         fldStruct.checkEnum(value, fieldName)
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Int?, fldStruct: Schema<*>, required: Boolean) {
-        val value = from.getRequiredField(fieldName, required)?.validateAsInteger()
+        val value = from.getField(fieldName, required)?.validateAsInteger()
         fldStruct.checkEnum(value, fieldName)
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Float?, fldStruct: Schema<*>, required: Boolean) {
-        val value = from.getRequiredField(fieldName, required)?.validateAsFloat()
+        val value = from.getField(fieldName, required)?.validateAsFloat()
         fldStruct.checkEnum(value, fieldName)
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Double?, fldStruct: Schema<*>, required: Boolean) {
-        val value = from.getRequiredField(fieldName, required)?.validateAsDouble()
+        val value = from.getField(fieldName, required)?.validateAsDouble()
         fldStruct.checkEnum(value, fieldName)
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: BigDecimal?, fldStruct: Schema<*>, required: Boolean) {
-        val value = from.getRequiredField(fieldName, required)?.validateAsBigDecimal()
+        val value = from.getField(fieldName, required)?.validateAsBigDecimal()
         fldStruct.checkEnum(value, fieldName)
         rootMessage.addFields(fieldName, value?.toPlainString() ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Long?, fldStruct: Schema<*>, required: Boolean) {
-        val value = from.getRequiredField(fieldName, required)?.validateAsLong()
+        val value = from.getField(fieldName, required)?.validateAsLong()
         fldStruct.checkEnum(value, fieldName)
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
@@ -146,7 +147,7 @@ class DecodeJsonObjectVisitor(override val from: ObjectNode) : DecodeVisitor<Obj
         }
     }
 
-    override fun visitUndefinedFields(fields: MutableSet<String>): Set<String> = this.from.fieldNames().asSequence().toMutableSet().apply { removeAll(fields) }
+    override fun getUndefinedFields(fields: MutableSet<String>): Set<String> = from.fieldNames().asSequence().filterNot { it in fields }.toSet()
 
     override fun getResult(): Message.Builder = rootMessage
 

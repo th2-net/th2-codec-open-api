@@ -47,7 +47,7 @@ Path that contains parameters inside will be converted as:
 
 All messages processing by encode must contain those types.
 
-Encode accepts only parsed messages, all raw will be passed.
+Encode accepts only parsed messages, raw ones will be skipped.
 
 In result of encode will be sent two messages:
 1. **Request/Response** parsed message with all info about http part (required)
@@ -140,7 +140,7 @@ Result of decode:
 
 ### Codec configs:
 
-* warnUndefinedFields - Enable or Disable warnings for all undefined fields inside object structures, true by default.
+* checkUndefinedFields - Enable or Disable warnings for all undefined fields inside object structures, true by default.
 
 **validationSettings (open api dictionary)**
 * enableRecommendations - Enable or Disable recommendations, true by default.
@@ -177,7 +177,7 @@ May be empty due to missing required fields
 
 ### 0.2.0
 
-+ Feature: check undefined fields and throws errors if they are found
++ Feature: check for undefined fields and throw errors if they are found
 + Fix: protocol loss on decode
 + Fix: null values in fields if no value was found
 + Fix: case-sensitive search for methods inside path items
