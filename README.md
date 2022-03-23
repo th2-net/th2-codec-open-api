@@ -178,6 +178,9 @@ May be empty due to missing required fields
 ### 0.2.0
 
 + Feature: check for undefined fields and throw errors if they are found
++ Feature: "-" format as bigDecimal for numbers
++ Fix: Removed scientific format of big decimal numbers
++ Fix: Http message types without body will be generated only for messages with optional body
 + Fix: protocol loss on decode
 + Fix: null values in fields if no value was found
 + Fix: case-sensitive search for methods inside path items
