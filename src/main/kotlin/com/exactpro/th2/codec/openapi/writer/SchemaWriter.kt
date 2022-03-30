@@ -27,9 +27,10 @@ import io.swagger.v3.parser.util.SchemaTypeUtil.INTEGER_TYPE
 import io.swagger.v3.parser.util.SchemaTypeUtil.NUMBER_TYPE
 import io.swagger.v3.parser.util.SchemaTypeUtil.OBJECT_TYPE
 import io.swagger.v3.parser.util.SchemaTypeUtil.STRING_TYPE
+import java.math.BigDecimal
 
 
-class SchemaWriter private constructor(private val openApi: OpenAPI) {
+class SchemaWriter constructor(private val openApi: OpenAPI, private val failOnUndefined: Boolean = true) {
 
     fun traverse(
         schemaVisitor: SchemaVisitor<*, *>,
@@ -38,11 +39,15 @@ class SchemaWriter private constructor(private val openApi: OpenAPI) {
         val schema = openApi.getEndPoint(msgStructure)
 
         when (schema.type) {
-            ARRAY_TYPE -> {
-                processProperty(schema, schemaVisitor, ARRAY_TYPE)
-            }
+            ARRAY_TYPE -> processProperty(schema, schemaVisitor, ARRAY_TYPE)
             OBJECT_TYPE -> {
                 requireNotNull(schema.properties) {"Properties in object are required: $schema"}
+                if (failOnUndefined) {
+                    schemaVisitor.getUndefinedFields(schema.properties.keys)?.let {
+                        check(it.isEmpty()) { "Undefined fields were found inside of ${schema.name}: ${it.joinToString()}" }
+                    }
+                }
+
                 schema.properties.forEach { (name, property) ->
                     processProperty(openApi.getEndPoint(property), schemaVisitor, name, schema.required?.contains(name) ?: false)
                 }
@@ -53,48 +58,23 @@ class SchemaWriter private constructor(private val openApi: OpenAPI) {
     private fun processProperty(property: Schema<*>, visitor: SchemaVisitor<*, *>, name: String, required: Boolean = false) {
         runCatching {
             when(property.type) {
-                ARRAY_TYPE -> {
-                    processArrayProperty(property as ArraySchema, visitor, name, required)
+                ARRAY_TYPE -> processArrayProperty(property as ArraySchema, visitor, name, required)
+                INTEGER_TYPE -> when (property.format) {
+                    "int64" -> visitor.visit(name, property.default as? Long, property, required)
+                    null, "", "int32" -> visitor.visit(name, property.default as? Int, property, required)
+                    else -> error("Unsupported format of '$INTEGER_TYPE' property $name: ${property.format}")
                 }
-                INTEGER_TYPE -> {
-                    when (property.format) {
-                        "int64" -> {
-                            visitor.visit(name, property.default as? Long, property, required)
-                        }
-                        null, "", "int32" -> {
-                            visitor.visit(name, property.default as? Int, property, required)
-                        }
-                        else -> {
-                            error("Unsupported format of '$INTEGER_TYPE' property $name: ${property.format}")
-                        }
-                    }
+                BOOLEAN_TYPE -> visitor.visit(name, property.default as? Boolean, property, required)
+                NUMBER_TYPE -> when (property.format) {
+                    "float" -> visitor.visit(name, property.default as? Float, property, required)
+                    "double" -> visitor.visit(name, property.default as? Double, property, required)
+                    "-" -> visitor.visit(name, property.default as? BigDecimal, property, required)
+                    null, "" -> visitor.visit(name, property.default as? String, property, required)
+                    else -> error("Unsupported format of '$NUMBER_TYPE' property $name: ${property.format}")
                 }
-                BOOLEAN_TYPE -> {
-                    visitor.visit(name, property.default as? Boolean, property, required)
-                }
-                NUMBER_TYPE -> {
-                    when (property.format) {
-                        "float" -> {
-                            visitor.visit(name, property.default as? Float, property, required)
-                        }
-                        "double" -> {
-                            visitor.visit(name, property.default as? Double, property, required)
-                        }
-                        null, "" -> {
-                            visitor.visit(name, property.default as? String, property, required)
-                        }
-                        else -> {
-                            error("Unsupported format of '$NUMBER_TYPE' property $name: ${property.format}")
-                        }
-                    }
-                }
-                STRING_TYPE -> {
-                    visitor.visit(name, property.default as? String, property, required)
-                }
-                OBJECT_TYPE -> {
-                    visitor.visit(name, property.default as? Schema<*>, property, required)
-                }
-                else -> error("Unsupported type of property $name: null")
+                STRING_TYPE -> visitor.visit(name, property.default as? String, property, required)
+                OBJECT_TYPE -> visitor.visit(name, property.default as? Schema<*>, property, required, this)
+                else -> error("Unsupported type of property")
             }
         }.onFailure {
             throw CodecException("Cannot parse field [$name] inside of schema with type ${property.type}", it)
@@ -106,45 +86,22 @@ class SchemaWriter private constructor(private val openApi: OpenAPI) {
     private fun processArrayProperty(property: ArraySchema, visitor: SchemaVisitor<*, *>, name: String, required: Boolean = false) {
         runCatching {
             when(property.items.type) {
-                INTEGER_TYPE -> {
-                    when (property.items.format) {
-                        "int64" -> {
-                            visitor.visitLongCollection(name, property.default as? List<Long>, property, required)
-                        }
-                        null, "", "int32" -> {
-                            visitor.visitIntegerCollection(name, property.default as? List<Int>, property, required)
-                        }
-                        else -> {
-                            error("Unsupported format of property $name: ${property.format}")
-                        }
-                    }
+                INTEGER_TYPE -> when (property.items.format) {
+                    "int64" -> visitor.visitLongCollection(name, property.default as? List<Long>, property, required)
+                    null, "", "int32" -> visitor.visitIntegerCollection(name, property.default as? List<Int>, property, required)
+                    else -> error("Unsupported format of '$INTEGER_TYPE' property: ${property.format}")
                 }
-                BOOLEAN_TYPE -> {
-                    visitor.visitBooleanCollection(name, property.default as? List<Boolean>, property, required)
+                BOOLEAN_TYPE -> visitor.visitBooleanCollection(name, property.default as? List<Boolean>, property, required)
+                NUMBER_TYPE -> when (property.items.format) {
+                    "float" -> visitor.visitFloatCollection(name, property.default as? List<Float>, property, required)
+                    "double" -> visitor.visitDoubleCollection(name, property.default as? List<Double>, property, required)
+                    null, "" -> visitor.visitStringCollection(name, property.default as? List<String>, property, required)
+                    "-" -> visitor.visitBigDecimalCollection(name, property.default as? List<BigDecimal>, property, required)
+                    else -> error("Unsupported format of '$NUMBER_TYPE' property: ${property.format}")
                 }
-                NUMBER_TYPE -> {
-                    when (property.items.format) {
-                        "float" -> {
-                            visitor.visitFloatCollection(name, property.default as? List<Float>, property, required)
-                        }
-                        "double" -> {
-                            visitor.visitDoubleCollection(name, property.default as? List<Double>, property, required)
-                        }
-                        null, "" -> {
-                            visitor.visitStringCollection(name, property.default as? List<String>, property, required)
-                        }
-                        else -> {
-                            error("Unsupported format of property $name: ${property.format}")
-                        }
-                    }
-                }
-                STRING_TYPE -> {
-                    visitor.visitStringCollection(name, property.default as? List<String>, property, required)
-                }
-                OBJECT_TYPE -> {
-                    visitor.visitObjectCollection(name, property.default as List<Any>, property, required)
-                }
-                else -> error("Unsupported type of property $name: null")
+                STRING_TYPE -> visitor.visitStringCollection(name, property.default as? List<String>, property, required)
+                OBJECT_TYPE -> visitor.visitObjectCollection(name, property.default as? List<Any>, property, required, this)
+                else -> error("Unsupported type of property")
             }
         }.onFailure {
             throw CodecException("Cannot parse array field [$name] inside of schema with type ${property.type}", it)
@@ -153,12 +110,5 @@ class SchemaWriter private constructor(private val openApi: OpenAPI) {
 
     companion object {
         const val ARRAY_TYPE = "array"
-        lateinit var instance: SchemaWriter
-            private set
-
-        fun createInstance(openApi: OpenAPI): SchemaWriter {
-            instance = SchemaWriter(openApi)
-            return instance
-        }
     }
 }

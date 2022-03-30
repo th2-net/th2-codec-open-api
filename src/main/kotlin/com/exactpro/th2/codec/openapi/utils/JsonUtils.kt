@@ -25,23 +25,39 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.NullNode
 import com.fasterxml.jackson.databind.node.ObjectNode
+import java.math.BigDecimal
 
 inline fun <reified T> ArrayNode.putAll(values: List<Value>) = when (T::class) {
     Int::class -> values.forEach { add(it.getInt()) }
     String::class -> values.forEach { add(it.getString()) }
-    Float::class, Double::class -> values.forEach { add(it.getBigDecimal()) }
-    Boolean::class -> values.forEach { add(it.getString()!!.toBoolean()) }
+    Boolean::class -> values.forEach { add(it.getBoolean()) }
     Long::class -> values.forEach { add(it.getLong()) }
+    Float::class, Double::class, BigDecimal::class -> values.forEach { add(it.getBigDecimal()) }
     else -> error("Unsupported type of ArrayNode: ${T::class.simpleName}")
 }
 
-fun JsonNode.getRequiredField(fieldName: String, required: Boolean): JsonNode? = get(fieldName).also { node ->
-    if (required && node == null || node is NullNode) {
-        error("Field [$fieldName] is required for json [${this.asText()}]")
+@JvmName("putAllSimple")
+inline fun <reified T> ArrayNode.putAll(values: List<T>) = when (T::class) {
+    Int::class -> values.forEach { add(it as Int) }
+    String::class -> values.forEach { add(it as String) }
+    Boolean::class -> values.forEach { add(it as Boolean) }
+    Long::class -> values.forEach { add(it as Long) }
+    Float::class, Double::class, BigDecimal::class -> values.forEach { add(it as BigDecimal) }
+    else -> error("Unsupported type of ArrayNode: ${T::class.simpleName}")
+}
+
+fun JsonNode.getField(fieldName: String, required: Boolean): JsonNode? = get(fieldName).let { node ->
+    if (node == null || node is NullNode) {
+        if (required) {
+            error("Field [$fieldName] is required for json [${this.asText()}]")
+        }
+        null
+    } else {
+        node
     }
 }
 
-fun JsonNode.getRequiredArray(fieldName: String, required: Boolean): ArrayNode? = getRequiredField(fieldName, required).apply {
+fun JsonNode.getRequiredArray(fieldName: String, required: Boolean): ArrayNode? = getField(fieldName, required).apply {
     if (this != null && !this.isArray) {
         error("$fieldName field of json isn't array!")
     }
@@ -55,6 +71,11 @@ fun JsonNode.validateAsBoolean(): Boolean = when {
 fun JsonNode.validateAsLong(): Long = when {
     isNumber -> asLong()
     else -> error("Cannot convert $this to Long")
+}
+
+fun JsonNode.validateAsBigDecimal(): BigDecimal = when {
+    isNumber -> asText().toBigDecimal()
+    else -> error("Cannot convert $this to BigDecimal")
 }
 
 fun JsonNode.validateAsInteger(): Int = when {

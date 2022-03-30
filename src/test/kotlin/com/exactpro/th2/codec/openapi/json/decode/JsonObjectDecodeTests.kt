@@ -19,12 +19,13 @@ package com.exactpro.th2.codec.openapi.json.decode
 import com.exactpro.th2.codec.openapi.OpenApiCodec
 import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
 import com.exactpro.th2.common.message.getString
-import com.exactpro.th2.codec.openapi.getResourceAsText
+import com.exactpro.th2.codec.openapi.utils.getResourceAsText
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import com.exactpro.th2.codec.openapi.testDecode
+import com.exactpro.th2.codec.openapi.utils.testDecode
+import com.exactpro.th2.common.message.messageType
 
 class JsonObjectDecodeTests {
     
@@ -33,18 +34,23 @@ class JsonObjectDecodeTests {
         val jsonData = """{
                       "publicKey" : "1234567",
                       "testEnabled" : true,
-                      "testStatus" : "FAILED"
+                      "testStatus" : "FAILED",
+                      "testBigDecimal": 100000000000
                     }""".trimIndent()
-        val decodedResult = OpenApiCodec(openAPI).testDecode(
+        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
             "/test",
             "get",
             "200",
             "application/json",
-            jsonData)
+            jsonData)!!
 
-        Assertions.assertEquals("1234567", decodedResult!!.getString("publicKey"))
+        Assertions.assertEquals("TestGet200ApplicationJson", decodedResult.messageType)
+        Assertions.assertEquals("1234567", decodedResult.getString("publicKey"))
         Assertions.assertEquals(true, decodedResult.getString("testEnabled").toBoolean())
         Assertions.assertEquals("FAILED", decodedResult.getString("testStatus"))
+        Assertions.assertEquals(null, decodedResult.getString("nullField"))
+        Assertions.assertEquals("100000000000", decodedResult.getString("testBigDecimal"))
+
     }
 
     @Test
@@ -54,14 +60,15 @@ class JsonObjectDecodeTests {
                       "testEnabled" : true,
                       "testStatus" : "FAILED"
                     }""".trimIndent()
-        val decodedResult = OpenApiCodec(openAPI).testDecode(
+        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
             "/test",
-            "get",
+            "GET",
             null,
             "application/json",
-            jsonData)
+            jsonData)!!
 
-        Assertions.assertEquals("1234567", decodedResult!!.getString("publicKey"))
+        Assertions.assertEquals("TestGetApplicationJson", decodedResult.messageType)
+        Assertions.assertEquals("1234567", decodedResult.getString("publicKey"))
         Assertions.assertEquals(true, decodedResult.getString("testEnabled").toBoolean())
         Assertions.assertEquals("FAILED", decodedResult.getString("testStatus"))
     }

@@ -29,7 +29,7 @@ import com.exactpro.th2.common.value.toValue
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.exactpro.th2.codec.openapi.createArrayTestSchema
-import com.exactpro.th2.codec.openapi.getResourceAsText
+import com.exactpro.th2.codec.openapi.utils.getResourceAsText
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
@@ -37,6 +37,7 @@ import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import java.math.BigDecimal
 
 class JsonArrayTest {
 
@@ -44,32 +45,37 @@ class JsonArrayTest {
     @Test
     fun `not supported decode`() {
         val node = mapper.createArrayNode()
+        val visitor = DecodeJsonArrayVisitor(node)
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            DecodeJsonArrayVisitor(node).visit("", null as? String, StringSchema(), true)
+            visitor.visit("", null as? String, StringSchema(), true)
         }
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            DecodeJsonArrayVisitor(node).visit("", null as? Int, StringSchema(), true)
+            visitor.visit("", null as? Int, StringSchema(), true)
         }
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            DecodeJsonArrayVisitor(node).visit("", null as? Double, StringSchema(), true)
+            visitor.visit("", null as? Double, StringSchema(), true)
         }
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            DecodeJsonArrayVisitor(node).visit("", null as? Long, StringSchema(), true)
+            visitor.visit("", null as? Long, StringSchema(), true)
         }
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            DecodeJsonArrayVisitor(node).visit("", null as? Float, StringSchema(), true)
+            visitor.visit("", null as? Float, StringSchema(), true)
         }
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            DecodeJsonArrayVisitor(node).visit("", null as? Boolean, StringSchema(), true)
+            visitor.visit("", null as? Boolean, StringSchema(), true)
         }
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            DecodeJsonArrayVisitor(node).visit("", null as? Schema<*>, StringSchema(), true)
+            visitor.visit("", null as? Schema<*>, StringSchema(), true, SchemaWriter(openAPI))
+        }
+
+        Assertions.assertThrows(UnsupportedOperationException::class.java) {
+            visitor.visit("", null as? BigDecimal, StringSchema(), true)
         }
     }
 
@@ -118,7 +124,7 @@ class JsonArrayTest {
         }
 
         val result = DecodeJsonArrayVisitor(jsonArrayNode).apply {
-            visitObjectCollection(fieldName, null, openAPI.components.schemas["ArrayObjectTest"]!! as ArraySchema, true)
+            visitObjectCollection(fieldName, null, openAPI.components.schemas["ArrayObjectTest"]!! as ArraySchema, true, SchemaWriter(openAPI))
         }.getResult()
 
         (result[fieldName]!!).let { listValue ->
@@ -209,10 +215,20 @@ class JsonArrayTest {
         visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
     }
 
-    private companion object {
-        val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/visitorTests.yml"), null, OpenApiCodecSettings().dictionaryParseOption).openAPI.apply {
-            SchemaWriter.createInstance(this)
+    @Test
+    fun `big decimal array test decode`() {
+        val fieldName = "decimalField"
+        val collection = listOf(100000000000, 100003330000, 100000220000, 100000001100)
+        val jsonArrayNode = mapper.createArrayNode().apply {
+            collection.forEach(this::add)
         }
+        val visitor = DecodeJsonArrayVisitor(jsonArrayNode)
+        visitor.visitBigDecimalCollection(fieldName, null, createArrayTestSchema("integer", "int64"), true)
+        visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
+    }
+
+    private companion object {
+        val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/visitorTests.yml"), null, OpenApiCodecSettings().dictionaryParseOption).openAPI
         private val mapper = ObjectMapper()
     }
 }

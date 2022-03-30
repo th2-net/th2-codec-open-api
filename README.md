@@ -1,5 +1,5 @@
 # OpenApi Codec 
-![version](https://img.shields.io/badge/version-0.1.0-blue.svg) 
+![version](https://img.shields.io/badge/version-0.2.0-blue.svg) 
 
 This microservice can validate open api dictionary, encode th2 messages or decode http body.
 
@@ -47,7 +47,7 @@ Path that contains parameters inside will be converted as:
 
 All messages processing by encode must contain those types.
 
-Decode accepts only raw messages, all parsed will be passed.
+Encode accepts only parsed messages, raw ones will be skipped.
 
 In result of encode will be sent two messages:
 1. **Request/Response** parsed message with all info about http part (required)
@@ -140,7 +140,7 @@ Result of decode:
 
 ### Codec configs:
 
-Config contain two main types of options.
+* checkUndefinedFields - Enable or Disable warnings for all undefined fields inside object structures, true by default.
 
 **validationSettings (open api dictionary)**
 * enableRecommendations - Enable or Disable recommendations, true by default.
@@ -163,6 +163,7 @@ Config contain two main types of options.
 ### Configuration example
 
 ```yaml
+checkUndefinedFields: true
 validationSettings:
   enableRecommendations: true
 dictionaryParseOption:
@@ -170,3 +171,16 @@ dictionaryParseOption:
 ```
 
 May be empty due to missing required fields
+
+
+## Release notes
+
+### 0.2.0
+
++ Feature: check for undefined fields and throw errors if they are found
++ Feature: "-" format as bigDecimal for numbers
++ Fix: Removed scientific format of big decimal numbers
++ Fix: Http message types without body will be generated only for messages with optional body
++ Fix: protocol loss on decode
++ Fix: null values in fields if no value was found
++ Fix: case-sensitive search for methods inside path items

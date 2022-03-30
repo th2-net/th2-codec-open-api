@@ -31,13 +31,14 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.exactpro.th2.codec.openapi.createArrayTestSchema
 import com.exactpro.th2.codec.openapi.createTestSchema
-import com.exactpro.th2.codec.openapi.getResourceAsText
+import com.exactpro.th2.codec.openapi.utils.getResourceAsText
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import java.math.BigDecimal
 
 @Suppress("CAST_NEVER_SUCCEEDS")
 class JsonObjectTest {
@@ -70,7 +71,7 @@ class JsonObjectTest {
         }).build()
 
         val result = EncodeJsonObjectVisitor(message).apply {
-            visit(fieldName, null as? Schema<*>, openAPI.components.schemas["ObjectTest"]!!, true)
+            visit(fieldName, null as? Schema<*>, openAPI.components.schemas["ObjectTest"]!!, true, SchemaWriter(openAPI))
         }.getResult().toStringUtf8()
 
         mapper.readTree(result).get(fieldName).let { objectNode ->
@@ -146,6 +147,17 @@ class JsonObjectTest {
         val schema = createTestSchema(simpleValue)
         visitor.visit(fieldName, null as? Long, schema, true)
         val result = mapper.readTree(visitor.getResult().toStringUtf8()).get(fieldName)?.asLong()
+        Assertions.assertEquals(simpleValue, result)
+    }
+
+    @Test
+    fun `big decimal test encode`() {
+        val fieldName = "decimalField"
+        val simpleValue = BigDecimal(100000000000)
+        val visitor = EncodeJsonObjectVisitor(message().addField(fieldName, simpleValue).build())
+        val schema = createTestSchema(simpleValue)
+        visitor.visit(fieldName, null as? BigDecimal, schema, true)
+        val result = mapper.readTree(visitor.getResult().toStringUtf8()).get(fieldName)?.asText()?.toBigDecimal()
         Assertions.assertEquals(simpleValue, result)
     }
 
@@ -234,6 +246,20 @@ class JsonObjectTest {
     }
 
     @Test
+    fun `big decimal array test encode`() {
+        val fieldName = "decimalField"
+        val collection = listOf(BigDecimal(100000000010), BigDecimal(100000002000), BigDecimal(100300000000), BigDecimal(100004000000))
+        val visitor = EncodeJsonObjectVisitor(message().addField(fieldName, collection).build())
+        val schema = createArrayTestSchema("number", "-")
+        visitor.visitBigDecimalCollection(fieldName, null, schema, true)
+        val result = requireNotNull(mapper.readTree(visitor.getResult().toStringUtf8()).get(fieldName) as? ArrayNode)
+        Assertions.assertEquals(4, result.size())
+        collection.forEachIndexed { index, value ->
+            Assertions.assertEquals(value, result.get(index).asText().toBigDecimal())
+        }
+    }
+
+    @Test
     fun `object array test decode`() {
         val fieldName = "objectField"
 
@@ -269,7 +295,7 @@ class JsonObjectTest {
         val message = message().addField(fieldName, listValue).build()
 
         val result = EncodeJsonObjectVisitor(message).apply {
-            visitObjectCollection(fieldName, null, openAPI.components.schemas["ArrayObjectTest"]!! as ArraySchema, true)
+            visitObjectCollection(fieldName, null, openAPI.components.schemas["ArrayObjectTest"]!! as ArraySchema, true, SchemaWriter(openAPI))
         }.getResult().toStringUtf8()
 
         mapper.readTree(result).let { objectNode ->
@@ -291,9 +317,7 @@ class JsonObjectTest {
     }
 
     private companion object {
-        val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/visitorTests.yml"), null, OpenApiCodecSettings().dictionaryParseOption).openAPI.apply {
-            SchemaWriter.createInstance(this)
-        }
+        val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/visitorTests.yml"), null, OpenApiCodecSettings().dictionaryParseOption).openAPI
         val mapper = ObjectMapper()
     }
 }

@@ -20,18 +20,18 @@ import com.exactpro.th2.codec.openapi.OpenApiCodec
 import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
 import com.exactpro.th2.common.message.addField
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.exactpro.th2.codec.openapi.getResourceAsText
+import com.exactpro.th2.codec.openapi.utils.getResourceAsText
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import com.exactpro.th2.codec.openapi.testEncode
+import com.exactpro.th2.codec.openapi.utils.testEncode
 
 class JsonObjectEncodeTests {
 
     @Test
     fun `json encode response`() {
-        val rawMessage = OpenApiCodec(openAPI).testEncode("/test/object", "get", "200", "application/json") {
+        val rawMessage = OpenApiCodec(openAPI, settings).testEncode("/test/object", "get", "200", "application/json", "json") {
             addField("publicKey", "1234567")
             addField("testEnabled", true)
             addField("testStatus", "FAILED")
@@ -42,12 +42,13 @@ class JsonObjectEncodeTests {
             Assertions.assertEquals("1234567", json.get("publicKey").asText())
             Assertions.assertTrue(json.get("testEnabled").asBoolean())
             Assertions.assertEquals("FAILED", json.get("testStatus").asText())
+            Assertions.assertEquals(null, json.get("nullField")?.asText())
         }
     }
 
     @Test
     fun `json encode request`() {
-        val rawMessage = OpenApiCodec(openAPI).testEncode("/test", "get", null, "application/json") {
+        val rawMessage = OpenApiCodec(openAPI, settings).testEncode("/test", "get", null, "application/json", "json") {
             addField("publicKey", "1234567")
             addField("testEnabled", true)
             addField("testStatus", "FAILED")

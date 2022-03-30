@@ -16,6 +16,7 @@
 
 package com.exactpro.th2.codec.openapi.writer.visitors.json
 
+import com.exactpro.th2.codec.openapi.utils.validateAsBigDecimal
 import com.exactpro.th2.codec.openapi.utils.validateAsBoolean
 import com.exactpro.th2.codec.openapi.utils.validateAsDouble
 import com.exactpro.th2.codec.openapi.utils.validateAsFloat
@@ -27,10 +28,12 @@ import com.exactpro.th2.codec.openapi.writer.visitors.SchemaVisitor.DecodeVisito
 import com.exactpro.th2.common.grpc.Message
 import com.exactpro.th2.common.message.addField
 import com.exactpro.th2.common.message.message
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
+import java.math.BigDecimal
 
 class DecodeJsonArrayVisitor(override val from: ArrayNode) : DecodeVisitor<ArrayNode>() {
 
@@ -38,7 +41,7 @@ class DecodeJsonArrayVisitor(override val from: ArrayNode) : DecodeVisitor<Array
 
     private val rootMessage = message()
 
-    override fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, required: Boolean) {
+    override fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, required: Boolean, schemaWriter: SchemaWriter) {
         throw UnsupportedOperationException("Array visitor supports only collections")
     }
 
@@ -66,41 +69,49 @@ class DecodeJsonArrayVisitor(override val from: ArrayNode) : DecodeVisitor<Array
         throw UnsupportedOperationException("Array visitor supports only collections")
     }
 
-    override fun visitBooleanCollection(fieldName: String, defaultValue: List<Boolean>?, fldStruct: ArraySchema, required: Boolean) {
-        rootMessage.addField(fieldName, from.map { it.validateAsBoolean() })
+    override fun visit(fieldName: String, defaultValue: BigDecimal?, fldStruct: Schema<*>, required: Boolean) {
+        throw UnsupportedOperationException("Array visitor supports only collections")
     }
 
-    override fun visitIntegerCollection(fieldName: String, defaultValue: List<Int>?, fldStruct: ArraySchema, required: Boolean) {
-        rootMessage.addField(fieldName, from.map { it.validateAsInteger() })
-    }
+    override fun visitBooleanCollection(fieldName: String, defaultValue: List<Boolean>?, fldStruct: ArraySchema, required: Boolean)  = rootMessage.putListFrom(from, fieldName, defaultValue, required, JsonNode::validateAsBoolean)
 
-    override fun visitStringCollection(fieldName: String, defaultValue: List<String>?, fldStruct: ArraySchema, required: Boolean) {
-        rootMessage.addField(fieldName, from.map { it.asText() })
-    }
+    override fun visitIntegerCollection(fieldName: String, defaultValue: List<Int>?, fldStruct: ArraySchema, required: Boolean) = rootMessage.putListFrom(from, fieldName, defaultValue, required, JsonNode::validateAsInteger)
 
-    override fun visitDoubleCollection(fieldName: String, defaultValue: List<Double>?, fldStruct: ArraySchema, required: Boolean) {
-        rootMessage.addField(fieldName, from.map { it.validateAsDouble() })
-    }
+    override fun visitStringCollection(fieldName: String, defaultValue: List<String>?, fldStruct: ArraySchema, required: Boolean) = rootMessage.putListFrom(from, fieldName, defaultValue, required, JsonNode::asText)
 
-    override fun visitFloatCollection(fieldName: String, defaultValue: List<Float>?, fldStruct: ArraySchema, required: Boolean) {
-        rootMessage.addField(fieldName, from.map { it.validateAsFloat() })
-    }
+    override fun visitDoubleCollection(fieldName: String, defaultValue: List<Double>?, fldStruct: ArraySchema, required: Boolean) = rootMessage.putListFrom(from, fieldName, defaultValue, required, JsonNode::validateAsDouble)
 
-    override fun visitLongCollection(fieldName: String, defaultValue: List<Long>?, fldStruct: ArraySchema, required: Boolean) {
-        rootMessage.addField(fieldName, from.map { it.validateAsLong() })
-    }
+    override fun visitFloatCollection(fieldName: String, defaultValue: List<Float>?, fldStruct: ArraySchema, required: Boolean) = rootMessage.putListFrom(from, fieldName, defaultValue, required, JsonNode::validateAsFloat)
 
-    override fun visitObjectCollection(fieldName: String, defaultValue: List<Any>?, fldStruct: ArraySchema, required: Boolean) {
+    override fun visitLongCollection(fieldName: String, defaultValue: List<Long>?, fldStruct: ArraySchema, required: Boolean) = rootMessage.putListFrom(from, fieldName, defaultValue, required, JsonNode::validateAsLong)
+
+    override fun visitBigDecimalCollection(fieldName: String, defaultValue: List<BigDecimal>?, fldStruct: ArraySchema, required: Boolean) = rootMessage.putListFrom(from, fieldName, defaultValue, required) { this.validateAsBigDecimal().toPlainString() }
+
+    override fun visitObjectCollection(fieldName: String, defaultValue: List<Any>?, fldStruct: ArraySchema, required: Boolean, schemaWriter: SchemaWriter) {
         rootMessage.addField(fieldName, from.map {
             DecodeJsonObjectVisitor(it.validateAsObject()).apply {
-                SchemaWriter.instance.traverse(this, fldStruct.items)
+                schemaWriter.traverse(this, fldStruct.items)
             }.getResult()
         })
     }
 
+    override fun getUndefinedFields(fields: MutableSet<String>): Nothing? = null
+
     override fun getResult(): Message.Builder = rootMessage
+
+    private inline fun <reified T> Message.Builder.putListFrom(node: ArrayNode, name: String, defaultValue: List<T>?, required: Boolean, extract: JsonNode.() -> T) {
+        if (node.isEmpty) {
+            when {
+                required -> error("$name field is required but array node was empty")
+                !defaultValue.isNullOrEmpty() -> this.addField(name, defaultValue)
+            }
+        } else {
+            this.addField(name, node.map(extract))
+        }
+    }
 
     private companion object {
         val mapper = ObjectMapper()
     }
+
 }

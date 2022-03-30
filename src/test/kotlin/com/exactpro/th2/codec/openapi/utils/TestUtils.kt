@@ -1,4 +1,4 @@
-package com.exactpro.th2.codec.openapi/*
+package com.exactpro.th2.codec.openapi.utils/*
  * Copyright 2021-2022 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +14,7 @@ package com.exactpro.th2.codec.openapi/*
  * limitations under the License.
  */
 
+import com.exactpro.th2.codec.openapi.OpenApiCodec
 import com.exactpro.th2.common.assertEqualMessages
 import com.exactpro.th2.common.assertString
 import com.exactpro.th2.common.grpc.AnyMessage
@@ -27,13 +28,12 @@ import com.exactpro.th2.common.message.getString
 import com.exactpro.th2.common.message.message
 import com.exactpro.th2.common.message.messageType
 import com.exactpro.th2.common.message.plusAssign
+import com.exactpro.th2.common.message.sessionAlias
 import com.google.protobuf.ByteString
 import org.junit.jupiter.api.Assertions
-import java.util.Locale
 import kotlin.test.fail
 
 
-const val PROTOCOL = "openapi"
 const val REQUEST_MESSAGE_TYPE = "Request"
 const val RESPONSE_MESSAGE_TYPE = "Response"
 const val FORMAT_HEADER_NAME = "Content-Type"
@@ -43,6 +43,7 @@ fun getResourceAsText(path: String): String {
 }
 
 fun OpenApiCodec.testDecode(path: String, method: String, code: String?, type: String?, bodyData: String? = null): Message? {
+    val alias = "testalias"
     val group = MessageGroup.newBuilder()
     val headerParentID = EventID.newBuilder().apply {
         id = "123"
@@ -53,6 +54,7 @@ fun OpenApiCodec.testDecode(path: String, method: String, code: String?, type: S
     val headerType = if (code == null) REQUEST_MESSAGE_TYPE else RESPONSE_MESSAGE_TYPE
     val header = message(headerType).apply {
         metadataBuilder.putProperties("testProperty", "testValue")
+        sessionAlias = alias
         parentEventId = headerParentID
         when(headerType) {
             RESPONSE_MESSAGE_TYPE -> {
@@ -82,6 +84,7 @@ fun OpenApiCodec.testDecode(path: String, method: String, code: String?, type: S
 
     bodyData?.let {
         group += RawMessage.newBuilder().apply {
+            sessionAlias = alias
             parentEventId = bodyParentID
             metadataBuilder.putProperties("testProperty", "testValue")
             when(headerType) {
@@ -107,6 +110,7 @@ fun OpenApiCodec.testDecode(path: String, method: String, code: String?, type: S
     Assertions.assertEquals(headerParentID, decodeResult.messagesList[0].message.parentEventId)  {"Decode process shouldn't lose parent event id inside of header"}
 
     decodeResult.messagesList[0].message.let { decodedHeader ->
+        Assertions.assertEquals(alias, decodedHeader.sessionAlias)
         header.metadata.propertiesMap.forEach {
             Assertions.assertEquals(it.value, decodedHeader.metadata.propertiesMap[it.key]) {"Property ${it.key} must be the same as in input message"}
         }
@@ -116,6 +120,7 @@ fun OpenApiCodec.testDecode(path: String, method: String, code: String?, type: S
         Assertions.assertEquals(2, decodeResult.messagesList.size)
         Assertions.assertTrue(decodeResult.messagesList[1].hasMessage())
         decodeResult.messagesList[1].message.let { decodedBody ->
+            Assertions.assertEquals(alias, decodedBody.sessionAlias)
             Assertions.assertEquals(bodyParentID, decodedBody.parentEventId) {"Decode process shouldn't lose parent event id inside of body"}
 
             group.messagesList[1]?.rawMessage?.let { oldBody ->
@@ -131,19 +136,20 @@ fun OpenApiCodec.testDecode(path: String, method: String, code: String?, type: S
     return null
 }
 
-fun OpenApiCodec.testEncode(path: String, method: String, code: String?, type: String?, fillMessage: (Message.Builder.() -> Unit)? = null): RawMessage? {
+fun OpenApiCodec.testEncode(path: String, method: String, code: String?, type: String?, protocol: String, fillMessage: (Message.Builder.() -> Unit)? = null): RawMessage? {
     val rawParentID = EventID.newBuilder().apply {
         id = "123"
     }.build()
 
     val messageType = combineName(path, method, code?:"", type?:"")
     val messageToEncode = message(messageType).apply {
-        metadataBuilder.protocol = PROTOCOL
+        metadataBuilder.protocol = protocol
         metadataBuilder.putProperties("testProperty", "testValue")
         parentEventId = rawParentID
         if (fillMessage != null) {
             fillMessage()
         }
+
     }.build()
 
     val messageGroup = MessageGroup.newBuilder()
@@ -196,7 +202,7 @@ fun OpenApiCodec.testEncode(path: String, method: String, code: String?, type: S
             code?.let {
                 Assertions.assertEquals(it, rawMessage.metadata.propertiesMap[OpenApiCodec.CODE_PROPERTY])
             }
-            Assertions.assertEquals(method, rawMessage.metadata.propertiesMap[OpenApiCodec.METHOD_PROPERTY])
+            Assertions.assertEquals(method.lowercase(), rawMessage.metadata.propertiesMap[OpenApiCodec.METHOD_PROPERTY]?.lowercase())
             Assertions.assertEquals(path, rawMessage.metadata.propertiesMap[OpenApiCodec.URI_PROPERTY])
         }
     } else {
@@ -204,16 +210,6 @@ fun OpenApiCodec.testEncode(path: String, method: String, code: String?, type: S
     }
 
     return body
-}
-
-private fun combineName(vararg steps : String): String {
-    return buildString {
-        for (step in steps) {
-            step.split("{", "}", "-", "/", "_").forEach { word ->
-                append(word.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() })
-            }
-        }
-    }
 }
 
 fun OpenApiCodec.encode(message: Message) = encode(MessageGroup.newBuilder().addMessages(AnyMessage.newBuilder().setMessage(message).build()).build())

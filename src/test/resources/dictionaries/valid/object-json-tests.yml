@@ -52,6 +52,10 @@ components:
         testEnabled:
           type: boolean
           example: false
+        testBigDecimal:
+          type: number
+          format: "-"
+          example: "10000000000"
         testStatus:
           $ref: "#/components/schemas/TestStatus"
 

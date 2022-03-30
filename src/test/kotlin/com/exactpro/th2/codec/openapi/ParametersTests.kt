@@ -3,6 +3,8 @@ package com.exactpro.th2.codec.openapi
 import com.exactpro.th2.codec.openapi.OpenApiCodec.Companion.HEADERS_FIELD
 import com.exactpro.th2.codec.openapi.OpenApiCodec.Companion.HEADER_PARAMS_FIELD
 import com.exactpro.th2.codec.openapi.OpenApiCodec.Companion.URI_PARAMS_FIELD
+import com.exactpro.th2.codec.openapi.utils.encode
+import com.exactpro.th2.codec.openapi.utils.getResourceAsText
 import com.exactpro.th2.common.assertList
 import com.exactpro.th2.common.assertString
 import com.exactpro.th2.common.grpc.AnyMessage
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
 class ParametersTests {
+
     @Test
     fun `simple params test encode request`() {
         val testPath = "123"
@@ -118,6 +121,6 @@ class ParametersTests {
     private companion object {
         val settings = OpenApiCodecSettings()
         val openAPI: OpenAPI = OpenAPIParser().readContents(getResourceAsText("dictionaries/valid/params-tests.yml"), null, settings.dictionaryParseOption).openAPI
-        val codec = OpenApiCodec(openAPI)
+        val codec = OpenApiCodec(openAPI, settings)
     }
 }

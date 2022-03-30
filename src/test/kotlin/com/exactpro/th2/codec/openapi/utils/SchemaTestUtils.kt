@@ -19,6 +19,7 @@ import io.swagger.v3.oas.models.media.BooleanSchema
 import io.swagger.v3.oas.models.media.NumberSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
+import java.math.BigDecimal
 
 inline fun <reified T:Any>createTestSchema(value: T?, fillEnum: List<T>? = null) : Schema<*> {
     when (T::class) {
@@ -73,8 +74,18 @@ inline fun <reified T:Any>createTestSchema(value: T?, fillEnum: List<T>? = null)
                 }
             }
         }
+        BigDecimal::class -> {
+            return NumberSchema().apply {
+                type = "number"
+                format = "-"
+                example = value
+                fillEnum?.forEach {
+                    enum.add((it as Double).toBigDecimal())
+                }
+            }
+        }
         else -> {
-            throw UnsupportedOperationException("com.exactpro.th2.codec.openapi.createTestSchema don't supports ${T::class} type of value")
+            throw UnsupportedOperationException("CreateTestSchema method in test utils don't supports ${T::class} type of value")
         }
     }
 }

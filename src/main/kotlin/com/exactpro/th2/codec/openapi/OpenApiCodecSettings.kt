@@ -29,4 +29,5 @@ class OpenApiCodecSettings : IPipelineCodecSettings {
         isResolveFully = true
         isResolveCombinators = true
     }
+    val checkUndefinedFields: Boolean = true
 }

@@ -24,7 +24,7 @@ import io.swagger.v3.parser.models.RefType
 
 private val METHODS = listOf("get", "put", "delete", "post")
 
-private fun PathItem.getByMethod(method: String) = when (method.lowercase()) {
+fun PathItem.getByMethod(method: String) = when (method.lowercase()) {
     "get" -> get
     "put" -> put
     "delete" -> delete
@@ -58,5 +58,20 @@ enum class JsonSchemaTypes(val type: String) {
 fun <T> Schema<*>.checkEnum(value: T?, name: String) {
     if (value != null && enum != null && enum.size > 0 && !enum.contains(value)) {
         error("Enum list of property $name doesn't contain $value")
+    }
+}
+
+fun String.extractType() = substringBefore(';').trim()
+
+fun PathItem.getSchema(method: String, code: String?, bodyFormat: String): Schema<*> {
+    val methodRootSchema = this.getByMethod(method)
+
+    val schema = when (code) {
+        null -> methodRootSchema?.requestBody?.content?.get(bodyFormat)?.schema
+        else -> methodRootSchema?.responses?.get(code)?.content?.get(bodyFormat)?.schema
+    }
+
+    return checkNotNull(schema) {
+        "Schema with method: [$method], code: [$code] and type [$bodyFormat] wasn't found"
     }
 }

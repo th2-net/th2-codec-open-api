@@ -172,6 +172,9 @@ components:
         publicKey:
           type: string
           example: "123qwer...12"
+        nullField:
+          type: string
+          example: ""
         testEnabled:
           type: boolean
           example: false

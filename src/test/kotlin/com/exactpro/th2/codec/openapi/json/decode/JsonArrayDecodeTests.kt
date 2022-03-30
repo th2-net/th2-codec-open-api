@@ -21,36 +21,53 @@ import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter.Companion.ARRAY_TYPE
 import com.exactpro.th2.common.assertList
 import com.exactpro.th2.common.value.toValue
-import com.exactpro.th2.codec.openapi.getResourceAsText
+import com.exactpro.th2.codec.openapi.utils.getResourceAsText
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import org.junit.jupiter.api.Test
-import com.exactpro.th2.codec.openapi.testDecode
+import com.exactpro.th2.codec.openapi.utils.testDecode
+import com.exactpro.th2.common.message.messageType
+import org.junit.jupiter.api.Assertions
 
 class JsonArrayDecodeTests {
 
     @Test
     fun `simple test json array decode response`() {
         val jsonData = """["test1", "test2", "test3"]"""
-        val decodedResult = OpenApiCodec(openAPI).testDecode(
+        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
             "/test",
-            "get",
+            "GET",
             "200",
             "application/json",
-            jsonData)
-        decodedResult!!.assertList(ARRAY_TYPE, listOf("test1".toValue(), "test2".toValue(), "test3".toValue()))
+            jsonData)!!
+        Assertions.assertEquals("TestGet200ApplicationJson", decodedResult.messageType)
+        decodedResult.assertList(ARRAY_TYPE, listOf("test1".toValue(), "test2".toValue(), "test3".toValue()))
+    }
+
+    @Test
+    fun `simple test json array decode with charset`() {
+        val jsonData = """["test1", "test2", "test3"]"""
+        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
+            "/test",
+            "GET",
+            "200",
+            "application/json; charset=utf-8",
+            jsonData)!!
+        Assertions.assertEquals("TestGet200ApplicationJson", decodedResult.messageType)
+        decodedResult.assertList(ARRAY_TYPE, listOf("test1".toValue(), "test2".toValue(), "test3".toValue()))
     }
 
     @Test
     fun `simple test json array decode request`() {
         val jsonData = """["test1", "test2", "test3"]"""
-        val decodedResult = OpenApiCodec(openAPI).testDecode(
+        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
             "/test",
             "get",
             null,
             "application/json",
-            jsonData)
-        decodedResult!!.assertList(ARRAY_TYPE, listOf("test1".toValue(), "test2".toValue(), "test3".toValue()))
+            jsonData)!!
+        Assertions.assertEquals("TestGetApplicationJson", decodedResult.messageType)
+        decodedResult.assertList(ARRAY_TYPE, listOf("test1".toValue(), "test2".toValue(), "test3".toValue()))
     }
 
     private companion object {

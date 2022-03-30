@@ -17,14 +17,16 @@
 package com.exactpro.th2.codec.openapi
 
 import com.exactpro.th2.codec.api.IPipelineCodec
-import com.exactpro.th2.codec.openapi.OpenApiCodecFactory.Companion.PROTOCOL
+import com.exactpro.th2.codec.openapi.OpenApiCodecFactory.Companion.PROTOCOLS
 import com.exactpro.th2.codec.openapi.schemacontainer.HttpRouteContainer
 import com.exactpro.th2.codec.openapi.schemacontainer.RequestContainer
 import com.exactpro.th2.codec.openapi.schemacontainer.ResponseContainer
 import com.exactpro.th2.codec.openapi.throwable.DecodeException
 import com.exactpro.th2.codec.openapi.throwable.EncodeException
+import com.exactpro.th2.codec.openapi.utils.extractType
 import com.exactpro.th2.codec.openapi.utils.getEndPoint
 import com.exactpro.th2.codec.openapi.utils.getMethods
+import com.exactpro.th2.codec.openapi.utils.getSchema
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.codec.openapi.writer.visitors.VisitorFactory
 import com.exactpro.th2.common.grpc.MessageGroup
@@ -43,17 +45,18 @@ import com.exactpro.th2.common.message.getString
 import com.exactpro.th2.common.message.message
 import com.exactpro.th2.common.message.messageType
 import com.exactpro.th2.common.message.orEmpty
+import com.exactpro.th2.common.message.sessionAlias
 import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.parameters.Parameter
 import mu.KotlinLogging
 
-class OpenApiCodec(private val dictionary: OpenAPI) : IPipelineCodec {
+class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettings) : IPipelineCodec {
 
-    private val messagesToSchema: Map<String, HttpRouteContainer>
+    private val typeToSchema: Map<String, HttpRouteContainer>
     private val patternToPathItem: List<Pair<UriPattern, PathItem>>
+    private val schemaWriter = SchemaWriter(dictionary, settings.checkUndefinedFields)
 
     init {
-        SchemaWriter.createInstance(dictionary)
         val mapForName = mutableMapOf<String, HttpRouteContainer>()
         val mapForPatterns = mutableMapOf<UriPattern, PathItem>()
         dictionary.paths.forEach { pathKey, pathsValue ->
@@ -70,13 +73,16 @@ class OpenApiCodec(private val dictionary: OpenAPI) : IPipelineCodec {
                     methodValue.parameters?.associateByTo(this, Parameter::getName)
                 }
 
-                mapForName[combineName(pathKey, methodKey)] = RequestContainer(pattern, methodKey, null, null, resultParams)
 
                 // Request
                 methodValue.requestBody?.content?.forEach { (typeKey, typeValue) ->
                     mapForName[combineName(pathKey, methodKey, typeKey)] = RequestContainer(
                         pattern, methodKey, dictionary.getEndPoint(typeValue.schema), typeKey, resultParams
                     )
+
+                    if (methodValue.requestBody.required /*nullable*/ == false) {
+                        mapForName[combineName(pathKey, methodKey)] = RequestContainer(pattern, methodKey, null, null, resultParams)
+                    }
                 } ?: run {
                     mapForName[combineName(pathKey, methodKey)] = RequestContainer(pattern, methodKey, null, null, resultParams)
                 }
@@ -94,7 +100,7 @@ class OpenApiCodec(private val dictionary: OpenAPI) : IPipelineCodec {
             }
         }
         LOGGER.info { "Schemas to map: ${mapForName.keys.joinToString(", ")}" }
-        messagesToSchema = mapForName
+        typeToSchema = mapForName
         patternToPathItem = mapForPatterns.toList()
     }
 
@@ -103,12 +109,7 @@ class OpenApiCodec(private val dictionary: OpenAPI) : IPipelineCodec {
         val builder = MessageGroup.newBuilder()
 
         for (message in messages) {
-            if (message.kindCase != MESSAGE) {
-                builder.addMessages(message)
-                continue
-            }
-
-            if (message.message.metadata.run { protocol.isNotEmpty() && protocol != PROTOCOL }) {
+            if (!message.hasMessage()) {
                 builder.addMessages(message)
                 continue
             }
@@ -117,17 +118,24 @@ class OpenApiCodec(private val dictionary: OpenAPI) : IPipelineCodec {
             val metadata = parsedMessage.metadata
             val messageType = metadata.messageType
 
-            val container = checkNotNull(messagesToSchema[messageType]) { "There no message $messageType in dictionary" }
+            if(messageType == REQUEST_MESSAGE || messageType == RESPONSE_MESSAGE || metadata.protocol.run { isNotEmpty() && this !in PROTOCOLS }) {
+                builder.addMessages(message)
+                continue
+            }
+
+            val container = checkNotNull(typeToSchema[messageType]) { "There no message $messageType in dictionary" }
 
             builder += createHeaderMessage(container, parsedMessage).apply {
                 if (parsedMessage.hasParentEventId()) parentEventId = parsedMessage.parentEventId
+                sessionAlias = parsedMessage.sessionAlias
                 metadataBuilder.putAllProperties(parsedMessage.metadata.propertiesMap)
+                LOGGER.trace { "Created header message for ${parsedMessage.messageType}: ${this.messageType}" }
             }
 
-            runCatching {
+            try {
                 encodeBody(container, parsedMessage)?.let(builder::plusAssign)
-            }.getOrElse {
-                throw EncodeException("Cannot encode body of message [${parsedMessage.messageType}]", it)
+            } catch (e: Exception) {
+                throw EncodeException("Cannot encode body of message [${parsedMessage.messageType}]", e)
             }
 
         }
@@ -135,20 +143,31 @@ class OpenApiCodec(private val dictionary: OpenAPI) : IPipelineCodec {
         return builder.build()
     }
 
-    private fun encodeBody(container: HttpRouteContainer, message: Message): RawMessage? = container.body?.let { messageSchema ->
+    private fun encodeBody(container: HttpRouteContainer, message: Message): RawMessage? {
+        val messageSchema = container.body ?: run {
+            LOGGER.debug { "Body wasn't found for message: ${message.messageType}" }
+            return null
+        }
+
+        LOGGER.debug { "Start of message encoding: ${message.messageType}" }
+        checkNotNull(messageSchema.type) {"Type of schema [${messageSchema.name}] wasn't filled"}
+
         val visitor = VisitorFactory.createEncodeVisitor(container.bodyFormat!!, messageSchema.type, message)
-        SchemaWriter.instance.traverse(visitor, messageSchema)
+        schemaWriter.traverse(visitor, messageSchema)
         val result = visitor.getResult()
-        if (!result.isEmpty) {
+
+        LOGGER.trace { "Result of encoded message ${message.messageType}: $result" }
+
+        return if (!result.isEmpty) {
             RawMessage.newBuilder().apply {
                 parentEventId = message.parentEventId
-                metadataBuilder.putAllProperties(message.metadata.propertiesMap)
+                sessionAlias = message.sessionAlias
                 container.fillHttpMetadata(metadataBuilder)
                 metadataBuilder.apply {
-                    putAllProperties(metadata.propertiesMap)
+                    putAllProperties(message.metadata.propertiesMap)
                     this.id = metadata.id
                     this.timestamp = metadata.timestamp
-                    this.protocol = PROTOCOL
+                    protocol = message.metadata.protocol
                 }
                 body = result
             }.build()
@@ -180,47 +199,68 @@ class OpenApiCodec(private val dictionary: OpenAPI) : IPipelineCodec {
     private fun decodeBody(header: Message, rawMessage: RawMessage): Message {
         val body = rawMessage.body
 
-        val bodyFormat = header.getList(HEADERS_FIELD)?.first { it.messageValue.getString("name") == "Content-Type" }?.messageValue?.getString("value") ?: "null"
+        val bodyFormat = header.getList(HEADERS_FIELD)
+            ?.first { it.messageValue.getString("name") == "Content-Type" }
+            ?.messageValue
+            ?.getString("value")
+            ?.extractType() ?: "null"
+
+        val uri: String
+        val method: String
+        var code = ""
+
+        val pairFound: Pair<UriPattern, PathItem>
+
         val messageSchema = when (header.messageType) {
             RESPONSE_MESSAGE -> {
-                val uri = requireNotNull(rawMessage.metadata.propertiesMap[URI_PROPERTY]) { "URI property in metadata from response is required" }
-                val method = requireNotNull(rawMessage.metadata.propertiesMap[METHOD_PROPERTY]?.lowercase()) { "Method property in metadata from response is required" }
-                val code = requireNotNull(header.getString(STATUS_CODE_FIELD)) { "Code status field required inside of http response message" }
+                uri = requireNotNull(rawMessage.metadata.propertiesMap[URI_PROPERTY]) { "URI property in metadata from response is required" }
+                method = requireNotNull(rawMessage.metadata.propertiesMap[METHOD_PROPERTY]?.lowercase()) { "Method property in metadata from response is required" }
+                code = requireNotNull(header.getString(STATUS_CODE_FIELD)) { "Code status field required inside of http response message" }
 
-                val pathItem = patternToPathItem.firstOrNull { it.first.matches(uri) }?.second
-                checkNotNull(pathItem?.getMethods()?.get(method)?.responses?.get(code)?.content?.get(bodyFormat)?.schema?.run {
-                    dictionary.getEndPoint(this)
-                }) { "Response schema with path $uri, method $method, code $code and type $bodyFormat wasn't found" }
+                pairFound = checkNotNull(patternToPathItem.firstOrNull { it.first.matches(uri) }) { "Cannot find path-item by uri: $uri" }
+                dictionary.getEndPoint(pairFound.second.getSchema(method, code, bodyFormat))
             }
             REQUEST_MESSAGE -> {
-                val uri = requireNotNull(header.getString(URI_FIELD)) { "URI field in request is required" }
-                val method = requireNotNull(header.getString(METHOD_FIELD)) { "Method field in request is required" }
+                uri = requireNotNull(header.getString(URI_FIELD)) { "URI field in request is required" }
+                method = requireNotNull(header.getString(METHOD_FIELD)) { "Method field in request is required" }
 
-                val pathItem = patternToPathItem.firstOrNull { it.first.matches(uri) }?.second
-                checkNotNull(pathItem?.getMethods()?.get(method)?.requestBody?.content?.get(bodyFormat)?.schema?.run {
-                    dictionary.getEndPoint(this)
-                }) { "Request schema with path $uri, method $method and type $bodyFormat wasn't found" }
+                pairFound = checkNotNull(patternToPathItem.firstOrNull { it.first.matches(uri) }) { "Cannot find path-item by uri: $uri" }
+                dictionary.getEndPoint(pairFound.second.getSchema(method, null, bodyFormat))
             }
             else -> error("Unsupported message type: ${header.messageType}")
         }
 
+        checkNotNull(messageSchema.type) { "Type of schema [${messageSchema.name}] wasn't filled" }
+
+        val type = combineName(pairFound.first.pattern, method, code, bodyFormat)
+
+        LOGGER.debug { "Schema for ${header.messageType} with type-name: $type was found" }
+
         val visitor = VisitorFactory.createDecodeVisitor(bodyFormat, messageSchema.type, body)
-        SchemaWriter.instance.traverse(visitor, messageSchema)
+        schemaWriter.traverse(visitor, messageSchema)
         return visitor.getResult().apply {
-            parentEventId = rawMessage.parentEventId
-            metadataBuilder.putAllProperties(rawMessage.metadata.propertiesMap)
+            if(rawMessage.hasParentEventId()) parentEventId = rawMessage.parentEventId
+            sessionAlias = rawMessage.sessionAlias
+            this.messageType = type
+            metadataBuilder.apply {
+                id = rawMessage.metadata.id
+                timestamp = metadata.timestamp
+                protocol = rawMessage.metadata.protocol
+                putAllProperties(rawMessage.metadata.propertiesMap)
+            }
         }.build()
     }
+
 
     private fun HttpRouteContainer.fillHttpMetadata(metadata: RawMessageMetadata.Builder) {
         when (this) {
             is ResponseContainer -> metadata.apply {
-                putProperties(METHOD_PROPERTY, method)
+                method?.let { putProperties(METHOD_PROPERTY, it.uppercase()) }
                 putProperties(URI_PROPERTY, uriPattern.pattern)
                 putProperties(CODE_PROPERTY, code)
             }
             is RequestContainer -> metadata.apply {
-                putProperties(METHOD_PROPERTY, method)
+                method?.let { putProperties(METHOD_PROPERTY, it.uppercase()) }
                 putProperties(URI_PROPERTY, uriPattern.pattern)
             }
         }
@@ -264,10 +304,11 @@ class OpenApiCodec(private val dictionary: OpenAPI) : IPipelineCodec {
             }
 
             addField(HEADERS_FIELD, headers)
+            this.metadataBuilder.protocol = HEADER_PROTOCOL
         }
     }
 
-    private fun combineName(vararg steps: String) = steps.asSequence().flatMap { it.split(COMBINER_REGEX) }.joinToString("") { it.capitalize() }
+    fun combineName(vararg steps: String) = steps.asSequence().flatMap { it.split(COMBINER_REGEX) }.joinToString("") { it.lowercase().capitalize() }
 
     companion object {
         private val LOGGER = KotlinLogging.logger { }
@@ -285,6 +326,6 @@ class OpenApiCodec(private val dictionary: OpenAPI) : IPipelineCodec {
         const val HEADERS_FIELD = "headers"
         const val URI_PARAMS_FIELD = "uriParameters"
         const val HEADER_PARAMS_FIELD = "headerParameters"
-
+        const val HEADER_PROTOCOL = "http"
     }
 }

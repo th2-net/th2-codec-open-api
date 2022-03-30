@@ -21,22 +21,23 @@ import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
 import com.exactpro.th2.common.message.addField
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
-import com.exactpro.th2.codec.openapi.getResourceAsText
+import com.exactpro.th2.codec.openapi.utils.getResourceAsText
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import com.exactpro.th2.codec.openapi.testEncode
+import com.exactpro.th2.codec.openapi.utils.testEncode
 
 class JsonArrayEncodeTests {
 
     @Test
     fun `simple test array json encode response`() {
-        val rawMessage = OpenApiCodec(openAPI).testEncode(
+        val rawMessage = OpenApiCodec(openAPI, settings).testEncode(
             "/test",
             "get",
             "200",
-            "application/json") {
+            "application/json",
+            "json") {
             addField("array", listOf("test0", "test1", "test2"))
         }
         val jsonString = rawMessage!!.body.toStringUtf8()
@@ -53,11 +54,12 @@ class JsonArrayEncodeTests {
 
     @Test
     fun `simple test array json encode request`() {
-        val rawMessage = OpenApiCodec(openAPI).testEncode(
+        val rawMessage = OpenApiCodec(openAPI, settings).testEncode(
             "/test",
             "get",
             null,
-            "application/json") {
+            "application/json",
+            "json") {
             addField("array", listOf("test0", "test1", "test2"))
         }
         val jsonString = rawMessage!!.body.toStringUtf8()
