@@ -48,7 +48,7 @@ class JsonObjectEncodeTests {
 
     @Test
     fun `json encode request`() {
-        val rawMessage = OpenApiCodec(openAPI, settings).testEncode("/test", "get", null, "application/json", "json") {
+        val rawMessage = OpenApiCodec(openAPI, settings).testEncode("/test", "get", null, "*/*", "json") {
             addField("publicKey", "1234567")
             addField("testEnabled", true)
             addField("testStatus", "FAILED")

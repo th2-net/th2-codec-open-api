@@ -68,9 +68,8 @@ class SchemaWriter constructor(private val openApi: OpenAPI, private val failOnU
                 NUMBER_TYPE -> when (property.format) {
                     "float" -> visitor.visit(name, property.default as? Float, property, required)
                     "double" -> visitor.visit(name, property.default as? Double, property, required)
-                    "-" -> visitor.visit(name, property.default as? BigDecimal, property, required)
                     null, "" -> visitor.visit(name, property.default as? String, property, required)
-                    else -> error("Unsupported format of '$NUMBER_TYPE' property $name: ${property.format}")
+                    else -> visitor.visit(name, property.default as? BigDecimal, property, required)
                 }
                 STRING_TYPE -> visitor.visit(name, property.default as? String, property, required)
                 OBJECT_TYPE -> visitor.visit(name, property.default as? Schema<*>, property, required, this)
@@ -96,8 +95,7 @@ class SchemaWriter constructor(private val openApi: OpenAPI, private val failOnU
                     "float" -> visitor.visitFloatCollection(name, property.default as? List<Float>, property, required)
                     "double" -> visitor.visitDoubleCollection(name, property.default as? List<Double>, property, required)
                     null, "" -> visitor.visitStringCollection(name, property.default as? List<String>, property, required)
-                    "-" -> visitor.visitBigDecimalCollection(name, property.default as? List<BigDecimal>, property, required)
-                    else -> error("Unsupported format of '$NUMBER_TYPE' property: ${property.format}")
+                    else -> visitor.visitBigDecimalCollection(name, property.default as? List<BigDecimal>, property, required)
                 }
                 STRING_TYPE -> visitor.visitStringCollection(name, property.default as? List<String>, property, required)
                 OBJECT_TYPE -> visitor.visitObjectCollection(name, property.default as? List<Any>, property, required, this)

@@ -308,7 +308,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
         }
     }
 
-    fun combineName(vararg steps: String) = steps.asSequence().flatMap { it.split(COMBINER_REGEX) }.joinToString("") { it.lowercase().capitalize() }
+    fun combineName(vararg steps: String) = steps.asSequence().flatMap { it.replace("*","Any").split(COMBINER_REGEX) }.joinToString("") { it.lowercase().capitalize() }
 
     companion object {
         private val LOGGER = KotlinLogging.logger { }

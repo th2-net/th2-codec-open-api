@@ -26,10 +26,11 @@ import com.google.protobuf.ByteString
 
 object VisitorFactory {
     private const val JSON_FORMAT = "application/json"
+    private const val ANY_FORMAT = "*/*"
 
     fun createEncodeVisitor(format: String, type: String, message: Message): SchemaVisitor.EncodeVisitor<*> {
         when (format) {
-            JSON_FORMAT -> {
+            ANY_FORMAT, JSON_FORMAT -> {
                 return when (JsonSchemaTypes.getType(type)) {
                     JsonSchemaTypes.ARRAY -> EncodeJsonArrayVisitor(message)
                     JsonSchemaTypes.OBJECT -> EncodeJsonObjectVisitor(message)
@@ -42,7 +43,7 @@ object VisitorFactory {
 
     fun createDecodeVisitor(format: String, type: String, data: ByteString): SchemaVisitor.DecodeVisitor<*> {
         when (format) {
-            JSON_FORMAT -> {
+            ANY_FORMAT, JSON_FORMAT -> {
                 return when (JsonSchemaTypes.getType(type)) {
                     JsonSchemaTypes.ARRAY -> DecodeJsonArrayVisitor(data.toStringUtf8())
                     JsonSchemaTypes.OBJECT -> DecodeJsonObjectVisitor(data.toStringUtf8())
