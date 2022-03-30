@@ -185,7 +185,8 @@ May be empty due to missing required fields
 
 ### 0.3.0 
 
-+ Feature: "*" symbol as any type will be processed only as Json by default
++ Feature: ```*``` protocol will be processed only as json
++ Feature: ```*``` will be converted into Any for message types
 + Any number format will be treated as BigDecimal
 
 ### 0.2.0
