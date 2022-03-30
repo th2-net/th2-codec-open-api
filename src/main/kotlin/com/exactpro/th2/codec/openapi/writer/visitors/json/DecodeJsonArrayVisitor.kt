@@ -106,7 +106,7 @@ class DecodeJsonArrayVisitor(override val from: ArrayNode) : DecodeVisitor<Array
                 !defaultValue.isNullOrEmpty() -> this.addField(name, defaultValue)
             }
         } else {
-            this.addField(name, node.map { it.extract() })
+            this.addField(name, node.map(extract))
         }
     }
 

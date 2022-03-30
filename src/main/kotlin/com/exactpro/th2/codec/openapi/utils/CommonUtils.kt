@@ -18,7 +18,7 @@ package com.exactpro.th2.codec.openapi.utils
 
 import com.exactpro.th2.common.grpc.Message
 import com.exactpro.th2.common.grpc.Value
-import com.exactpro.th2.common.message.getField
+import com.exactpro.th2.common.message.get
 import com.exactpro.th2.common.message.messageType
 import com.exactpro.th2.common.value.getString
 
@@ -26,9 +26,8 @@ import com.exactpro.th2.common.value.getString
  * @param fieldName name of extracted field
  * @param required check if value is required, used only if extracted value was null
  */
-fun Message.getField(fieldName: String, required: Boolean): Value? = this@getField.getField(fieldName).apply {
+fun Message.getField(fieldName: String, required: Boolean): Value? = this[fieldName].apply {
     if (required) checkNotNull(this) { "Field [$fieldName] is required for message [$messageType]" }
 }
 
-fun Value.getFloat(): Float? = this.getString()?.toFloatOrNull()
 fun Value.getBoolean(): Boolean? = this.getString()?.toBooleanStrictOrNull()

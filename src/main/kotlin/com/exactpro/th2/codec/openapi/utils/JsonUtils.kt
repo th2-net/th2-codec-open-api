@@ -30,10 +30,9 @@ import java.math.BigDecimal
 inline fun <reified T> ArrayNode.putAll(values: List<Value>) = when (T::class) {
     Int::class -> values.forEach { add(it.getInt()) }
     String::class -> values.forEach { add(it.getString()) }
-    Float::class, Double::class -> values.forEach { add(it.getFloat()) }
     Boolean::class -> values.forEach { add(it.getBoolean()) }
     Long::class -> values.forEach { add(it.getLong()) }
-    BigDecimal::class -> values.forEach { add(it.getBigDecimal()) }
+    Float::class, Double::class, BigDecimal::class -> values.forEach { add(it.getBigDecimal()) }
     else -> error("Unsupported type of ArrayNode: ${T::class.simpleName}")
 }
 
@@ -41,10 +40,9 @@ inline fun <reified T> ArrayNode.putAll(values: List<Value>) = when (T::class) {
 inline fun <reified T> ArrayNode.putAll(values: List<T>) = when (T::class) {
     Int::class -> values.forEach { add(it as Int) }
     String::class -> values.forEach { add(it as String) }
-    Float::class, Double::class -> values.forEach { add(it as Float) }
     Boolean::class -> values.forEach { add(it as Boolean) }
     Long::class -> values.forEach { add(it as Long) }
-    BigDecimal::class -> values.forEach { add(it as BigDecimal) }
+    Float::class, Double::class, BigDecimal::class -> values.forEach { add(it as BigDecimal) }
     else -> error("Unsupported type of ArrayNode: ${T::class.simpleName}")
 }
 

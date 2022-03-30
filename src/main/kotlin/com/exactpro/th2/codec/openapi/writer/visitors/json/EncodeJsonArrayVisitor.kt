@@ -88,10 +88,6 @@ class EncodeJsonArrayVisitor(override val from: Message) : EncodeVisitor<Message
     }
 
     private inline fun <reified T> ArrayNode.putListFrom(message: Message, name: String, defaultValue: List<T>?, required: Boolean) {
-        message.getField(name, required)?.getList()?.let { values ->
-            this.putAll<T>(values)
-        } ?: defaultValue?.let { list ->
-            this.putAll(list)
-        }
+        message.getField(name, required)?.getList()?.let { this.putAll<T>(it) } ?: defaultValue?.let(::putAll)
     }
 }
