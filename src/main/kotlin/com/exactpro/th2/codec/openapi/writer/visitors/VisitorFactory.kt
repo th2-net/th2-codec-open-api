@@ -16,6 +16,8 @@
 
 package com.exactpro.th2.codec.openapi.writer.visitors
 
+import com.exactpro.th2.codec.openapi.utils.ANY_FORMAT
+import com.exactpro.th2.codec.openapi.utils.JSON_FORMAT
 import com.exactpro.th2.codec.openapi.utils.JsonSchemaTypes
 import com.exactpro.th2.codec.openapi.writer.visitors.json.DecodeJsonArrayVisitor
 import com.exactpro.th2.codec.openapi.writer.visitors.json.DecodeJsonObjectVisitor
@@ -25,9 +27,6 @@ import com.exactpro.th2.common.grpc.Message
 import com.google.protobuf.ByteString
 
 object VisitorFactory {
-    private const val JSON_FORMAT = "application/json"
-    private const val ANY_FORMAT = "*/*"
-
     fun createEncodeVisitor(format: String, type: String, message: Message): SchemaVisitor.EncodeVisitor<*> {
         when (format) {
             ANY_FORMAT, JSON_FORMAT -> {

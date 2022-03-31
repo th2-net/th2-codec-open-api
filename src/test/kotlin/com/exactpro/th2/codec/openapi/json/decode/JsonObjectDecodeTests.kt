@@ -44,7 +44,7 @@ class JsonObjectDecodeTests {
             "application/json",
             jsonData)!!
 
-        Assertions.assertEquals("TestGet200ApplicationJson", decodedResult.messageType)
+        Assertions.assertEquals("TestGet200AnyAny", decodedResult.messageType)
         Assertions.assertEquals("1234567", decodedResult.getString("publicKey"))
         Assertions.assertEquals(true, decodedResult.getString("testEnabled").toBoolean())
         Assertions.assertEquals("FAILED", decodedResult.getString("testStatus"))

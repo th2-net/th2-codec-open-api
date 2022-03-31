@@ -36,7 +36,7 @@ class JsonArrayEncodeTests {
             "/test",
             "get",
             "200",
-            "application/json",
+            "*/*",
             "json") {
             addField("array", listOf("test0", "test1", "test2"))
         }
