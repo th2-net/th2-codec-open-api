@@ -56,6 +56,27 @@ class JsonObjectDecodeTests {
     }
 
     @Test
+    fun `E in double test json decode response`() {
+        val jsonData = """{
+                      "publicKey" : "1234567",
+                      "testEnabled" : true,
+                      "testDouble": 1E+3
+                    }""".trimIndent()
+        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
+            "/test",
+            "get",
+            "200",
+            "application/json",
+            jsonData)!!
+
+        Assertions.assertEquals("TestGet200AnyAny", decodedResult.messageType)
+        Assertions.assertEquals("1234567", decodedResult.getString("publicKey"))
+        Assertions.assertEquals(true, decodedResult.getString("testEnabled").toBoolean())
+        Assertions.assertEquals("1000", decodedResult.getString("testDouble"))
+
+    }
+
+    @Test
     fun `simple test json decode request`() {
         val jsonData = """{
                       "publicKey" : "1234567",
