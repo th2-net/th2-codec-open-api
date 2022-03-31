@@ -188,6 +188,8 @@ May be empty due to missing required fields
 + Feature: ```*``` protocol will be processed only as json
 + Feature: ```*``` will be converted into Any for message types
 + Any number format will be treated as BigDecimal
++ Fix: removed all trailing zeros for double, float, bigDecimal
+
 
 ### 0.2.0
 

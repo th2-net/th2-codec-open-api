@@ -52,6 +52,9 @@ components:
         testEnabled:
           type: boolean
           example: false
+        testDouble:
+          type: number
+          format: double
         testBigDecimal:
           type: number
           format: "-"
