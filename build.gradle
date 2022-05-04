@@ -10,7 +10,7 @@ apply plugin: 'com.palantir.docker'
 
 ext {
     sharedDir = file("${project.rootDir}/shared")
-    common_version = '3.32.0'
+    common_version = '3.37.1'
 }
 
 group = 'com.exactpro.th2'
