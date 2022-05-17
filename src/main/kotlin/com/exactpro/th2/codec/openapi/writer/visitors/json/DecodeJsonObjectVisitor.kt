@@ -49,6 +49,7 @@ class DecodeJsonObjectVisitor(override val from: ObjectNode) : DecodeVisitor<Obj
         from.getField(fieldName, required)?.let {
             val visitor = DecodeJsonObjectVisitor(it.validateAsObject())
             schemaWriter.traverse(visitor, fldStruct)
+            processedFields.add(fieldName)
             rootMessage.addFields(fieldName, visitor.rootMessage.build())
         }
     }
@@ -56,89 +57,104 @@ class DecodeJsonObjectVisitor(override val from: ObjectNode) : DecodeVisitor<Obj
     override fun visit(fieldName: String, defaultValue: String?, fldStruct: Schema<*>, required: Boolean) {
         val value = from.getField(fieldName, required)?.asText()
         fldStruct.checkEnum(value, fieldName)
+        value ?.run { processedFields.add(fieldName) }
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Boolean?, fldStruct: Schema<*>, required: Boolean) {
         val value = from.getField(fieldName, required)?.validateAsBoolean()
         fldStruct.checkEnum(value, fieldName)
+        value ?.run { processedFields.add(fieldName) }
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Int?, fldStruct: Schema<*>, required: Boolean) {
         val value = from.getField(fieldName, required)?.validateAsInteger()
         fldStruct.checkEnum(value, fieldName)
+        value ?.run { processedFields.add(fieldName) }
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Float?, fldStruct: Schema<*>, required: Boolean) {
         val value = from.getField(fieldName, required)?.validateAsFloat()
         fldStruct.checkEnum(value, fieldName)
+        value ?.run { processedFields.add(fieldName) }
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Double?, fldStruct: Schema<*>, required: Boolean) {
         val value = from.getField(fieldName, required)?.validateAsDouble()
         fldStruct.checkEnum(value, fieldName)
+        value ?.run { processedFields.add(fieldName) }
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: BigDecimal?, fldStruct: Schema<*>, required: Boolean) {
         val value = from.getField(fieldName, required)?.validateAsBigDecimal()
         fldStruct.checkEnum(value, fieldName)
+        value ?.run { processedFields.add(fieldName) }
         rootMessage.addFields(fieldName, value?.toPlainString() ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Long?, fldStruct: Schema<*>, required: Boolean) {
         val value = from.getField(fieldName, required)?.validateAsLong()
         fldStruct.checkEnum(value, fieldName)
+        value ?.run { processedFields.add(fieldName) }
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
     override fun visitBooleanCollection(fieldName: String, defaultValue: List<Boolean>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredArray(fieldName, required)?.let { array ->
+            processedFields.add(fieldName)
             rootMessage.addField(fieldName, array.map { it.validateAsBoolean() })
         }
     }
 
     override fun visitIntegerCollection(fieldName: String, defaultValue: List<Int>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredArray(fieldName, required)?.let { array ->
+            processedFields.add(fieldName)
             rootMessage.addField(fieldName, array.map { it.validateAsInteger() })
         }
     }
 
     override fun visitStringCollection(fieldName: String, defaultValue: List<String>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredArray(fieldName, required)?.map { it.asText() }?.let {
+            processedFields.add(fieldName)
             rootMessage.addField(fieldName, it)
         }
     }
 
     override fun visitDoubleCollection(fieldName: String, defaultValue: List<Double>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredArray(fieldName, required)?.let { array ->
+            processedFields.add(fieldName)
             rootMessage.addField(fieldName, array.map { it.validateAsDouble() })
         }
     }
 
     override fun visitFloatCollection(fieldName: String, defaultValue: List<Float>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredArray(fieldName, required)?.let { array ->
+            processedFields.add(fieldName)
             rootMessage.addField(fieldName, array.map { it.validateAsFloat() })
         }
     }
 
     override fun visitLongCollection(fieldName: String, defaultValue: List<Long>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredArray(fieldName, required)?.let { array ->
+            processedFields.add(fieldName)
             rootMessage.addField(fieldName, array.map { it.validateAsLong() })
         }
     }
 
     override fun visitBigDecimalCollection(fieldName: String, defaultValue: List<BigDecimal>?, fldStruct: ArraySchema, required: Boolean) {
         from.getRequiredArray(fieldName, required)?.let { array ->
+            processedFields.add(fieldName)
             rootMessage.addField(fieldName, array.map { it.validateAsBigDecimal().toPlainString() })
         }
     }
 
     override fun visitObjectCollection(fieldName: String, defaultValue: List<Any>?, fldStruct: ArraySchema, required: Boolean, schemaWriter: SchemaWriter) {
         from.getRequiredArray(fieldName, required)?.let { array ->
+            processedFields.add(fieldName)
             rootMessage.addField(fieldName, array.map {
                 DecodeJsonObjectVisitor(it.validateAsObject()).apply {
                     schemaWriter.traverse(this, fldStruct.items)
@@ -156,4 +172,7 @@ class DecodeJsonObjectVisitor(override val from: ObjectNode) : DecodeVisitor<Obj
             nodeFactory = JsonNodeFactory.withExactBigDecimals(true)
         }
     }
+
+    override fun getDiscriminatorValue(fieldName: String): String?
+            = from.getField(fieldName, false)?.textValue()
 }

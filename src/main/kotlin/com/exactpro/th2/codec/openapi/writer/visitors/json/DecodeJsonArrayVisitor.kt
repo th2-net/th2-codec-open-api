@@ -114,4 +114,8 @@ class DecodeJsonArrayVisitor(override val from: ArrayNode) : DecodeVisitor<Array
         val mapper = ObjectMapper()
     }
 
+    override fun getDiscriminatorValue(fieldName: String): String? {
+        return null
+    }
+
 }

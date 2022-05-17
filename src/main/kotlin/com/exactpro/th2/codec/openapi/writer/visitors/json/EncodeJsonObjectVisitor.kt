@@ -47,6 +47,7 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
         from.getField(fieldName, required)?.getMessage()?.let { nextMessage ->
             val visitor = EncodeJsonObjectVisitor(nextMessage)
             schemaWriter.traverse(visitor, fldStruct)
+            processedFields.add(fieldName)
             rootNode.set<ObjectNode>(fieldName, visitor.rootNode)
         }
     }
@@ -54,6 +55,7 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
     override fun visit(fieldName: String, defaultValue: String?, fldStruct: Schema<*>, required: Boolean) {
         from.getField(fieldName, required)?.getString()?.let { value ->
             fldStruct.checkEnum(value, fieldName)
+            processedFields.add(fieldName)
             rootNode.put(fieldName, value)
         } ?: defaultValue?.let {
             rootNode.put(fieldName, defaultValue)
@@ -63,6 +65,7 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
     override fun visit(fieldName: String, defaultValue: Boolean?, fldStruct: Schema<*>, required: Boolean) {
         from.getField(fieldName, required)?.getString()?.toBoolean()?.let { value ->
             fldStruct.checkEnum(value, fieldName)
+            processedFields.add(fieldName)
             rootNode.put(fieldName, value)
         } ?: defaultValue?.let {
             rootNode.put(fieldName, defaultValue)
@@ -72,6 +75,7 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
     override fun visit(fieldName: String, defaultValue: Int?, fldStruct: Schema<*>, required: Boolean) {
         from.getField(fieldName, required)?.getInt()?.let { value ->
             fldStruct.checkEnum(value, fieldName)
+            processedFields.add(fieldName)
             rootNode.put(fieldName, value)
         } ?: defaultValue?.let {
             rootNode.put(fieldName, defaultValue)
@@ -81,6 +85,7 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
     override fun visit(fieldName: String, defaultValue: Float?, fldStruct: Schema<*>, required: Boolean) {
         from.getField(fieldName, required)?.getString()?.toFloat()?.let { value ->
             fldStruct.checkEnum(value, fieldName)
+            processedFields.add(fieldName)
             rootNode.put(fieldName, value)
         } ?: defaultValue?.let {
             rootNode.put(fieldName, defaultValue)
@@ -90,6 +95,7 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
     override fun visit(fieldName: String, defaultValue: Double?, fldStruct: Schema<*>, required: Boolean) {
         from.getField(fieldName, required)?.getDouble()?.let { value ->
             fldStruct.checkEnum(value, fieldName)
+            processedFields.add(fieldName)
             rootNode.put(fieldName, value)
         } ?: defaultValue?.let {
             rootNode.put(fieldName, defaultValue)
@@ -99,6 +105,7 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
     override fun visit(fieldName: String, defaultValue: Long?, fldStruct: Schema<*>, required: Boolean) {
         from.getField(fieldName, required)?.getLong()?.let { value ->
             fldStruct.checkEnum(value, fieldName)
+            processedFields.add(fieldName)
             rootNode.put(fieldName, value)
         } ?: defaultValue?.let {
             rootNode.put(fieldName, defaultValue)
@@ -108,6 +115,7 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
     override fun visit(fieldName: String, defaultValue: BigDecimal?, fldStruct: Schema<*>, required: Boolean) {
         from.getField(fieldName, required)?.getBigDecimal()?.let { value ->
             fldStruct.checkEnum(value, fieldName)
+            processedFields.add(fieldName)
             rootNode.put(fieldName, value)
         } ?: defaultValue?.let {
             rootNode.put(fieldName, defaultValue)
@@ -155,6 +163,10 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
         val mapper = ObjectMapper().apply {
             nodeFactory = JsonNodeFactory.withExactBigDecimals(true)
         }
+    }
+
+    override fun getDiscriminatorValue(fieldName: String): String? {
+        return null
     }
 
 }

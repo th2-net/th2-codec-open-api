@@ -17,10 +17,12 @@
 package com.exactpro.th2.codec.openapi.writer
 
 import com.exactpro.th2.codec.CodecException
+import com.exactpro.th2.codec.openapi.utils.findByRef
 import com.exactpro.th2.codec.openapi.utils.getEndPoint
 import com.exactpro.th2.codec.openapi.writer.visitors.SchemaVisitor
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
+import io.swagger.v3.oas.models.media.ComposedSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.parser.util.SchemaTypeUtil.BOOLEAN_TYPE
 import io.swagger.v3.parser.util.SchemaTypeUtil.INTEGER_TYPE
@@ -37,6 +39,10 @@ class SchemaWriter constructor(private val openApi: OpenAPI, private val failOnU
         msgStructure: Schema<*>
     ) {
         val schema = openApi.getEndPoint(msgStructure)
+        if(schema is ComposedSchema) {
+            processComposedSchema(schema, schemaVisitor)
+            return
+        }
 
         when (schema.type) {
             ARRAY_TYPE -> processProperty(schema, schemaVisitor, ARRAY_TYPE)
@@ -57,6 +63,10 @@ class SchemaWriter constructor(private val openApi: OpenAPI, private val failOnU
 
     private fun processProperty(property: Schema<*>, visitor: SchemaVisitor<*, *>, name: String, required: Boolean = false) {
         runCatching {
+            if(property is ComposedSchema) {
+                visitor.visit(name, property.default as? Schema<*>, property, required, this)
+                return
+            }
             when(property.type) {
                 ARRAY_TYPE -> processArrayProperty(property as ArraySchema, visitor, name, required)
                 INTEGER_TYPE -> when (property.format) {
@@ -85,6 +95,10 @@ class SchemaWriter constructor(private val openApi: OpenAPI, private val failOnU
     @Suppress("UNCHECKED_CAST")
     private fun processArrayProperty(property: ArraySchema, visitor: SchemaVisitor<*, *>, name: String, required: Boolean = false) {
         runCatching {
+            if(property.items is ComposedSchema) {
+                visitor.visitObjectCollection(name, property.items.default as? List<Any>, property, required, this)
+                return
+            }
             when(property.items.type) {
                 INTEGER_TYPE -> when (property.items.format) {
                     "int64" -> visitor.visitLongCollection(name, property.default as? List<Long>, property, required)
@@ -106,6 +120,55 @@ class SchemaWriter constructor(private val openApi: OpenAPI, private val failOnU
         }.onFailure {
             throw CodecException("Cannot parse array field [$name] inside of schema with type ${property.type}", it)
         }
+    }
+
+    private fun processComposedSchema(
+        messageSchema: ComposedSchema,
+        schemaVisitor: SchemaVisitor<*, *>
+    ) {
+        if (!messageSchema.anyOf.isNullOrEmpty()) {
+            getSchema(messageSchema, schemaVisitor)?.let { schema ->
+                if(schema.type != OBJECT_TYPE) throw CodecException("Unsupported any of schema type: ${schema.type}")
+                schema.properties.forEach { (name, property) ->
+                    processProperty(
+                        openApi.getEndPoint(property),
+                        schemaVisitor,
+                        name,
+                        schema.required?.contains(name) ?: false
+                    )
+                }
+            } ?: run {
+                var isValid = false
+                messageSchema.anyOf.forEach { subSchema ->
+                    // TODO: Primitive types has no name, think about how we can overcome this
+                    // Need to see real world example with this case
+                    // TODO: Think about case when there is two fields in different components with the same name, but with different type
+                    if (subSchema.type == OBJECT_TYPE) {
+                        subSchema.properties.forEach { (name, property) ->
+                            processProperty(openApi.getEndPoint(property), schemaVisitor, name, false)
+                        }
+                        if (subSchema.required == null || schemaVisitor.processedFields.containsAll(subSchema.required)) {
+                            isValid = true
+                        }
+                    }
+                }
+                if (!isValid) {
+                    throw CodecException("Problems during parsing anyOf structure. Non of the listed schemas were in message.")
+                }
+            }
+        }
+    }
+
+    private fun getSchema(schema: ComposedSchema, visitor: SchemaVisitor<*, *>): Schema<*>? {
+        schema.discriminator?.run {
+            val discriminatorValue = visitor.getDiscriminatorValue(this.propertyName)
+            checkNotNull(discriminatorValue)
+            this.mapping?.run {
+                return this[discriminatorValue]?. run { return openApi.findByRef(this) }
+            } ?: run {
+                return schema.anyOf.first { it.name == discriminatorValue }
+            }
+        } ?: run { return null }
     }
 
     companion object {

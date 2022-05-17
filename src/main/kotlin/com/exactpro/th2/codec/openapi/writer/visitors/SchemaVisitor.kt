@@ -24,6 +24,7 @@ import io.swagger.v3.oas.models.media.Schema
 import java.math.BigDecimal
 
 sealed class SchemaVisitor<FromType, ToType> {
+    val processedFields = mutableListOf<String>()
     abstract val from: FromType
     abstract fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, required: Boolean = false, schemaWriter: SchemaWriter)
     abstract fun visit(fieldName: String, defaultValue: String?, fldStruct: Schema<*>, required: Boolean = false)
@@ -42,6 +43,7 @@ sealed class SchemaVisitor<FromType, ToType> {
     abstract fun visitLongCollection(fieldName: String, defaultValue: List<Long>?, fldStruct: ArraySchema, required: Boolean = false)
     abstract fun visitObjectCollection(fieldName: String, defaultValue: List<Any>?, fldStruct: ArraySchema, required: Boolean = false, schemaWriter: SchemaWriter)
     abstract fun getUndefinedFields(fields: MutableSet<String>): Set<String>?
+    abstract fun getDiscriminatorValue(fieldName: String): String?
 
     abstract fun getResult(): ToType
 

@@ -48,6 +48,7 @@ import com.exactpro.th2.common.message.orEmpty
 import com.exactpro.th2.common.message.sessionAlias
 import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.parameters.Parameter
+import io.swagger.v3.parser.util.SchemaTypeUtil.OBJECT_TYPE
 import mu.KotlinLogging
 
 class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettings) : IPipelineCodec {
@@ -230,13 +231,11 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
             else -> error("Unsupported message type: ${header.messageType}")
         }
 
-        checkNotNull(messageSchema.type) { "Type of schema [${messageSchema.name}] wasn't filled" }
-
         val type = combineName(pairFound.first.pattern, method, code, bodyFormat)
 
         LOGGER.debug { "Schema for ${header.messageType} with type-name: $type was found" }
 
-        val visitor = VisitorFactory.createDecodeVisitor(bodyFormat, messageSchema.type, body)
+        val visitor = VisitorFactory.createDecodeVisitor(bodyFormat, messageSchema.type ?: OBJECT_TYPE, body)
         schemaWriter.traverse(visitor, messageSchema)
         return visitor.getResult().apply {
             if(rawMessage.hasParentEventId()) parentEventId = rawMessage.parentEventId
