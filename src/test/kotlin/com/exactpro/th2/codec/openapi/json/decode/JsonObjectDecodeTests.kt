@@ -35,7 +35,8 @@ class JsonObjectDecodeTests {
                       "publicKey" : "1234567",
                       "testEnabled" : true,
                       "testStatus" : "FAILED",
-                      "testBigDecimal": 100000000000
+                      "testBigDecimal": 100000000000.0,
+                      "testDouble": 1.0
                     }""".trimIndent()
         val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
             "/test",
@@ -44,12 +45,34 @@ class JsonObjectDecodeTests {
             "application/json",
             jsonData)!!
 
-        Assertions.assertEquals("TestGet200ApplicationJson", decodedResult.messageType)
+        Assertions.assertEquals("TestGet200AnyAny", decodedResult.messageType)
         Assertions.assertEquals("1234567", decodedResult.getString("publicKey"))
         Assertions.assertEquals(true, decodedResult.getString("testEnabled").toBoolean())
         Assertions.assertEquals("FAILED", decodedResult.getString("testStatus"))
         Assertions.assertEquals(null, decodedResult.getString("nullField"))
         Assertions.assertEquals("100000000000", decodedResult.getString("testBigDecimal"))
+        Assertions.assertEquals("1", decodedResult.getString("testDouble"))
+
+    }
+
+    @Test
+    fun `E in double test json decode response`() {
+        val jsonData = """{
+                      "publicKey" : "1234567",
+                      "testEnabled" : true,
+                      "testDouble": 1E+3
+                    }""".trimIndent()
+        val decodedResult = OpenApiCodec(openAPI, settings).testDecode(
+            "/test",
+            "get",
+            "200",
+            "application/json",
+            jsonData)!!
+
+        Assertions.assertEquals("TestGet200AnyAny", decodedResult.messageType)
+        Assertions.assertEquals("1234567", decodedResult.getString("publicKey"))
+        Assertions.assertEquals(true, decodedResult.getString("testEnabled").toBoolean())
+        Assertions.assertEquals("1000", decodedResult.getString("testDouble"))
 
     }
 

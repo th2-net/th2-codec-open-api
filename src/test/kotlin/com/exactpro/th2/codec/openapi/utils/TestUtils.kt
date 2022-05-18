@@ -174,13 +174,13 @@ fun OpenApiCodec.testEncode(path: String, method: String, code: String?, type: S
                 assertString(OpenApiCodec.URI_FIELD, path)
                 assertString(OpenApiCodec.METHOD_FIELD, method)
                 type?.let {
-                    this.getList(OpenApiCodec.HEADERS_FIELD)!![0].messageValue.assertString("value", type)
+                    this.getList(OpenApiCodec.HEADERS_FIELD)!![0].messageValue.assertString("value", it)
                 } ?: Assertions.assertNull(this.getList(OpenApiCodec.HEADERS_FIELD)?.find { it.messageValue.getString("name") == FORMAT_HEADER_NAME })
             }
             RESPONSE_MESSAGE_TYPE -> {
                 assertString(OpenApiCodec.CODE_FIELD, code)
                 type?.let {
-                    this.getList(OpenApiCodec.HEADERS_FIELD)!![0].messageValue.assertString("value", type)
+                    this.getList(OpenApiCodec.HEADERS_FIELD)!![0].messageValue.assertString("value", it)
                 } ?: Assertions.assertNull(this.getList(OpenApiCodec.HEADERS_FIELD)?.find { it.messageValue.getString("name") == FORMAT_HEADER_NAME })
             }
             else -> error("Wrong type of header message: $headerType")

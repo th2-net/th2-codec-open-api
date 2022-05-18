@@ -45,6 +45,14 @@ Path that contains parameters inside will be converted as:
 * /test/{client} -> TestClient
 * /test/{client}/{audio} -> TestClientAudio
 
+Example of type processing for messages:
+* Path Get ```application/json``` -> PathGetApplicationJson
+* Path Get  ```application/xml``` -> PathGetApplicationXml
+* Path Get  ```*/*``` -> PathGetAnyAny \
+All ```*``` will be converted to ```Any```
+
+```*/*``` will be treated as ```application/json```
+
 All messages processing by encode must contain those types.
 
 Encode accepts only parsed messages, raw ones will be skipped.
@@ -174,6 +182,14 @@ May be empty due to missing required fields
 
 
 ## Release notes
+
+### 0.3.0 
+
++ Feature: ```*``` protocol will be processed only as json
++ Feature: ```*``` will be converted into Any for message types
++ Any number format will be treated as BigDecimal
++ Fix: removed all trailing zeros for double, float, bigDecimal
+
 
 ### 0.2.0
 

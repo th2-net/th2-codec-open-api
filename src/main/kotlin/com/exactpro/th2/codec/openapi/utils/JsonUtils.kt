@@ -74,7 +74,7 @@ fun JsonNode.validateAsLong(): Long = when {
 }
 
 fun JsonNode.validateAsBigDecimal(): BigDecimal = when {
-    isNumber -> asText().toBigDecimal()
+    isNumber -> asText().toBigDecimal().stripTrailingZeros()
     else -> error("Cannot convert $this to BigDecimal")
 }
 
@@ -83,13 +83,13 @@ fun JsonNode.validateAsInteger(): Int = when {
     else -> error("Cannot convert $this to Int")
 }
 
-fun JsonNode.validateAsDouble(): Double = when {
-    isNumber -> asDouble()
+fun JsonNode.validateAsDouble(): BigDecimal = when {
+    isNumber -> asText().toBigDecimal().stripTrailingZeros()
     else -> error("Cannot convert $this to Double")
 }
 
-fun JsonNode.validateAsFloat(): Float = when {
-    isNumber -> asText().toFloat()
+fun JsonNode.validateAsFloat(): BigDecimal = when {
+    isNumber -> asText().toBigDecimal().stripTrailingZeros()
     else -> error("Cannot convert $this to Float")
 }
 

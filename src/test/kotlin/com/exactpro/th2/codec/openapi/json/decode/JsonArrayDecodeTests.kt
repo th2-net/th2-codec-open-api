@@ -40,7 +40,7 @@ class JsonArrayDecodeTests {
             "200",
             "application/json",
             jsonData)!!
-        Assertions.assertEquals("TestGet200ApplicationJson", decodedResult.messageType)
+        Assertions.assertEquals("TestGet200AnyAny", decodedResult.messageType)
         decodedResult.assertList(ARRAY_TYPE, listOf("test1".toValue(), "test2".toValue(), "test3".toValue()))
     }
 
@@ -53,7 +53,7 @@ class JsonArrayDecodeTests {
             "200",
             "application/json; charset=utf-8",
             jsonData)!!
-        Assertions.assertEquals("TestGet200ApplicationJson", decodedResult.messageType)
+        Assertions.assertEquals("TestGet200AnyAny", decodedResult.messageType)
         decodedResult.assertList(ARRAY_TYPE, listOf("test1".toValue(), "test2".toValue(), "test3".toValue()))
     }
 

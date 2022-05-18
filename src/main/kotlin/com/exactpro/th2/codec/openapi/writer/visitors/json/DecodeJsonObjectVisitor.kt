@@ -72,21 +72,21 @@ class DecodeJsonObjectVisitor(override val from: ObjectNode) : DecodeVisitor<Obj
     }
 
     override fun visit(fieldName: String, defaultValue: Float?, fldStruct: Schema<*>, required: Boolean) {
-        val value = from.getField(fieldName, required)?.validateAsFloat()
+        val value = from.getField(fieldName, required)?.validateAsFloat()?.toPlainString()
         fldStruct.checkEnum(value, fieldName)
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Double?, fldStruct: Schema<*>, required: Boolean) {
-        val value = from.getField(fieldName, required)?.validateAsDouble()
+        val value = from.getField(fieldName, required)?.validateAsDouble()?.toPlainString()
         fldStruct.checkEnum(value, fieldName)
         rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: BigDecimal?, fldStruct: Schema<*>, required: Boolean) {
-        val value = from.getField(fieldName, required)?.validateAsBigDecimal()
+        val value = from.getField(fieldName, required)?.validateAsBigDecimal()?.toPlainString()
         fldStruct.checkEnum(value, fieldName)
-        rootMessage.addFields(fieldName, value?.toPlainString() ?: defaultValue)
+        rootMessage.addFields(fieldName, value ?: defaultValue)
     }
 
     override fun visit(fieldName: String, defaultValue: Long?, fldStruct: Schema<*>, required: Boolean) {

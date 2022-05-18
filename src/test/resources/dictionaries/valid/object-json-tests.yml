@@ -22,7 +22,7 @@ paths:
         "200":
           description: OK
           content:
-            application/json:
+            "*/*":
               schema:
                 $ref: "#/components/schemas/TestObject"
 
@@ -52,6 +52,9 @@ components:
         testEnabled:
           type: boolean
           example: false
+        testDouble:
+          type: number
+          format: double
         testBigDecimal:
           type: number
           format: "-"
