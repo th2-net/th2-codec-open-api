@@ -95,6 +95,8 @@ class DecodeJsonArrayVisitor(override val from: ArrayNode) : DecodeVisitor<Array
         })
     }
 
+    override fun checkAgainst(message: Schema<*>): Boolean = error("Unsupported checkAgainst for arrays")
+
     override fun getUndefinedFields(fields: MutableSet<String>): Nothing? = null
 
     override fun getResult(): Message.Builder = rootMessage

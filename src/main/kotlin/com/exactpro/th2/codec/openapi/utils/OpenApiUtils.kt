@@ -19,10 +19,16 @@ package com.exactpro.th2.codec.openapi.utils
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.oas.models.PathItem
+import io.swagger.v3.oas.models.media.ArraySchema
+import io.swagger.v3.oas.models.media.ComposedSchema
+import io.swagger.v3.oas.models.media.Content
+import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.parser.models.RefType
 
 private val METHODS = listOf("get", "put", "delete", "post")
+const val JSON_FORMAT = "application/json"
+const val ANY_FORMAT = "*/*"
 
 fun PathItem.getByMethod(method: String) = when (method.lowercase()) {
     "get" -> get
@@ -42,9 +48,9 @@ fun OpenAPI.findByRef(ref: String): Schema<*>? {
     } else error("Unsupported ref type: $ref")
 }
 
-fun OpenAPI.getEndPoint(schema: Schema<*>): Schema<*> = when (schema.`$ref`) {
+fun OpenAPI.getEndPoint(schema: Schema<*>): Schema<*> = when(schema.`$ref`) {
     null -> schema
-    else -> findByRef(schema.`$ref`) ?: error("Unsupported schema, no reference was found: ${schema.`$ref`}")
+    else -> findByRef(schema.`$ref`) ?: error("Unsupported Object schema, no reference was found: ${schema.`$ref`}")
 }
 
 enum class JsonSchemaTypes(val type: String) {
@@ -63,15 +69,19 @@ fun <T> Schema<*>.checkEnum(value: T?, name: String) {
 
 fun String.extractType() = substringBefore(';').trim()
 
-fun PathItem.getSchema(method: String, code: String?, bodyFormat: String): Schema<*> {
-    val methodRootSchema = this.getByMethod(method)
-
-    val schema = when (code) {
-        null -> methodRootSchema?.requestBody?.content?.get(bodyFormat)?.schema
-        else -> methodRootSchema?.responses?.get(code)?.content?.get(bodyFormat)?.schema
-    }
-
-    return checkNotNull(schema) {
-        "Schema with method: [$method], code: [$code] and type [$bodyFormat] wasn't found"
-    }
+fun Content.containingFormatOrNull(httpHeader: String) = when {
+    httpHeader == JSON_FORMAT && this.contains(ANY_FORMAT) -> ANY_FORMAT
+    this.contains(httpHeader) -> httpHeader
+    else -> null
 }
+
+fun Schema<*>.validateForType(): Schema<*> {
+    if (!this.isComposed()) {
+        checkNotNull(this.type) { "Type of schema [${this.name}] wasn't filled" }
+    }
+    return this
+}
+
+fun Schema<*>.isComposed() = this is ComposedSchema
+fun Schema<*>.isObject() = this is ObjectSchema
+fun Schema<*>.isArray() = this is ArraySchema

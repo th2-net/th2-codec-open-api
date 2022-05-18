@@ -49,11 +49,9 @@ class ValidationDictionaryTests {
                 if (dictionary.name.endsWith(YAML_FORMAT) || dictionary.name.endsWith(JSON_FORMAT)) {
                     val factory = OpenApiCodecFactory().apply {
                         init(object : IPipelineCodecContext {
-                            override fun get(alias: DictionaryAlias): InputStream = TODO("Not yet implemented")
-
+                            override fun get(alias: DictionaryAlias): InputStream = error("")
                             override fun get(type: DictionaryType): InputStream = dictionary.inputStream()
-
-                            override fun getDictionaryAliases(): Set<String> = TODO("Not yet implemented")
+                            override fun getDictionaryAliases(): Set<String> = error("")
                         })
                     }
 

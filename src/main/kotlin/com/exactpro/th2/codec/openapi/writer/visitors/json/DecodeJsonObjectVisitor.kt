@@ -156,4 +156,9 @@ class DecodeJsonObjectVisitor(override val from: ObjectNode) : DecodeVisitor<Obj
             nodeFactory = JsonNodeFactory.withExactBigDecimals(true)
         }
     }
+
+    override fun checkAgainst(message: Schema<*>): Boolean {
+        val fieldNames = from.fieldNames().asSequence()
+        return message.required.filterNot { it in fieldNames }.isEmpty()
+    }
 }

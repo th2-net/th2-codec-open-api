@@ -79,6 +79,8 @@ class EncodeJsonArrayVisitor(override val from: Message) : EncodeVisitor<Message
 
     override fun getUndefinedFields(fields: MutableSet<String>): Nothing? = null
 
+    override fun checkAgainst(message: Schema<*>): Boolean = error("Unsupported checkAgainst for arrays")
+
     override fun getResult(): ByteString {
         return if (rootNode.isEmpty) {
             ByteString.EMPTY

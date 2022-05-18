@@ -42,6 +42,7 @@ sealed class SchemaVisitor<FromType, ToType> {
     abstract fun visitLongCollection(fieldName: String, defaultValue: List<Long>?, fldStruct: ArraySchema, required: Boolean = false)
     abstract fun visitObjectCollection(fieldName: String, defaultValue: List<Any>?, fldStruct: ArraySchema, required: Boolean = false, schemaWriter: SchemaWriter)
     abstract fun getUndefinedFields(fields: MutableSet<String>): Set<String>?
+    abstract fun checkAgainst(message: Schema<*>): Boolean
 
     abstract fun getResult(): ToType
 

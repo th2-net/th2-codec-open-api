@@ -21,12 +21,13 @@ import com.exactpro.th2.codec.openapi.utils.getEndPoint
 import com.exactpro.th2.codec.openapi.writer.visitors.SchemaVisitor
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
+import io.swagger.v3.oas.models.media.BooleanSchema
+import io.swagger.v3.oas.models.media.ComposedSchema
+import io.swagger.v3.oas.models.media.IntegerSchema
+import io.swagger.v3.oas.models.media.NumberSchema
+import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.Schema
-import io.swagger.v3.parser.util.SchemaTypeUtil.BOOLEAN_TYPE
-import io.swagger.v3.parser.util.SchemaTypeUtil.INTEGER_TYPE
-import io.swagger.v3.parser.util.SchemaTypeUtil.NUMBER_TYPE
-import io.swagger.v3.parser.util.SchemaTypeUtil.OBJECT_TYPE
-import io.swagger.v3.parser.util.SchemaTypeUtil.STRING_TYPE
+import io.swagger.v3.oas.models.media.StringSchema
 import java.math.BigDecimal
 
 
@@ -36,11 +37,21 @@ class SchemaWriter constructor(private val openApi: OpenAPI, private val failOnU
         schemaVisitor: SchemaVisitor<*, *>,
         msgStructure: Schema<*>
     ) {
+
         val schema = openApi.getEndPoint(msgStructure)
 
-        when (schema.type) {
-            ARRAY_TYPE -> processProperty(schema, schemaVisitor, ARRAY_TYPE)
-            OBJECT_TYPE -> {
+        when {
+            schema is ComposedSchema -> {
+                when {
+                    !schema.anyOf.isNullOrEmpty() -> processAnyOf(schema.anyOf, schemaVisitor)
+                    !schema.oneOf.isNullOrEmpty() -> processOneOf(schema.oneOf, schemaVisitor)
+                    !schema.allOf.isNullOrEmpty() -> processAllOf(schema.allOf, schemaVisitor)
+                }
+            }
+            schema is ArraySchema -> {
+                processArrayProperty(schema, schemaVisitor, ARRAY_TYPE)
+            }
+            schema is ObjectSchema -> {
                 requireNotNull(schema.properties) {"Properties in object are required: $schema"}
                 if (failOnUndefined) {
                     schemaVisitor.getUndefinedFields(schema.properties.keys)?.let {
@@ -55,26 +66,45 @@ class SchemaWriter constructor(private val openApi: OpenAPI, private val failOnU
         }
     }
 
+    private fun processAllOf(property: List<Schema<*>>, visitor: SchemaVisitor<*, *>) {
+        property.forEach {
+            traverse(visitor, it)
+        }
+    }
+
+    private fun processAnyOf(property: List<Schema<*>>, visitor: SchemaVisitor<*, *>) {
+        val validSchemes = property.filter(visitor::checkAgainst)
+        check(validSchemes.isNotEmpty()) { "Message wasn't valid for any of shames from 'AnyOf' list: ${property.joinToString(", ") { it.`$ref` }}" }
+        validSchemes.forEach {
+            traverse(visitor, it)
+        }
+    }
+
+    private fun processOneOf(property: List<Schema<*>>, visitor: SchemaVisitor<*, *>) {
+        val validSchemes = property.filter(visitor::checkAgainst)
+        check(validSchemes.size == 1) { "Message was valid for more than one shame from 'OneOf' list: ${property.joinToString(", ") { it.`$ref` }}" }
+        traverse(visitor, validSchemes[0])
+    }
+
     private fun processProperty(property: Schema<*>, visitor: SchemaVisitor<*, *>, name: String, required: Boolean = false) {
         runCatching {
-            when(property.type) {
-                ARRAY_TYPE -> processArrayProperty(property as ArraySchema, visitor, name, required)
-                INTEGER_TYPE -> when (property.format) {
+            when(property) {
+                is ArraySchema -> processArrayProperty(property, visitor, name, required)
+                is StringSchema -> visitor.visit(name, property.default, property, required)
+                is IntegerSchema -> when (property.format) {
                     "int64" -> visitor.visit(name, property.default as? Long, property, required)
                     null, "", "int32" -> visitor.visit(name, property.default as? Int, property, required)
-                    else -> error("Unsupported format of '$INTEGER_TYPE' property $name: ${property.format}")
+                    else -> error("Unsupported format of '${IntegerSchema::class.simpleName}' property $name: ${property.format}")
                 }
-                BOOLEAN_TYPE -> visitor.visit(name, property.default as? Boolean, property, required)
-                NUMBER_TYPE -> when (property.format) {
-                    "float" -> visitor.visit(name, property.default as? Float, property, required)
-                    "double" -> visitor.visit(name, property.default as? Double, property, required)
-                    "-" -> visitor.visit(name, property.default as? BigDecimal, property, required)
-                    null, "" -> visitor.visit(name, property.default as? String, property, required)
-                    else -> error("Unsupported format of '$NUMBER_TYPE' property $name: ${property.format}")
+                is NumberSchema -> when (property.format) {
+                    "float" ->visitor.visit(name, property.default?.toFloat(), property, required)
+                    "double" -> visitor.visit(name, property.default?.toDouble(), property, required)
+                    null, "" -> visitor.visit(name, property.default?.toString(), property, required)
+                    else -> visitor.visit(name, property.default, property, required)
                 }
-                STRING_TYPE -> visitor.visit(name, property.default as? String, property, required)
-                OBJECT_TYPE -> visitor.visit(name, property.default as? Schema<*>, property, required, this)
-                else -> error("Unsupported type of property")
+                is BooleanSchema -> visitor.visit(name, property.default, property, required)
+                is ObjectSchema -> visitor.visit(name, property.default as? Schema<*>, property, required, this)
+                else -> error("Unsupported class of property: ${property::class.simpleName}")
             }
         }.onFailure {
             throw CodecException("Cannot parse field [$name] inside of schema with type ${property.type}", it)
@@ -85,22 +115,21 @@ class SchemaWriter constructor(private val openApi: OpenAPI, private val failOnU
     @Suppress("UNCHECKED_CAST")
     private fun processArrayProperty(property: ArraySchema, visitor: SchemaVisitor<*, *>, name: String, required: Boolean = false) {
         runCatching {
-            when(property.items.type) {
-                INTEGER_TYPE -> when (property.items.format) {
+            when(property.items) {
+                is IntegerSchema -> when (property.items.format) {
                     "int64" -> visitor.visitLongCollection(name, property.default as? List<Long>, property, required)
                     null, "", "int32" -> visitor.visitIntegerCollection(name, property.default as? List<Int>, property, required)
-                    else -> error("Unsupported format of '$INTEGER_TYPE' property: ${property.format}")
+                    else -> error("Unsupported format of '${IntegerSchema::class.simpleName}' property: ${property.format}")
                 }
-                BOOLEAN_TYPE -> visitor.visitBooleanCollection(name, property.default as? List<Boolean>, property, required)
-                NUMBER_TYPE -> when (property.items.format) {
+                is BooleanSchema -> visitor.visitBooleanCollection(name, property.default as? List<Boolean>, property, required)
+                is NumberSchema-> when (property.items.format) {
                     "float" -> visitor.visitFloatCollection(name, property.default as? List<Float>, property, required)
                     "double" -> visitor.visitDoubleCollection(name, property.default as? List<Double>, property, required)
                     null, "" -> visitor.visitStringCollection(name, property.default as? List<String>, property, required)
-                    "-" -> visitor.visitBigDecimalCollection(name, property.default as? List<BigDecimal>, property, required)
-                    else -> error("Unsupported format of '$NUMBER_TYPE' property: ${property.format}")
+                    else -> visitor.visitBigDecimalCollection(name, property.default as? List<BigDecimal>, property, required)
                 }
-                STRING_TYPE -> visitor.visitStringCollection(name, property.default as? List<String>, property, required)
-                OBJECT_TYPE -> visitor.visitObjectCollection(name, property.default as? List<Any>, property, required, this)
+                is StringSchema -> visitor.visitStringCollection(name, property.default as? List<String>, property, required)
+                is ObjectSchema -> visitor.visitObjectCollection(name, property.default as? List<Any>, property, required, this)
                 else -> error("Unsupported type of property")
             }
         }.onFailure {

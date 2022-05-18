@@ -18,6 +18,7 @@ package com.exactpro.th2.codec.openapi.json.encode
 
 import com.exactpro.th2.codec.openapi.OpenApiCodec
 import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
+import com.exactpro.th2.codec.openapi.throwable.EncodeException
 import com.exactpro.th2.common.message.addField
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.exactpro.th2.codec.openapi.utils.getResourceAsText
@@ -59,6 +60,44 @@ class JsonObjectEncodeTests {
             Assertions.assertEquals("1234567", json.get("publicKey").asText())
             Assertions.assertTrue(json.get("testEnabled").asBoolean())
             Assertions.assertEquals("FAILED", json.get("testStatus").asText())
+        }
+    }
+
+    @Test
+    fun `json encode response oneOf`() {
+        val codec = OpenApiCodec(openAPI, settings)
+        val firstOneOf = codec.testEncode("/test", "get", "300", "application/json", "json") {
+            addField("publicKey", "1234567")
+            addField("testEnabled", true)
+            addField("testStatus", "FAILED")
+        }
+
+        mapper.readTree(firstOneOf!!.body.toStringUtf8()).let { json ->
+            Assertions.assertEquals(3, json.size())
+            Assertions.assertEquals("1234567", json.get("publicKey").asText())
+            Assertions.assertTrue(json.get("testEnabled").asBoolean())
+            Assertions.assertEquals("FAILED", json.get("testStatus").asText())
+            Assertions.assertEquals(null, json.get("nullField")?.asText())
+        }
+
+        val secondOneOf = codec.testEncode("/test", "get", "300", "application/json", "json") {
+            addField("oneOfInteger", "1234567")
+            addField("oneOfEnabled", false)
+        }
+
+        mapper.readTree(secondOneOf!!.body.toStringUtf8()).let { json ->
+            Assertions.assertEquals(2, json.size())
+            Assertions.assertEquals("1234567", json.get("oneOfInteger").asText())
+            Assertions.assertFalse(json.get("oneOfEnabled").asBoolean())
+        }
+
+        Assertions.assertThrows(EncodeException::class.java) {
+            codec.testEncode("/test", "get", "300", "application/json", "json") {
+                addField("oneOfInteger", "1234567")
+                addField("oneOfEnabled", false)
+                addField("publicKey", "1234567")
+                addField("testEnabled", true)
+            }
         }
     }
 
