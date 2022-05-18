@@ -37,21 +37,18 @@ class SchemaWriter constructor(private val openApi: OpenAPI, private val failOnU
         schemaVisitor: SchemaVisitor<*, *>,
         msgStructure: Schema<*>
     ) {
-
-        val schema = openApi.getEndPoint(msgStructure)
-
-        when {
-            schema is ComposedSchema -> {
+        when (val schema = openApi.getEndPoint(msgStructure)) {
+            is ComposedSchema -> {
                 when {
                     !schema.anyOf.isNullOrEmpty() -> processAnyOf(schema.anyOf, schemaVisitor)
                     !schema.oneOf.isNullOrEmpty() -> processOneOf(schema.oneOf, schemaVisitor)
                     !schema.allOf.isNullOrEmpty() -> processAllOf(schema.allOf, schemaVisitor)
                 }
             }
-            schema is ArraySchema -> {
+            is ArraySchema -> {
                 processArrayProperty(schema, schemaVisitor, ARRAY_TYPE)
             }
-            schema is ObjectSchema -> {
+            is ObjectSchema -> {
                 requireNotNull(schema.properties) {"Properties in object are required: $schema"}
                 if (failOnUndefined) {
                     schemaVisitor.getUndefinedFields(schema.properties.keys)?.let {
@@ -82,7 +79,7 @@ class SchemaWriter constructor(private val openApi: OpenAPI, private val failOnU
 
     private fun processOneOf(property: List<Schema<*>>, visitor: SchemaVisitor<*, *>) {
         val validSchemes = property.filter(visitor::checkAgainst)
-        check(validSchemes.size == 1) { "Message was valid for more than one shame from 'OneOf' list: ${property.joinToString(", ") { it.`$ref` }}" }
+        check(validSchemes.size == 1) { "Message was valid for more than one scheme from 'OneOf' list: ${property.joinToString(", ") { it.`$ref`?: it.type }}" }
         traverse(visitor, validSchemes[0])
     }
 
@@ -107,7 +104,7 @@ class SchemaWriter constructor(private val openApi: OpenAPI, private val failOnU
                 else -> error("Unsupported class of property: ${property::class.simpleName}")
             }
         }.onFailure {
-            throw CodecException("Cannot parse field [$name] inside of schema with type ${property.type}", it)
+            throw CodecException("Cannot parse field [$name]:${property.type}", it)
         }
 
     }

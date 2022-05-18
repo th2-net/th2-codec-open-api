@@ -18,6 +18,7 @@ package com.exactpro.th2.codec.openapi.json.decode
 
 import com.exactpro.th2.codec.openapi.OpenApiCodec
 import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
+import com.exactpro.th2.codec.openapi.throwable.DecodeException
 import com.exactpro.th2.common.message.getString
 import com.exactpro.th2.codec.openapi.utils.getResourceAsText
 import io.swagger.parser.OpenAPIParser
@@ -25,6 +26,7 @@ import io.swagger.v3.oas.models.OpenAPI
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import com.exactpro.th2.codec.openapi.utils.testDecode
+import com.exactpro.th2.common.message.getInt
 import com.exactpro.th2.common.message.messageType
 
 class JsonObjectDecodeTests {
@@ -71,6 +73,57 @@ class JsonObjectDecodeTests {
         Assertions.assertEquals("1234567", decodedResult.getString("publicKey"))
         Assertions.assertEquals(true, decodedResult.getString("testEnabled").toBoolean())
         Assertions.assertEquals("FAILED", decodedResult.getString("testStatus"))
+    }
+
+    @Test
+    fun `json decode response oneOf`() {
+        val codec = OpenApiCodec(openAPI, settings)
+        val firstOneOf = codec.testDecode(
+            "/test",
+            "GET",
+            "300",
+            "application/json",
+            """{
+                    "publicKey" : "1234567",
+                    "testEnabled" : true,
+                    "testStatus" : "FAILED"
+            }""".trimIndent())!!
+
+        Assertions.assertEquals("TestGet300ApplicationJson", firstOneOf.messageType)
+        Assertions.assertEquals(3, firstOneOf.fieldsMap.size)
+        Assertions.assertEquals("1234567", firstOneOf.getString("publicKey"))
+        Assertions.assertEquals(true, firstOneOf.getString("testEnabled").toBoolean())
+        Assertions.assertEquals("FAILED", firstOneOf.getString("testStatus"))
+
+        val secondOneOf = codec.testDecode(
+            "/test",
+            "get",
+            "300",
+            "application/json",
+            """{
+                    "oneOfInteger" : 1234567,
+                    "oneOfEnabled" : true
+            }""".trimIndent())!!
+
+        Assertions.assertEquals("TestGet300ApplicationJson", secondOneOf.messageType)
+        Assertions.assertEquals(2, secondOneOf.fieldsMap.size)
+        Assertions.assertEquals(1234567, secondOneOf.getInt("oneOfInteger"))
+        Assertions.assertEquals(true, secondOneOf.getString("oneOfEnabled").toBoolean())
+
+        Assertions.assertThrows(DecodeException::class.java) {
+            codec.testDecode(
+                "/test",
+                "get",
+                "300",
+                "application/json",
+                """{
+                    "oneOfInteger" : 1234567,
+                    "oneOfEnabled" : true,
+                    "publicKey" : "1234567",
+                    "testEnabled" : true,
+                    "testStatus" : "FAILED"
+            }""".trimIndent())!!
+        }
     }
 
     private companion object {

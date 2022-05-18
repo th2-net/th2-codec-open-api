@@ -46,53 +46,70 @@ class DecodeJsonObjectVisitor(override val from: ObjectNode) : DecodeVisitor<Obj
     constructor(jsonString: String) : this(mapper.readTree(jsonString) as ObjectNode)
 
     override fun visit(fieldName: String, defaultValue: Schema<*>?, fldStruct: Schema<*>, required: Boolean, schemaWriter: SchemaWriter) {
-        from.getField(fieldName, required)?.let {
-            val visitor = DecodeJsonObjectVisitor(it.validateAsObject())
+        from.getField(fieldName, required)?.let { node ->
+            val visitor = DecodeJsonObjectVisitor(node.validateAsObject())
             schemaWriter.traverse(visitor, fldStruct)
-            rootMessage.addFields(fieldName, visitor.rootMessage.build())
+            (visitor.rootMessage.build() ?: defaultValue)?.let {
+                rootMessage.addFields(fieldName, it)
+            }
         }
     }
 
     override fun visit(fieldName: String, defaultValue: String?, fldStruct: Schema<*>, required: Boolean) {
         val value = from.getField(fieldName, required)?.asText()
         fldStruct.checkEnum(value, fieldName)
-        rootMessage.addFields(fieldName, value ?: defaultValue)
+        (value ?: defaultValue)?.let {
+            rootMessage.addFields(fieldName, it)
+        }
     }
 
     override fun visit(fieldName: String, defaultValue: Boolean?, fldStruct: Schema<*>, required: Boolean) {
         val value = from.getField(fieldName, required)?.validateAsBoolean()
         fldStruct.checkEnum(value, fieldName)
-        rootMessage.addFields(fieldName, value ?: defaultValue)
+        (value ?: defaultValue)?.let {
+            rootMessage.addFields(fieldName, it)
+        }
     }
 
     override fun visit(fieldName: String, defaultValue: Int?, fldStruct: Schema<*>, required: Boolean) {
         val value = from.getField(fieldName, required)?.validateAsInteger()
         fldStruct.checkEnum(value, fieldName)
-        rootMessage.addFields(fieldName, value ?: defaultValue)
+        (value ?: defaultValue)?.let {
+            rootMessage.addFields(fieldName, it)
+        }
     }
 
     override fun visit(fieldName: String, defaultValue: Float?, fldStruct: Schema<*>, required: Boolean) {
         val value = from.getField(fieldName, required)?.validateAsFloat()
         fldStruct.checkEnum(value, fieldName)
-        rootMessage.addFields(fieldName, value ?: defaultValue)
+        (value ?: defaultValue)?.let {
+            rootMessage.addFields(fieldName, it)
+        }
     }
 
     override fun visit(fieldName: String, defaultValue: Double?, fldStruct: Schema<*>, required: Boolean) {
         val value = from.getField(fieldName, required)?.validateAsDouble()
         fldStruct.checkEnum(value, fieldName)
-        rootMessage.addFields(fieldName, value ?: defaultValue)
+        (value ?: defaultValue)?.let {
+            rootMessage.addFields(fieldName, it)
+        }
     }
 
     override fun visit(fieldName: String, defaultValue: BigDecimal?, fldStruct: Schema<*>, required: Boolean) {
         val value = from.getField(fieldName, required)?.validateAsBigDecimal()
         fldStruct.checkEnum(value, fieldName)
-        rootMessage.addFields(fieldName, value?.toPlainString() ?: defaultValue)
+        (value?.toPlainString() ?: defaultValue)?.let {
+            rootMessage.addFields(fieldName, it)
+        }
+
     }
 
     override fun visit(fieldName: String, defaultValue: Long?, fldStruct: Schema<*>, required: Boolean) {
         val value = from.getField(fieldName, required)?.validateAsLong()
         fldStruct.checkEnum(value, fieldName)
-        rootMessage.addFields(fieldName, value ?: defaultValue)
+        (value ?: defaultValue)?.let {
+            rootMessage.addFields(fieldName, it)
+        }
     }
 
     override fun visitBooleanCollection(fieldName: String, defaultValue: List<Boolean>?, fldStruct: ArraySchema, required: Boolean) {
@@ -158,7 +175,7 @@ class DecodeJsonObjectVisitor(override val from: ObjectNode) : DecodeVisitor<Obj
     }
 
     override fun checkAgainst(message: Schema<*>): Boolean {
-        val fieldNames = from.fieldNames().asSequence()
+        val fieldNames = from.fieldNames().asSequence().toList()
         return message.required.filterNot { it in fieldNames }.isEmpty()
     }
 }

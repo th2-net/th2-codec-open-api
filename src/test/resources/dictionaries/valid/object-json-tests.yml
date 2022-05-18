@@ -19,6 +19,14 @@ paths:
             schema:
               $ref: "#/components/schemas/TestObject"
       responses:
+        "300":
+          description: One Of Test
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/TestObject"
+                  - $ref: "#/components/schemas/TestObjectOneOf"
         "200":
           description: OK
           content:
@@ -28,6 +36,20 @@ paths:
 
 components:
   schemas:
+    TestObjectOneOf:
+      type: object
+      description: |
+        Defines the test object.
+      required:
+        - oneOfEnabled
+        - oneOfInteger
+      properties:
+        oneOfInteger:
+          type: integer
+          example: 123
+        oneOfEnabled:
+          type: boolean
+          example: false
     TestStatus:
       type: string
       description: |

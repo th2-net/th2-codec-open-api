@@ -190,7 +190,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
             builder += runCatching {
                 decodeBody(message, messages[1].rawMessage!!)
             }.getOrElse {
-                throw DecodeException("Cannot parse body of http message", it)
+                throw DecodeException("Cannot decode body of http message", it)
             }
         }
 
