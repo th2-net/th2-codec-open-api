@@ -45,6 +45,13 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val open
                     else -> error("Unsupported type of schema [${propertySchema}] for object visitor - visit object schema")
                 }
             }
+            if (throwUndefined) {
+                val propertyNames = fldStruct.properties.keys
+                val undefinedFields = from.fieldsMap.keys.filter { !propertyNames.contains(it) }
+                if (undefinedFields.isNotEmpty()) {
+                    error("Found undefined fields: " + undefinedFields.joinToString(", "))
+                }
+            }
             rootNode.set<ObjectNode>(fieldName, visitor.rootNode)
         } ?: fldStruct.default?.let { error("Default values isn't supported for objects") }
     }
