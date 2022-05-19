@@ -18,7 +18,7 @@ package com.exactpro.th2.codec.openapi.json.decode
 
 import com.exactpro.th2.codec.openapi.OpenApiCodec
 import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
-import com.exactpro.th2.codec.openapi.writer.SchemaWriter.Companion.ARRAY_TYPE
+import com.exactpro.th2.codec.openapi.utils.ARRAY_TYPE
 import com.exactpro.th2.common.assertList
 import com.exactpro.th2.common.value.toValue
 import com.exactpro.th2.codec.openapi.utils.getResourceAsText
