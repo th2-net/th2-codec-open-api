@@ -15,7 +15,7 @@ sealed class UpdatedSchemaVisitor<FromType, ToType> {
     abstract val openAPI: OpenAPI
     abstract val from: FromType
     abstract fun getResult(): ToType
-    abstract fun visit(fieldName: String, fldStruct: ObjectSchema, required: Boolean, checkUndefined: Boolean = true)
+    abstract fun visit(fieldName: String, fldStruct: ObjectSchema, required: Boolean, throwUndefined: Boolean = true)
     abstract fun visit(fieldName: String, fldStruct: ArraySchema, required: Boolean)
     abstract fun visit(fieldName: String, fldStruct: ComposedSchema, required: Boolean)
     abstract fun visit(fieldName: String, fldStruct: NumberSchema, required: Boolean)

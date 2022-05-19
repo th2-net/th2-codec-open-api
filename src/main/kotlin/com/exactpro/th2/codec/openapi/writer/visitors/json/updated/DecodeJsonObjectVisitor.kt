@@ -2,12 +2,16 @@ package com.exactpro.th2.codec.openapi.writer.visitors.json.updated
 
 import com.exactpro.th2.codec.openapi.utils.checkEnum
 import com.exactpro.th2.codec.openapi.utils.getField
+import com.exactpro.th2.codec.openapi.utils.getRequiredArray
 import com.exactpro.th2.codec.openapi.utils.validateAsBigDecimal
 import com.exactpro.th2.codec.openapi.utils.validateAsBoolean
 import com.exactpro.th2.codec.openapi.utils.validateAsLong
+import com.exactpro.th2.codec.openapi.utils.validateAsObject
 import com.exactpro.th2.codec.openapi.writer.visitors.UpdatedSchemaVisitor
 import com.exactpro.th2.common.grpc.Message
+import com.exactpro.th2.common.message.addField
 import com.exactpro.th2.common.message.addFields
+import com.exactpro.th2.common.message.getMessage
 import com.exactpro.th2.common.message.message
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
@@ -27,12 +31,54 @@ class DecodeJsonObjectVisitor(override val from: ObjectNode, override val openAP
 
     constructor(jsonString: String, openAPI: OpenAPI) : this(mapper.readTree(jsonString) as ObjectNode, openAPI)
 
-    override fun visit(fieldName: String, fldStruct: ObjectSchema, required: Boolean, checkUndefined: Boolean) {
-        TODO("Not yet implemented")
+    override fun visit(fieldName: String, fldStruct: ObjectSchema, required: Boolean, throwUndefined: Boolean) {
+        from.getField(fieldName, required)?.let { message ->
+            val visitor = DecodeJsonObjectVisitor(message.validateAsObject(), openAPI)
+            for (entry in fldStruct.properties) {
+                when (val propertySchema = entry.value) {
+                    is NumberSchema -> visitor.visit(entry.key, propertySchema, fldStruct.required.contains(entry.key))
+                    is IntegerSchema -> visitor.visit(entry.key, propertySchema, fldStruct.required.contains(entry.key))
+                    is BooleanSchema -> visitor.visit(entry.key, propertySchema, fldStruct.required.contains(entry.key))
+                    is StringSchema -> visitor.visit(entry.key, propertySchema, fldStruct.required.contains(entry.key))
+                    is ArraySchema -> visitor.visit(entry.key, propertySchema, fldStruct.required.contains(entry.key))
+                    is ObjectSchema -> visitor.visit(entry.key, propertySchema, fldStruct.required.contains(entry.key))
+                    is ComposedSchema -> visitor.visit(entry.key, propertySchema, fldStruct.required.contains(entry.key))
+                    else -> error("Unsupported type of schema [${propertySchema}] for object visitor - visit object schema")
+                }
+            }
+            if (throwUndefined) {
+                val propertyNames = fldStruct.properties.keys
+                val undefinedFields = from.fieldNames().asSequence().filter { !propertyNames.contains(it) }
+                if (undefinedFields.count() > 0) {
+                    error("Found undefined fields: " + undefinedFields.joinToString(", "))
+                }
+            }
+            rootMessage.addField(fieldName, visitor.rootMessage)
+        } ?: fldStruct.default?.let { error("Default values isn't supported for objects") }
     }
 
     override fun visit(fieldName: String, fldStruct: ArraySchema, required: Boolean) {
-        TODO("Not yet implemented")
+        val itemSchema = fldStruct.items
+
+        from.getRequiredArray(fieldName, required)?.let { arrayNode ->
+            when (itemSchema) {
+                is NumberSchema -> rootMessage.addField(fieldName, arrayNode.map { it.validateAsBigDecimal() })
+                is IntegerSchema -> rootMessage.addField(fieldName, arrayNode.map { it.validateAsLong() })
+                is BooleanSchema -> rootMessage.addField(fieldName, arrayNode.map { it.validateAsBoolean() })
+                is StringSchema -> rootMessage.addField(fieldName, arrayNode.map { it.asText() })
+                is ObjectSchema -> rootMessage.addField(fieldName, arrayNode.run {
+                    val listOfMessages = mutableListOf<Message>()
+                    arrayNode.forEach {
+                        DecodeJsonObjectVisitor(checkNotNull(it.validateAsObject()) {" Value from list [$fieldName] must be message"}, openAPI).let { visitor ->
+                            visitor.visit("message", itemSchema, true)
+                            visitor.rootMessage.getMessage("message")?.run(listOfMessages::add)
+                        }
+                    }
+                    listOfMessages
+                })
+                else -> error("Unsupported items type: ${fldStruct.items::class.java}")
+            }
+        } ?: fldStruct.default?.let { error("Default values isn't supported for arrays") }
     }
 
     override fun visit(fieldName: String, fldStruct: ComposedSchema, required: Boolean) {
@@ -53,6 +99,8 @@ class DecodeJsonObjectVisitor(override val from: ObjectNode, override val openAP
     override fun getResult(): Message.Builder {
         TODO("Not yet implemented")
     }
+
+    fun getMessage() = rootMessage
 
     private companion object {
         val mapper = ObjectMapper().apply {

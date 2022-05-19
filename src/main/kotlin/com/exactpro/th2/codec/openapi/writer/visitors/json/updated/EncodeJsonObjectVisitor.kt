@@ -65,7 +65,7 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val open
                 is IntegerSchema -> rootNode.putArray(fieldName).putAll<Long>(listOfValues)
                 is BooleanSchema -> rootNode.putArray(fieldName).putAll<Boolean>(listOfValues)
                 is StringSchema -> rootNode.putArray(fieldName).putAll<String>(listOfValues)
-                is ObjectSchema -> {
+                is ObjectSchema -> rootNode.putArray(fieldName).run {
                     val listOfNodes = mutableListOf<ObjectNode>()
                     listOfValues.forEach {
                         EncodeJsonObjectVisitor(checkNotNull(it.getMessage()) {" Value from list [$fieldName] must be message"}, openAPI).let { visitor ->
@@ -75,6 +75,7 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val open
                             }
                         }
                     }
+                    listOfNodes.forEach { add(it) }
                 }
                 else -> error("Unsupported items type: ${fldStruct.items::class.java}")
             }
