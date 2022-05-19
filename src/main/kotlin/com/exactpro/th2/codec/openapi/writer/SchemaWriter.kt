@@ -17,6 +17,7 @@
 package com.exactpro.th2.codec.openapi.writer
 
 import com.exactpro.th2.codec.CodecException
+import com.exactpro.th2.codec.openapi.utils.ARRAY_TYPE
 import com.exactpro.th2.codec.openapi.utils.getEndPoint
 import com.exactpro.th2.codec.openapi.writer.visitors.SchemaVisitor
 import io.swagger.v3.oas.models.OpenAPI
@@ -134,7 +135,4 @@ class SchemaWriter constructor(private val openApi: OpenAPI, private val failOnU
         }
     }
 
-    companion object {
-        const val ARRAY_TYPE = "array"
-    }
 }

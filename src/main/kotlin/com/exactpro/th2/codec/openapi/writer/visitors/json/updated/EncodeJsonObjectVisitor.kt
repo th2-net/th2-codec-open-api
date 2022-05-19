@@ -27,7 +27,7 @@ import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
 import java.math.BigDecimal
 
-class EncodeJsonObjectVisitor(override val from: Message, override val openAPI: OpenAPI) : UpdatedSchemaVisitor.EncodeVisitor<Message>() {
+open class EncodeJsonObjectVisitor(override val from: Message, override val openAPI: OpenAPI) : UpdatedSchemaVisitor.EncodeVisitor<Message>() {
     private val rootNode: ObjectNode = mapper.createObjectNode()
 
     override fun visit(fieldName: String, fldStruct: ObjectSchema, required: Boolean, throwUndefined: Boolean) {

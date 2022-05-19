@@ -27,6 +27,7 @@ import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.parser.models.RefType
 
 private val METHODS = listOf("get", "put", "delete", "post")
+const val ARRAY_TYPE = "array"
 const val JSON_FORMAT = "application/json"
 const val ANY_FORMAT = "*/*"
 
