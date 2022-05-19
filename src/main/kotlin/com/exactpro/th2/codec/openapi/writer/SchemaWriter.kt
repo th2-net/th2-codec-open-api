@@ -79,7 +79,7 @@ class SchemaWriter constructor(private val openApi: OpenAPI, private val failOnU
 
     private fun processOneOf(property: List<Schema<*>>, visitor: SchemaVisitor<*, *>) {
         val validSchemes = property.filter(visitor::checkAgainst)
-        check(validSchemes.size == 1) { "Message was valid for more than one scheme from 'OneOf' list: ${property.joinToString(", ") { it.`$ref`?: it.type }}" }
+        check(validSchemes.size == 1) { "Message was valid for [${validSchemes.size}] schemas from OneOf list: ${property.joinToString(", ") { it.`$ref`?: it.type }}" }
         traverse(visitor, validSchemes[0])
     }
 
