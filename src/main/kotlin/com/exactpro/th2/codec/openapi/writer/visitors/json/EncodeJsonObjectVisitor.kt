@@ -153,7 +153,7 @@ class EncodeJsonObjectVisitor(override val from: Message) : EncodeVisitor<Messag
 
     override fun checkAgainst(message: Schema<*>): Boolean {
         val fieldNames = from.fieldsMap.keys
-        return message.required.filterNot { it in fieldNames }.isEmpty()
+        return message.required?.filterNot { it in fieldNames }?.isEmpty() ?: true
     }
 
     private companion object {
