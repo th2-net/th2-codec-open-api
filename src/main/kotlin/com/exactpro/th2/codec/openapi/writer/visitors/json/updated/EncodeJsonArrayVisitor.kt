@@ -18,5 +18,5 @@ class EncodeJsonArrayVisitor(from: Message, openAPI: OpenAPI) : EncodeJsonObject
     override fun visit(fieldName: String, fldStruct: StringSchema, required: Boolean) = throw UnsupportedOperationException("Array visitor supports only collections")
     override fun visit(fieldName: String, fldStruct: ComposedSchema, required: Boolean) = throw UnsupportedOperationException("Array visitor supports only collections")
     override fun visit(fieldName: String, fldStruct: ObjectSchema, required: Boolean, throwUndefined: Boolean) = throw UnsupportedOperationException("Array visitor supports only collections")
-    override fun getResult(): ByteString = ByteString.copyFrom(getNode().get(ARRAY_TYPE).toString().toByteArray())
+    override fun getResult(): ByteString = ByteString.copyFrom(getNode().get(0).toString().toByteArray())
 }
