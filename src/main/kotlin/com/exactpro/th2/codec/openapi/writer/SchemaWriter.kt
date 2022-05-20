@@ -52,7 +52,7 @@ class SchemaWriter constructor(private val openApi: OpenAPI, private val failOnU
                 requireNotNull(schema.properties) {"Properties in object are required: $schema"}
                 if (failOnUndefined) {
                     schemaVisitor.getUndefinedFields(schema.properties.keys)?.let {
-                        check(it.isEmpty()) { "Undefined fields were found inside of ${schema.name}: ${it.joinToString()}" }
+                        check(it.isEmpty()) { "Undefined fields were found inside of schema: ${it.joinToString()}" }
                     }
                 }
 

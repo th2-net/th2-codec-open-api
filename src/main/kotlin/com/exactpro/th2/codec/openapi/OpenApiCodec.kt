@@ -28,7 +28,6 @@ import com.exactpro.th2.codec.openapi.utils.extractType
 import com.exactpro.th2.codec.openapi.utils.getByMethod
 import com.exactpro.th2.codec.openapi.utils.getEndPoint
 import com.exactpro.th2.codec.openapi.utils.getMethods
-import com.exactpro.th2.codec.openapi.utils.validateForType
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.codec.openapi.writer.visitors.VisitorFactory
 import com.exactpro.th2.common.grpc.MessageGroup
@@ -78,8 +77,9 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
 
                 // Request
                 methodValue.requestBody?.content?.forEach { (typeKey, typeValue) ->
+
                     mapForName[combineName(pathKey, methodKey, typeKey)] = RequestContainer(
-                        pattern, methodKey, dictionary.getEndPoint(typeValue.schema).validateForType(), typeKey, resultParams
+                        pattern, methodKey, dictionary.getEndPoint(typeValue.schema), typeKey, resultParams
                     )
 
                     if (methodValue.requestBody.required /*nullable*/ == false) {
@@ -93,7 +93,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
                 methodValue.responses?.forEach { (responseKey, responseValue) ->
                     responseValue.content?.forEach { (typeKey, typeValue) ->
                         mapForName[combineName(pathKey, methodKey, responseKey, typeKey)] = ResponseContainer(
-                            pattern, methodKey, responseKey, dictionary.getEndPoint(typeValue.schema).validateForType(), typeKey, resultParams
+                            pattern, methodKey, responseKey, dictionary.getEndPoint(typeValue.schema), typeKey, resultParams
                         )
                     } ?: run {
                         mapForName[combineName(pathKey, methodKey, responseKey)] = ResponseContainer(pattern, methodKey, responseKey, null, null, resultParams)
@@ -179,7 +179,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
         val messages = messageGroup.messagesList
 
         require(messages.size < 3) { "Message group must contain only 1 or 2 messages" }
-        require(messages[0].kindCase == MESSAGE) { "Message must be a raw message" }
+        require(messages[0].kindCase == MESSAGE) { "Message must be a message" }
         val builder = MessageGroup.newBuilder()
 
         val message = messages[0].message
@@ -223,7 +223,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
             ?.first { it.messageValue.getString("name") == "Content-Type" }
             ?.messageValue
             ?.getString("value")
-            ?.extractType() ?: "null"
+            ?.extractType() ?: error("Header does not contain content-type attribute, this attribute is required for processing body")
 
         val method: String
         val schemaFormat: String
