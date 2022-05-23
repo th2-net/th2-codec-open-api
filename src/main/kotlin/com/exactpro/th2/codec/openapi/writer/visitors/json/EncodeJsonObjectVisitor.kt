@@ -34,7 +34,12 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val open
     internal val rootNode: ObjectNode = mapper.createObjectNode()
 
     override fun visit(fieldName: String, fldStruct: Schema<*>, required: Boolean, throwUndefined: Boolean) {
-        from.getField(fieldName, required)?.getMessage()?.let { message ->
+        from.getField(fieldName, required)?.let { field ->
+            when {
+                field.kindCase.number == 1 -> return
+                !field.hasMessageValue() -> error("$fieldName is not an message: ${field.kindCase}")
+            }
+            val message = field.getMessage()!!
             val visitor = EncodeJsonObjectVisitor(message, openAPI)
             val writer = SchemaWriter(openAPI)
             writer.traverse(visitor, fldStruct, throwUndefined)
@@ -45,7 +50,13 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val open
     override fun visit(fieldName: String, fldStruct: ArraySchema, required: Boolean, throwUndefined: Boolean) {
         val itemSchema = openAPI.getEndPoint(fldStruct.items)
 
-        from.getField(fieldName, required)?.getList()?.let { listOfValues ->
+        from.getField(fieldName, required)?.let { field ->
+            when {
+                field.kindCase.number == 1 -> return
+                !field.hasListValue() -> error("$fieldName is not an list: ${field.kindCase}")
+            }
+            val listOfValues = field.getList()!!
+
             when (itemSchema) {
                 is NumberSchema -> rootNode.putArray(fieldName).putAll<BigDecimal>(listOfValues)
                 is IntegerSchema -> rootNode.putArray(fieldName).putAll<Long>(listOfValues)
@@ -70,7 +81,13 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val open
     }
 
     override fun visit(fieldName: String, fldStruct: ComposedSchema, required: Boolean) {
-        from.getField(fieldName, required)?.getMessage()?.let { message ->
+        from.getField(fieldName, required)?.let { field ->
+            when {
+                field.kindCase.number == 1 -> return
+                !field.hasMessageValue() -> error("$fieldName is not an message: ${field.kindCase}")
+            }
+            val message = field.getMessage()!!
+
             val visitor = EncodeJsonObjectVisitor(message, openAPI)
             val writer = SchemaWriter(openAPI)
             writer.traverse(visitor, fldStruct, false)
