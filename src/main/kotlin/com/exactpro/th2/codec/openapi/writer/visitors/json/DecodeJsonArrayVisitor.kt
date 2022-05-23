@@ -40,7 +40,7 @@ class DecodeJsonArrayVisitor(override val from: JsonNode, override val openAPI: 
             is ObjectSchema -> rootMessage.addField(fieldName,  mutableListOf<Message>().apply {
                 fromArray.forEach {
                     DecodeJsonObjectVisitor(checkNotNull(it.validateAsObject()) { " Value from list [$fieldName] must be message" }, openAPI).let { visitor ->
-                        SchemaWriter(openAPI, throwUndefined).traverse(visitor, itemSchema)
+                        SchemaWriter(openAPI).traverse(visitor, itemSchema, throwUndefined)
                         visitor.rootMessage.build().run(this::add)
                     }
                 }

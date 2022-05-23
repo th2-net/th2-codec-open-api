@@ -39,8 +39,8 @@ open class DecodeJsonObjectVisitor(override val from: JsonNode, override val ope
     override fun visit(fieldName: String, fldStruct: Schema<*>, required: Boolean, throwUndefined: Boolean) {
         fromObject.getField(fieldName, required)?.let { message ->
             val visitor = DecodeJsonObjectVisitor(message.validateAsObject(), openAPI)
-            val writer = SchemaWriter(openAPI, throwUndefined)
-            writer.traverse(visitor, fldStruct)
+            val writer = SchemaWriter(openAPI)
+            writer.traverse(visitor, fldStruct, throwUndefined)
             rootMessage.addField(fieldName, visitor.rootMessage)
         } ?: fldStruct.default?.let { error("Default values isn't supported for objects") }
     }
@@ -60,7 +60,7 @@ open class DecodeJsonObjectVisitor(override val from: JsonNode, override val ope
                 else -> rootMessage.addField(fieldName, mutableListOf<Message>().apply {
                 arrayNode.forEach {
                     DecodeJsonObjectVisitor(checkNotNull(it.validateAsObject()) { " Value from list [$fieldName] must be message" }, openAPI).let { visitor ->
-                        SchemaWriter(openAPI, throwUndefined).traverse(visitor, itemSchema)
+                        SchemaWriter(openAPI).traverse(visitor, itemSchema, throwUndefined)
                         visitor.rootMessage.build().run(this::add)
                     }
                 }
@@ -70,7 +70,12 @@ open class DecodeJsonObjectVisitor(override val from: JsonNode, override val ope
     }
 
     override fun visit(fieldName: String, fldStruct: ComposedSchema, required: Boolean) {
-        TODO("Not yet implemented")
+        fromObject.getField(fieldName, required)?.let { message ->
+            val visitor = DecodeJsonObjectVisitor(message.validateAsObject(), openAPI)
+            val writer = SchemaWriter(openAPI)
+            writer.traverse(visitor, fldStruct, false)
+            rootMessage.addField(fieldName, visitor.rootMessage)
+        } ?: fldStruct.default?.let { error("Default values isn't supported for objects") }
     }
 
     override fun visit(fieldName: String, fldStruct: NumberSchema, required: Boolean) = visitPrimitive(fieldName, fromObject.getField(fieldName, required)?.validateAsBigDecimal(), fldStruct)

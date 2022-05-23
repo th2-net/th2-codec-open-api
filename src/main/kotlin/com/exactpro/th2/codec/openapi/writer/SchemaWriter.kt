@@ -41,24 +41,25 @@ import io.swagger.v3.oas.models.media.UUIDSchema
 import java.lang.IllegalStateException
 
 
-class SchemaWriter constructor(private val openApi: OpenAPI, private val throwUndefined: Boolean = true) {
+class SchemaWriter constructor(private val openApi: OpenAPI) {
 
     fun traverse(
         visitor: SchemaVisitor<*, *>,
-        msgStructure: Schema<*>
+        msgStructure: Schema<*>,
+        throwUndefined: Boolean = true
     ) {
         when (msgStructure) {
             is ArraySchema -> visitor.visit(ARRAY_TYPE, msgStructure, true)
             is ComposedSchema -> {
                 when {
                     !msgStructure.allOf.isNullOrEmpty() -> visitor.allOf(msgStructure.allOf.map { openApi.getEndPoint(it) } as List<ObjectSchema>).forEach {
-                        traverse(visitor, it)
+                        traverse(visitor, it, false)
                     }
                     !msgStructure.oneOf.isNullOrEmpty() -> visitor.oneOf(msgStructure.oneOf.map { openApi.getEndPoint(it) } as List<ObjectSchema>).forEach {
-                        traverse(visitor, it)
+                        traverse(visitor, it, false)
                     }
                     !msgStructure.anyOf.isNullOrEmpty() -> visitor.anyOf(msgStructure.anyOf.map { openApi.getEndPoint(it) } as List<ObjectSchema>).forEach {
-                        traverse(visitor, it)
+                        traverse(visitor, it, false)
                     }
                     else -> throw IllegalStateException("Composed schema was empty at allOf, oneOf, anyOf lists")
                 }
