@@ -50,6 +50,7 @@ import com.exactpro.th2.common.message.sessionAlias
 import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.parameters.Parameter
 import mu.KotlinLogging
+import java.lang.IllegalStateException
 
 class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettings) : IPipelineCodec {
 
@@ -152,7 +153,11 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
 
         LOGGER.debug { "Start of message encoding: ${message.messageType}" }
 
-        val visitor = VisitorFactory.createEncodeVisitor(container.bodyFormat!!, messageSchema, message, dictionary)
+        val visitor = try {
+            VisitorFactory.createEncodeVisitor(container.bodyFormat!!, messageSchema, message, dictionary)
+        } catch (e: Exception) {
+            throw IllegalStateException("Cannot create encode visitor for message: ${message.messageType} - ${container.body}", e)
+        }
         schemaWriter.traverse(visitor, messageSchema)
         val result = visitor.getResult()
 
@@ -202,7 +207,12 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
         val schema = dictionary.getEndPoint(checkNotNull(container.body) { "Container: $messageType did not contain schema body" })
         val format = checkNotNull(container.bodyFormat) { "Container: $messageType did not contain schema bodyFormat" }
 
-        val visitor = VisitorFactory.createDecodeVisitor(format, schema, body, dictionary)
+        val visitor = try {
+            VisitorFactory.createDecodeVisitor(format, schema, body, dictionary)
+        } catch (e: Exception) {
+            throw IllegalStateException("Cannot create decode visitor for message: ${header.messageType} - ${container.body}", e)
+        }
+
         schemaWriter.traverse(visitor, schema)
         return visitor.getResult().apply {
             if(rawMessage.hasParentEventId()) parentEventId = rawMessage.parentEventId
