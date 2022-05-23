@@ -52,11 +52,11 @@ import io.swagger.v3.oas.models.parameters.Parameter
 import mu.KotlinLogging
 import java.lang.IllegalStateException
 
-class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettings) : IPipelineCodec {
+class OpenApiCodec(private val dictionary: OpenAPI, val settings: OpenApiCodecSettings) : IPipelineCodec {
 
     private val typeToSchema: Map<String, HttpRouteContainer>
     private val patternToPathItem: List<Pair<UriPattern, PathItem>>
-    private val schemaWriter = SchemaWriter(dictionary, settings.checkUndefinedFields)
+    private val schemaWriter = SchemaWriter(dictionary)
 
     init {
         val mapForName = mutableMapOf<String, HttpRouteContainer>()
@@ -158,7 +158,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
         } catch (e: Exception) {
             throw IllegalStateException("Cannot create encode visitor for message: ${message.messageType} - ${container.body}", e)
         }
-        schemaWriter.traverse(visitor, messageSchema)
+        schemaWriter.traverse(visitor, messageSchema, settings.checkUndefinedFields)
         val result = visitor.getResult()
 
         LOGGER.trace { "Result of encoded message ${message.messageType}: $result" }
@@ -213,7 +213,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
             throw IllegalStateException("Cannot create decode visitor for message: ${header.messageType} - ${container.body}", e)
         }
 
-        schemaWriter.traverse(visitor, schema)
+        schemaWriter.traverse(visitor, schema, settings.checkUndefinedFields)
         return visitor.getResult().apply {
             if(rawMessage.hasParentEventId()) parentEventId = rawMessage.parentEventId
             sessionAlias = rawMessage.sessionAlias
