@@ -91,7 +91,7 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val open
     }
 
     override fun checkAgainst(fldStruct: ObjectSchema): Boolean {
-        if (fldStruct.required.isEmpty()) {
+        if (fldStruct.required.isNullOrEmpty()) {
             return true
         }
         return from.fieldsMap.keys.containsAll(fldStruct.required)
