@@ -101,5 +101,10 @@ open class DecodeJsonObjectVisitor(override val from: JsonNode, override val ope
         }
     }
 
-    override fun checkAgainst(fldStruct: ObjectSchema): Boolean = fromObject.fieldNames().asSequence().toList().containsAll(fldStruct.required)
+    override fun checkAgainst(fldStruct: ObjectSchema): Boolean {
+        if (fldStruct.required.isEmpty()) {
+            return true
+        }
+        return fromObject.fieldNames().asSequence().toList().containsAll(fldStruct.required)
+    }
 }

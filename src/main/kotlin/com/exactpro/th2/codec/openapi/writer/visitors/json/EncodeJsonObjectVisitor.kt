@@ -90,7 +90,12 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val open
         rootNode.put(fieldName, it)
     }
 
-    override fun checkAgainst(fldStruct: ObjectSchema): Boolean = from.fieldsMap.keys.containsAll(fldStruct.required)
+    override fun checkAgainst(fldStruct: ObjectSchema): Boolean {
+        if (fldStruct.required.isEmpty()) {
+            return true
+        }
+        return from.fieldsMap.keys.containsAll(fldStruct.required)
+    }
 
     private inline fun <T> visitPrimitive(fieldName: String, fieldValue: Value?, fldStruct: Schema<T>, convert: (Value) -> T, put: (T) -> Unit) {
         fieldValue?.run(convert)?.let { value ->
