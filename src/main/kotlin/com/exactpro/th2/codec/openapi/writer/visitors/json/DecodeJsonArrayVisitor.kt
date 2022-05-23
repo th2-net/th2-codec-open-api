@@ -16,13 +16,22 @@ import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
+import io.swagger.v3.oas.models.media.BinarySchema
 import io.swagger.v3.oas.models.media.BooleanSchema
+import io.swagger.v3.oas.models.media.ByteArraySchema
 import io.swagger.v3.oas.models.media.ComposedSchema
+import io.swagger.v3.oas.models.media.DateSchema
+import io.swagger.v3.oas.models.media.DateTimeSchema
+import io.swagger.v3.oas.models.media.EmailSchema
+import io.swagger.v3.oas.models.media.FileSchema
 import io.swagger.v3.oas.models.media.IntegerSchema
+import io.swagger.v3.oas.models.media.MapSchema
 import io.swagger.v3.oas.models.media.NumberSchema
 import io.swagger.v3.oas.models.media.ObjectSchema
+import io.swagger.v3.oas.models.media.PasswordSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
+import io.swagger.v3.oas.models.media.UUIDSchema
 
 class DecodeJsonArrayVisitor(override val from: JsonNode, override val openAPI: OpenAPI) : SchemaVisitor.DecodeVisitor<JsonNode>() {
 
@@ -37,7 +46,8 @@ class DecodeJsonArrayVisitor(override val from: JsonNode, override val openAPI: 
             is IntegerSchema -> rootMessage.addField(fieldName, fromArray.map { it.validateAsLong() })
             is BooleanSchema -> rootMessage.addField(fieldName, fromArray.map { it.validateAsBoolean() })
             is StringSchema -> rootMessage.addField(fieldName, fromArray.map { it.asText() })
-            is ObjectSchema -> rootMessage.addField(fieldName,  mutableListOf<Message>().apply {
+            is BinarySchema, is ByteArraySchema, is DateSchema, is DateTimeSchema, is EmailSchema, is FileSchema, is MapSchema, is PasswordSchema, is UUIDSchema -> throw UnsupportedOperationException("${itemSchema::class.simpleName} for json array isn't supported for now")
+            else -> rootMessage.addField(fieldName,  mutableListOf<Message>().apply {
                 fromArray.forEach {
                     DecodeJsonObjectVisitor(checkNotNull(it.validateAsObject()) { " Value from list [$fieldName] must be message" }, openAPI).let { visitor ->
                         SchemaWriter(openAPI).traverse(visitor, itemSchema, throwUndefined)
@@ -45,10 +55,6 @@ class DecodeJsonArrayVisitor(override val from: JsonNode, override val openAPI: 
                     }
                 }
             })
-            is ComposedSchema -> {
-                TODO("Not yet implemented")
-            }
-            else -> error("Unsupported items type: ${fldStruct.items::class.java}")
         }
     }
 

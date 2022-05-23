@@ -20,13 +20,22 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.google.protobuf.ByteString
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
+import io.swagger.v3.oas.models.media.BinarySchema
 import io.swagger.v3.oas.models.media.BooleanSchema
+import io.swagger.v3.oas.models.media.ByteArraySchema
 import io.swagger.v3.oas.models.media.ComposedSchema
+import io.swagger.v3.oas.models.media.DateSchema
+import io.swagger.v3.oas.models.media.DateTimeSchema
+import io.swagger.v3.oas.models.media.EmailSchema
+import io.swagger.v3.oas.models.media.FileSchema
 import io.swagger.v3.oas.models.media.IntegerSchema
+import io.swagger.v3.oas.models.media.MapSchema
 import io.swagger.v3.oas.models.media.NumberSchema
 import io.swagger.v3.oas.models.media.ObjectSchema
+import io.swagger.v3.oas.models.media.PasswordSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
+import io.swagger.v3.oas.models.media.UUIDSchema
 import java.lang.IllegalStateException
 import java.math.BigDecimal
 
@@ -62,9 +71,7 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val open
                 is IntegerSchema -> rootNode.putArray(fieldName).putAll<Long>(listOfValues)
                 is BooleanSchema -> rootNode.putArray(fieldName).putAll<Boolean>(listOfValues)
                 is StringSchema -> rootNode.putArray(fieldName).putAll<String>(listOfValues)
-                is ComposedSchema -> {
-                    TODO("Not yet implemented")
-                }
+                is BinarySchema, is ByteArraySchema, is DateSchema, is DateTimeSchema, is EmailSchema, is FileSchema, is MapSchema, is PasswordSchema, is UUIDSchema -> throw UnsupportedOperationException("${itemSchema::class.simpleName} for json array isn't supported for now")
                 else -> rootNode.putArray(fieldName).apply {
                     val listOfNodes = mutableListOf<ObjectNode>()
                     val writer = SchemaWriter(openAPI)
@@ -111,12 +118,7 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val open
         rootNode.put(fieldName, it)
     }
 
-    override fun checkAgainst(fldStruct: ObjectSchema): Boolean {
-        if (fldStruct.required.isNullOrEmpty()) {
-            return true
-        }
-        return from.fieldsMap.keys.containsAll(fldStruct.required)
-    }
+    override fun checkAgainst(fldStruct: ObjectSchema): Boolean = fldStruct.required.isNullOrEmpty() || from.fieldsMap.keys.containsAll(fldStruct.required)
 
     private inline fun <reified T> visitPrimitive(fieldName: String, fieldValue: Value?, fldStruct: Schema<T>, convert: (Value) -> T, put: (T) -> Unit) {
         fieldValue?.let { value ->

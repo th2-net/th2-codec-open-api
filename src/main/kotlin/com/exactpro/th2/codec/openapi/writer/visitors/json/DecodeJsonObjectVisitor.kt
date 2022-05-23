@@ -20,13 +20,22 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
+import io.swagger.v3.oas.models.media.BinarySchema
 import io.swagger.v3.oas.models.media.BooleanSchema
+import io.swagger.v3.oas.models.media.ByteArraySchema
 import io.swagger.v3.oas.models.media.ComposedSchema
+import io.swagger.v3.oas.models.media.DateSchema
+import io.swagger.v3.oas.models.media.DateTimeSchema
+import io.swagger.v3.oas.models.media.EmailSchema
+import io.swagger.v3.oas.models.media.FileSchema
 import io.swagger.v3.oas.models.media.IntegerSchema
+import io.swagger.v3.oas.models.media.MapSchema
 import io.swagger.v3.oas.models.media.NumberSchema
 import io.swagger.v3.oas.models.media.ObjectSchema
+import io.swagger.v3.oas.models.media.PasswordSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
+import io.swagger.v3.oas.models.media.UUIDSchema
 import java.lang.IllegalStateException
 
 open class DecodeJsonObjectVisitor(override val from: JsonNode, override val openAPI: OpenAPI) : SchemaVisitor.DecodeVisitor<JsonNode>() {
@@ -54,17 +63,15 @@ open class DecodeJsonObjectVisitor(override val from: JsonNode, override val ope
                 is IntegerSchema -> rootMessage.addField(fieldName, arrayNode.map { it.validateAsLong() })
                 is BooleanSchema -> rootMessage.addField(fieldName, arrayNode.map { it.validateAsBoolean() })
                 is StringSchema -> rootMessage.addField(fieldName, arrayNode.map { it.asText() })
-                is ComposedSchema -> {
-                    TODO("Not yet implemented")
-                }
+                is BinarySchema, is ByteArraySchema, is DateSchema, is DateTimeSchema, is EmailSchema, is FileSchema, is MapSchema, is PasswordSchema, is UUIDSchema -> throw UnsupportedOperationException("${itemSchema::class.simpleName} for json array isn't supported for now")
                 else -> rootMessage.addField(fieldName, mutableListOf<Message>().apply {
-                arrayNode.forEach {
-                    DecodeJsonObjectVisitor(checkNotNull(it.validateAsObject()) { " Value from list [$fieldName] must be message" }, openAPI).let { visitor ->
-                        SchemaWriter(openAPI).traverse(visitor, itemSchema, throwUndefined)
-                        visitor.rootMessage.build().run(this::add)
+                    arrayNode.forEach {
+                        DecodeJsonObjectVisitor(checkNotNull(it.validateAsObject()) { " Value from list [$fieldName] must be message" }, openAPI).let { visitor ->
+                            SchemaWriter(openAPI).traverse(visitor, itemSchema, throwUndefined)
+                            visitor.rootMessage.build().run(this::add)
+                        }
                     }
-                }
-            })
+                })
             }
         } ?: fldStruct.default?.let { error("Default values isn't supported for arrays") }
     }
@@ -105,10 +112,5 @@ open class DecodeJsonObjectVisitor(override val from: JsonNode, override val ope
         }
     }
 
-    override fun checkAgainst(fldStruct: ObjectSchema): Boolean {
-        if (fldStruct.required.isNullOrEmpty()) {
-            return true
-        }
-        return fromObject.fieldNames().asSequence().toList().containsAll(fldStruct.required)
-    }
+    override fun checkAgainst(fldStruct: ObjectSchema): Boolean = fldStruct.required.isNullOrEmpty() || fromObject.fieldNames().asSequence().toList().containsAll(fldStruct.required)
 }
