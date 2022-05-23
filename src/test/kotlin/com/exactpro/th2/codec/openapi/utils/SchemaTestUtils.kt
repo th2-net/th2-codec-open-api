@@ -16,6 +16,7 @@ package com.exactpro.th2.codec.openapi/*
 
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.BooleanSchema
+import io.swagger.v3.oas.models.media.IntegerSchema
 import io.swagger.v3.oas.models.media.NumberSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
@@ -39,8 +40,8 @@ inline fun <reified T:Any>createTestSchema(value: T?, fillEnum: List<T>? = null)
             }
         }
         Int::class -> {
-            return NumberSchema().apply {
-                type = "number"
+            return IntegerSchema().apply {
+                type = "int32"
                 example = value
                 fillEnum?.forEach {
                     enum.add((it as Int).toBigDecimal())
@@ -48,8 +49,8 @@ inline fun <reified T:Any>createTestSchema(value: T?, fillEnum: List<T>? = null)
             }
         }
         Long::class -> {
-            return NumberSchema().apply {
-                type = "number"
+            return IntegerSchema().apply {
+                type = "int64"
                 example = value
                 fillEnum?.forEach {
                     enum.add((it as Long).toBigDecimal())

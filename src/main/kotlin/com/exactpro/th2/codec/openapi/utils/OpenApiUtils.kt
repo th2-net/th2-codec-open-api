@@ -86,3 +86,5 @@ fun Schema<*>.validateForType(): Schema<*> {
 fun Schema<*>.isComposed() = this is ComposedSchema
 fun Schema<*>.isObject() = this is ObjectSchema
 fun Schema<*>.isArray() = this is ArraySchema
+
+fun Schema<*>.requiredContains(name: String) = this.required?.contains(name) ?: false

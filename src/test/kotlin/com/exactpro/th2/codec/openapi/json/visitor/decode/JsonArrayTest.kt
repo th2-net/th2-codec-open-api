@@ -17,7 +17,6 @@
 package com.exactpro.th2.codec.openapi.json.visitor.decode
 
 import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
-import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.codec.openapi.writer.visitors.json.DecodeJsonArrayVisitor
 import com.exactpro.th2.common.assertInt
 import com.exactpro.th2.common.assertList
@@ -33,11 +32,13 @@ import com.exactpro.th2.codec.openapi.utils.getResourceAsText
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
-import io.swagger.v3.oas.models.media.Schema
+import io.swagger.v3.oas.models.media.BooleanSchema
+import io.swagger.v3.oas.models.media.IntegerSchema
+import io.swagger.v3.oas.models.media.NumberSchema
+import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.StringSchema
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import java.math.BigDecimal
 
 class JsonArrayTest {
 
@@ -45,37 +46,25 @@ class JsonArrayTest {
     @Test
     fun `not supported decode`() {
         val node = mapper.createArrayNode()
-        val visitor = DecodeJsonArrayVisitor(node)
+        val visitor = DecodeJsonArrayVisitor(node, openAPI)
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            visitor.visit("", null as? String, StringSchema(), true)
+            visitor.visit("", StringSchema(), true)
         }
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            visitor.visit("", null as? Int, StringSchema(), true)
+            visitor.visit("", IntegerSchema(), true)
         }
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            visitor.visit("", null as? Double, StringSchema(), true)
+            visitor.visit("", NumberSchema(), true)
         }
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            visitor.visit("", null as? Long, StringSchema(), true)
+            visitor.visit("", BooleanSchema(), true)
         }
 
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            visitor.visit("", null as? Float, StringSchema(), true)
-        }
-
-        Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            visitor.visit("", null as? Boolean, StringSchema(), true)
-        }
-
-        Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            visitor.visit("", null as? Schema<*>, StringSchema(), true, SchemaWriter(openAPI))
-        }
-
-        Assertions.assertThrows(UnsupportedOperationException::class.java) {
-            visitor.visit("", null as? BigDecimal, StringSchema(), true)
+            visitor.visit("", ObjectSchema(), true)
         }
     }
 
@@ -123,8 +112,8 @@ class JsonArrayTest {
             })
         }
 
-        val result = DecodeJsonArrayVisitor(jsonArrayNode).apply {
-            visitObjectCollection(fieldName, null, openAPI.components.schemas["ArrayObjectTest"]!! as ArraySchema, true, SchemaWriter(openAPI))
+        val result = DecodeJsonArrayVisitor(jsonArrayNode, openAPI).apply {
+            visit(fieldName, openAPI.components.schemas["ArrayObjectTest"]!! as ArraySchema, true)
         }.getResult()
 
         (result[fieldName]!!).let { listValue ->
@@ -150,8 +139,8 @@ class JsonArrayTest {
         val jsonArrayNode = mapper.createArrayNode().apply {
             collection.forEach(this::add)
         }
-        val visitor = DecodeJsonArrayVisitor(jsonArrayNode)
-        visitor.visitStringCollection(fieldName, null, createArrayTestSchema("string"), true)
+        val visitor = DecodeJsonArrayVisitor(jsonArrayNode, openAPI)
+        visitor.visit(fieldName, createArrayTestSchema("string"), true)
         visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
     }
 
@@ -162,8 +151,8 @@ class JsonArrayTest {
         val jsonArrayNode = mapper.createArrayNode().apply {
             collection.forEach(this::add)
         }
-        val visitor = DecodeJsonArrayVisitor(jsonArrayNode)
-        visitor.visitBooleanCollection(fieldName, null, createArrayTestSchema("boolean"), true)
+        val visitor = DecodeJsonArrayVisitor(jsonArrayNode, openAPI)
+        visitor.visit(fieldName, createArrayTestSchema("boolean"), true)
         visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
     }
 
@@ -174,8 +163,8 @@ class JsonArrayTest {
         val jsonArrayNode = mapper.createArrayNode().apply {
             collection.forEach(this::add)
         }
-        val visitor = DecodeJsonArrayVisitor(jsonArrayNode)
-        visitor.visitIntegerCollection(fieldName, null, createArrayTestSchema("integer"), true)
+        val visitor = DecodeJsonArrayVisitor(jsonArrayNode, openAPI)
+        visitor.visit(fieldName, createArrayTestSchema("integer"), true)
         visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
     }
 
@@ -186,8 +175,8 @@ class JsonArrayTest {
         val jsonArrayNode = mapper.createArrayNode().apply {
             collection.forEach(this::add)
         }
-        val visitor = DecodeJsonArrayVisitor(jsonArrayNode)
-        visitor.visitDoubleCollection(fieldName, null, createArrayTestSchema("number", "double"), true)
+        val visitor = DecodeJsonArrayVisitor(jsonArrayNode, openAPI)
+        visitor.visit(fieldName, createArrayTestSchema("number", "double"), true)
         visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
     }
 
@@ -198,8 +187,8 @@ class JsonArrayTest {
         val jsonArrayNode = mapper.createArrayNode().apply {
             collection.forEach(this::add)
         }
-        val visitor = DecodeJsonArrayVisitor(jsonArrayNode)
-        visitor.visitFloatCollection(fieldName, null, createArrayTestSchema("number", "float"), true)
+        val visitor = DecodeJsonArrayVisitor(jsonArrayNode, openAPI)
+        visitor.visit(fieldName, createArrayTestSchema("number", "float"), true)
         visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
     }
 
@@ -210,8 +199,8 @@ class JsonArrayTest {
         val jsonArrayNode = mapper.createArrayNode().apply {
             collection.forEach(this::add)
         }
-        val visitor = DecodeJsonArrayVisitor(jsonArrayNode)
-        visitor.visitLongCollection(fieldName, null, createArrayTestSchema("integer", "int64"), true)
+        val visitor = DecodeJsonArrayVisitor(jsonArrayNode, openAPI)
+        visitor.visit(fieldName, createArrayTestSchema("integer", "int64"), true)
         visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
     }
 
@@ -222,8 +211,8 @@ class JsonArrayTest {
         val jsonArrayNode = mapper.createArrayNode().apply {
             collection.forEach(this::add)
         }
-        val visitor = DecodeJsonArrayVisitor(jsonArrayNode)
-        visitor.visitBigDecimalCollection(fieldName, null, createArrayTestSchema("integer", "int64"), true)
+        val visitor = DecodeJsonArrayVisitor(jsonArrayNode, openAPI)
+        visitor.visit(fieldName, createArrayTestSchema("integer", "int64"), true)
         visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
     }
 

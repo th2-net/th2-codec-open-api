@@ -200,7 +200,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
     private fun decodeBody(header: Message, rawMessage: RawMessage): Message {
         val body = rawMessage.body
         val (messageType, container) = searchContainer(header, rawMessage.metadata)
-        val schema = checkNotNull(container.body) { "Container: $messageType did not contain schema body" }
+        val schema = dictionary.getEndPoint(checkNotNull(container.body) { "Container: $messageType did not contain schema body" })
         val format = checkNotNull(container.bodyFormat) { "Container: $messageType did not contain schema bodyFormat" }
 
         val visitor = VisitorFactory.createDecodeVisitor(format, schema, body, dictionary)

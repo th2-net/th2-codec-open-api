@@ -38,8 +38,8 @@ object VisitorFactory {
         when (format) {
             JSON_FORMAT -> {
                 return when (schema.defineType(dictionary)) {
-                    JsonSchemaTypes.ARRAY -> EncodeJsonArrayVisitor(message)
-                    JsonSchemaTypes.OBJECT -> EncodeJsonObjectVisitor(message)
+                    JsonSchemaTypes.ARRAY -> EncodeJsonArrayVisitor(message, dictionary)
+                    JsonSchemaTypes.OBJECT -> EncodeJsonObjectVisitor(message, dictionary)
                 }
             }
             else -> error("Unsupported format of message $format for encode")
@@ -50,8 +50,8 @@ object VisitorFactory {
         when (format) {
             JSON_FORMAT -> {
                 return when (schema.defineType(dictionary)) {
-                    JsonSchemaTypes.ARRAY -> DecodeJsonArrayVisitor(data.toStringUtf8())
-                    JsonSchemaTypes.OBJECT -> DecodeJsonObjectVisitor(data.toStringUtf8())
+                    JsonSchemaTypes.ARRAY -> DecodeJsonArrayVisitor(data.toStringUtf8(), dictionary)
+                    JsonSchemaTypes.OBJECT -> DecodeJsonObjectVisitor(data.toStringUtf8(), dictionary)
                 }
             }
             else -> error("Unsupported format of message $format for decode")
