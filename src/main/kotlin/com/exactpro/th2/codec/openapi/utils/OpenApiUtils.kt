@@ -76,13 +76,6 @@ fun Content.containingFormatOrNull(httpHeader: String) = when {
     else -> null
 }
 
-fun Schema<*>.validateForType(): Schema<*> {
-    if (!this.isComposed()) {
-        checkNotNull(this.type) { "Type of schema [${this.name}] wasn't filled" }
-    }
-    return this
-}
-
 fun Schema<*>.isComposed() = this is ComposedSchema
 fun Schema<*>.isObject() = this is ObjectSchema
 fun Schema<*>.isArray() = this is ArraySchema

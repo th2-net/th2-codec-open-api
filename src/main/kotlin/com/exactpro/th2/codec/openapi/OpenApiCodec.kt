@@ -28,7 +28,6 @@ import com.exactpro.th2.codec.openapi.utils.extractType
 import com.exactpro.th2.codec.openapi.utils.getByMethod
 import com.exactpro.th2.codec.openapi.utils.getEndPoint
 import com.exactpro.th2.codec.openapi.utils.getMethods
-import com.exactpro.th2.codec.openapi.utils.validateForType
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.codec.openapi.writer.visitors.VisitorFactory
 import com.exactpro.th2.common.grpc.MessageGroup
@@ -79,7 +78,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
                 // Request
                 methodValue.requestBody?.content?.forEach { (typeKey, typeValue) ->
                     mapForName[combineName(pathKey, methodKey, typeKey)] = RequestContainer(
-                        pattern, methodKey, dictionary.getEndPoint(typeValue.schema).validateForType(), typeKey, resultParams
+                        pattern, methodKey, dictionary.getEndPoint(typeValue.schema), typeKey, resultParams
                     )
 
                     if (methodValue.requestBody.required /*nullable*/ == false) {
@@ -93,7 +92,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, settings: OpenApiCodecSettin
                 methodValue.responses?.forEach { (responseKey, responseValue) ->
                     responseValue.content?.forEach { (typeKey, typeValue) ->
                         mapForName[combineName(pathKey, methodKey, responseKey, typeKey)] = ResponseContainer(
-                            pattern, methodKey, responseKey, dictionary.getEndPoint(typeValue.schema).validateForType(), typeKey, resultParams
+                            pattern, methodKey, responseKey, dictionary.getEndPoint(typeValue.schema), typeKey, resultParams
                         )
                     } ?: run {
                         mapForName[combineName(pathKey, methodKey, responseKey)] = ResponseContainer(pattern, methodKey, responseKey, null, null, resultParams)
