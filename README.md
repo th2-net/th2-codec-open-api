@@ -1,5 +1,5 @@
 # OpenApi Codec 
-![version](https://img.shields.io/badge/version-0.2.0-blue.svg) 
+![version](https://img.shields.io/badge/version-0.3.0-blue.svg) 
 
 This microservice can validate open api dictionary, encode th2 messages or decode http body.
 
@@ -174,6 +174,11 @@ May be empty due to missing required fields
 
 
 ## Release notes
+
+### 0.3.0
+
++ Feature: anyOf, allOf, oneOf support for objects and arrays
++ Fix: Reworked visitor interface
 
 ### 0.2.0
 
