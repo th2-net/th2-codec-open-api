@@ -28,8 +28,8 @@ import com.exactpro.th2.common.value.getList
 import com.exactpro.th2.common.value.toValue
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
-import com.exactpro.th2.codec.openapi.createArrayTestSchema
-import com.exactpro.th2.codec.openapi.createTestSchema
+import com.exactpro.th2.codec.openapi.utils.createArrayTestSchema
+import com.exactpro.th2.codec.openapi.utils.createTestSchema
 import com.exactpro.th2.codec.openapi.utils.getResourceAsText
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI

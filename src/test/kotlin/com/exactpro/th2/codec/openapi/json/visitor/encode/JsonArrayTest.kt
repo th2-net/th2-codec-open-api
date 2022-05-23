@@ -16,10 +16,10 @@
 
 package com.exactpro.th2.codec.openapi.json.visitor.encode
 
-import com.exactpro.th2.codec.openapi.assertBoolean
-import com.exactpro.th2.codec.openapi.assertFloat
-import com.exactpro.th2.codec.openapi.assertInteger
-import com.exactpro.th2.codec.openapi.assertString
+import com.exactpro.th2.codec.openapi.utils.assertBoolean
+import com.exactpro.th2.codec.openapi.utils.assertFloat
+import com.exactpro.th2.codec.openapi.utils.assertInteger
+import com.exactpro.th2.codec.openapi.utils.assertString
 import com.exactpro.th2.codec.openapi.OpenApiCodecSettings
 import com.exactpro.th2.codec.openapi.writer.visitors.json.EncodeJsonArrayVisitor
 import com.exactpro.th2.common.grpc.ListValue
@@ -28,7 +28,7 @@ import com.exactpro.th2.common.message.message
 import com.exactpro.th2.common.value.toValue
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
-import com.exactpro.th2.codec.openapi.createArrayTestSchema
+import com.exactpro.th2.codec.openapi.utils.createArrayTestSchema
 import com.exactpro.th2.codec.openapi.utils.getResourceAsText
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI

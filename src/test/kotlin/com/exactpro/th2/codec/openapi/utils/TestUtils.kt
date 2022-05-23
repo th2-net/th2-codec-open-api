@@ -1,4 +1,4 @@
-package com.exactpro.th2.codec.openapi.utils/*
+/*
  * Copyright 2021-2022 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +13,8 @@ package com.exactpro.th2.codec.openapi.utils/*
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package com.exactpro.th2.codec.openapi.utils
 
 import com.exactpro.th2.codec.openapi.OpenApiCodec
 import com.exactpro.th2.common.assertEqualMessages
