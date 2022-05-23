@@ -27,7 +27,7 @@ class OpenApiCodecSettings : IPipelineCodecSettings {
     val dictionaryParseOption: ParseOptions = ParseOptions().apply {
         isResolve = true
         isResolveFully = true
-        isResolveCombinators = true
+        isResolveCombinators = false
     }
     val checkUndefinedFields: Boolean = true
 }

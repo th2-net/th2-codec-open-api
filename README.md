@@ -143,7 +143,7 @@ Result of decode:
 * checkUndefinedFields - Enable or Disable warnings for all undefined fields inside object structures, true by default.
 
 **validationSettings (open api dictionary)**
-* enableRecommendations - Enable or Disable recommendations, true by default.
+* enableRecommendations - Enable or Disable recommendations, `true` by default.
 * enableApacheNginxUnderscoreRecommendation - Enable or Disable the recommendation check for Apache/Nginx potentially ignoring header with underscore by default.
 * enableOneOfWithPropertiesRecommendation - Enable or Disable the recommendation check for schemas containing properties and oneOf definitions.
 * enableUnusedSchemasRecommendation - Enable or Disable the recommendation check for unused schemas.
@@ -152,8 +152,8 @@ Result of decode:
 * enableInvalidTypeRecommendation - Enable or Disable the recommendation check for the 'type' attribute.
 
 **dictionaryParseOption (open api dictionary)**
-* resolve - true by default;
-* resolveCombinators - true by default;
+* resolve - `true` by default;
+* resolveCombinators - will combine some schemas into one due allOf statement (`false` by default);
 * resolveFully;
 * flatten;
 * flattenComposedSchemas;

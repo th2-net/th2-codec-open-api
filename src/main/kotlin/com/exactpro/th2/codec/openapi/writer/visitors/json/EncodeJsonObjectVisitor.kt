@@ -33,7 +33,7 @@ import java.math.BigDecimal
 open class EncodeJsonObjectVisitor(override val from: Message, override val openAPI: OpenAPI) : SchemaVisitor.EncodeVisitor<Message>() {
     internal val rootNode: ObjectNode = mapper.createObjectNode()
 
-    override fun visit(fieldName: String, fldStruct: ObjectSchema, required: Boolean, throwUndefined: Boolean) {
+    override fun visit(fieldName: String, fldStruct: Schema<*>, required: Boolean, throwUndefined: Boolean) {
         from.getField(fieldName, required)?.getMessage()?.let { message ->
             val visitor = EncodeJsonObjectVisitor(message, openAPI)
             val writer = SchemaWriter(openAPI, throwUndefined)
@@ -51,7 +51,10 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val open
                 is IntegerSchema -> rootNode.putArray(fieldName).putAll<Long>(listOfValues)
                 is BooleanSchema -> rootNode.putArray(fieldName).putAll<Boolean>(listOfValues)
                 is StringSchema -> rootNode.putArray(fieldName).putAll<String>(listOfValues)
-                is ObjectSchema -> rootNode.putArray(fieldName).apply {
+                is ComposedSchema -> {
+                    TODO("Not yet implemented")
+                }
+                else -> rootNode.putArray(fieldName).apply {
                     val listOfNodes = mutableListOf<ObjectNode>()
                     val writer = SchemaWriter(openAPI, throwUndefined)
                     listOfValues.forEach {
@@ -62,10 +65,6 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val open
                     }
                     listOfNodes.forEach { add(it) }
                 }
-                is ComposedSchema -> {
-                    TODO("Not yet implemented")
-                }
-                else -> error("Unsupported items type: ${fldStruct.items::class.java}")
             }
         } ?: fldStruct.default?.let { error("Default values isn't supported for arrays") }
     }
@@ -112,7 +111,7 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val open
         }
     }
 
-    override fun checkUndefined(objectSchema: ObjectSchema) {
+    override fun checkUndefined(objectSchema: Schema<*>) {
         val names = objectSchema.properties.keys
         val undefined = from.fieldsMap.keys.filter { !names.contains(it) }
         if (undefined.isNotEmpty()) {

@@ -9,6 +9,7 @@ import io.swagger.v3.oas.models.media.ComposedSchema
 import io.swagger.v3.oas.models.media.IntegerSchema
 import io.swagger.v3.oas.models.media.NumberSchema
 import io.swagger.v3.oas.models.media.ObjectSchema
+import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
 import java.lang.IllegalStateException
 
@@ -16,14 +17,14 @@ sealed class SchemaVisitor<FromType, ToType> {
     abstract val openAPI: OpenAPI
     abstract val from: FromType
     abstract fun getResult(): ToType
-    abstract fun visit(fieldName: String, fldStruct: ObjectSchema, required: Boolean, throwUndefined: Boolean = true)
+    abstract fun visit(fieldName: String, fldStruct: Schema<*>, required: Boolean, throwUndefined: Boolean = true)
     abstract fun visit(fieldName: String, fldStruct: ArraySchema, required: Boolean, throwUndefined: Boolean = true)
     abstract fun visit(fieldName: String, fldStruct: ComposedSchema, required: Boolean)
     abstract fun visit(fieldName: String, fldStruct: NumberSchema, required: Boolean)
     abstract fun visit(fieldName: String, fldStruct: IntegerSchema, required: Boolean)
     abstract fun visit(fieldName: String, fldStruct: StringSchema, required: Boolean)
     abstract fun visit(fieldName: String, fldStruct: BooleanSchema, required: Boolean)
-    abstract fun checkUndefined(objectSchema: ObjectSchema)
+    abstract fun checkUndefined(objectSchema: Schema<*>)
     abstract fun checkAgainst(fldStruct: ObjectSchema): Boolean
 
     fun oneOf(list: List<ObjectSchema>): List<ObjectSchema> = list.filter(this::checkAgainst).also {

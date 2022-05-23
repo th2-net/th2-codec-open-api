@@ -40,23 +40,6 @@ class SchemaWriter constructor(private val openApi: OpenAPI, private val throwUn
     ) {
         when (msgStructure) {
             is ArraySchema -> visitor.visit(ARRAY_TYPE, msgStructure, true)
-            is ObjectSchema -> {
-                if (throwUndefined) {
-                    visitor.checkUndefined(msgStructure)
-                }
-                msgStructure.properties.forEach { (name, property) ->
-                    when(property) {
-                        is ArraySchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
-                        is StringSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
-                        is IntegerSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
-                        is NumberSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
-                        is BooleanSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
-                        is ObjectSchema -> visitor.visit(name, property, msgStructure.requiredContains(name), throwUndefined)
-                        is ComposedSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
-                        else -> error("Unsupported class of property: ${property::class.simpleName}")
-                    }
-                }
-            }
             is ComposedSchema -> {
                 when {
                     !msgStructure.allOf.isNullOrEmpty() -> visitor.allOf(msgStructure.allOf.map { openApi.getEndPoint(it) } as List<ObjectSchema>).forEach {
@@ -71,7 +54,22 @@ class SchemaWriter constructor(private val openApi: OpenAPI, private val throwUn
                     else -> throw IllegalStateException("Composed schema was empty at allOf, oneOf, anyOf lists")
                 }
             }
-            else -> throw UnsupportedOperationException("Traverse does not support anything except array and object schema")
+            else -> {
+                if (throwUndefined) {
+                    visitor.checkUndefined(msgStructure)
+                }
+                msgStructure.properties.forEach { (name, property) ->
+                    when(property) {
+                        is ArraySchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
+                        is StringSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
+                        is IntegerSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
+                        is NumberSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
+                        is BooleanSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
+                        is ComposedSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
+                        else -> visitor.visit(name, property, msgStructure.requiredContains(name), throwUndefined)
+                    }
+                }
+            }
         }
     }
 }

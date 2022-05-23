@@ -36,7 +36,7 @@ open class DecodeJsonObjectVisitor(override val from: JsonNode, override val ope
     internal val rootMessage = message()
     private val fromObject = from as ObjectNode
 
-    override fun visit(fieldName: String, fldStruct: ObjectSchema, required: Boolean, throwUndefined: Boolean) {
+    override fun visit(fieldName: String, fldStruct: Schema<*>, required: Boolean, throwUndefined: Boolean) {
         fromObject.getField(fieldName, required)?.let { message ->
             val visitor = DecodeJsonObjectVisitor(message.validateAsObject(), openAPI)
             val writer = SchemaWriter(openAPI, throwUndefined)
@@ -54,18 +54,17 @@ open class DecodeJsonObjectVisitor(override val from: JsonNode, override val ope
                 is IntegerSchema -> rootMessage.addField(fieldName, arrayNode.map { it.validateAsLong() })
                 is BooleanSchema -> rootMessage.addField(fieldName, arrayNode.map { it.validateAsBoolean() })
                 is StringSchema -> rootMessage.addField(fieldName, arrayNode.map { it.asText() })
-                is ObjectSchema -> rootMessage.addField(fieldName, mutableListOf<Message>().apply {
-                    arrayNode.forEach {
-                        DecodeJsonObjectVisitor(checkNotNull(it.validateAsObject()) { " Value from list [$fieldName] must be message" }, openAPI).let { visitor ->
-                            SchemaWriter(openAPI, throwUndefined).traverse(visitor, itemSchema)
-                            visitor.rootMessage.build().run(this::add)
-                        }
-                    }
-                })
                 is ComposedSchema -> {
                     TODO("Not yet implemented")
                 }
-                else -> error("Unsupported items type: ${fldStruct.items::class.java}")
+                else -> rootMessage.addField(fieldName, mutableListOf<Message>().apply {
+                arrayNode.forEach {
+                    DecodeJsonObjectVisitor(checkNotNull(it.validateAsObject()) { " Value from list [$fieldName] must be message" }, openAPI).let { visitor ->
+                        SchemaWriter(openAPI, throwUndefined).traverse(visitor, itemSchema)
+                        visitor.rootMessage.build().run(this::add)
+                    }
+                }
+            })
             }
         } ?: fldStruct.default?.let { error("Default values isn't supported for arrays") }
     }
@@ -93,7 +92,7 @@ open class DecodeJsonObjectVisitor(override val from: JsonNode, override val ope
         }
     }
 
-    override fun checkUndefined(objectSchema: ObjectSchema) {
+    override fun checkUndefined(objectSchema: Schema<*>) {
         val names = objectSchema.properties.keys
         val undefined = fromObject.fieldNames().asSequence().toList().filter { !names.contains(it) }
         if (undefined.isNotEmpty()) {

@@ -27,7 +27,6 @@ import com.google.protobuf.ByteString
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.ComposedSchema
-import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.Schema
 
 object VisitorFactory {
@@ -61,7 +60,6 @@ object VisitorFactory {
     private fun Schema<*>.defineType(dictionary: OpenAPI): JsonSchemaTypes {
         return when (this) {
             is ArraySchema -> JsonSchemaTypes.ARRAY
-            is ObjectSchema -> JsonSchemaTypes.OBJECT
             is ComposedSchema -> {
                 val schemas = when {
                     !this.anyOf.isNullOrEmpty() -> this.anyOf
@@ -71,13 +69,12 @@ object VisitorFactory {
                 }
                 when (dictionary.getEndPoint(schemas.first())) {
                     is ArraySchema -> JsonSchemaTypes.ARRAY
-                    is ObjectSchema -> JsonSchemaTypes.OBJECT
                     is ComposedSchema -> error("Unsupported level of abstraction, cannot parse composed scheme inside of composed scheme")
                     //TODO: More than one level of abstraction isn't impossible, need to implement later, this is fast try of realization
-                    else -> error("Unsupported type of first element from composed schema [${schemas.first()::class.simpleName}], array or object required")
+                    else -> JsonSchemaTypes.OBJECT
                 }
             }
-            else -> error("Unsupported type of json schema [${this::class.simpleName}], array or object required")
+            else -> JsonSchemaTypes.OBJECT
         }
     }
 
