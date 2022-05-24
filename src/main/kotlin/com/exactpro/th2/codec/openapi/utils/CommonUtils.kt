@@ -27,7 +27,9 @@ import com.exactpro.th2.common.value.getString
  * @param required check if value is required, used only if extracted value was null
  */
 fun Message.getField(fieldName: String, required: Boolean): Value? = this[fieldName].apply {
-    if (required) checkNotNull(this) { "Field [$fieldName] is required for message [$messageType]" }
+    if (required) {
+        check(this != null && this.kindCase.number != 1) { "Field [$fieldName] is required for message [$messageType]" }
+    }
 }
 
 fun Value.getBoolean(): Boolean? = this.getString()?.toBooleanStrictOrNull()

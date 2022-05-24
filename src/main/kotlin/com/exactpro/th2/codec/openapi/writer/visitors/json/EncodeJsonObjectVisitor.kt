@@ -59,7 +59,10 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val open
     override fun visit(fieldName: String, fldStruct: Schema<*>, required: Boolean, throwUndefined: Boolean) {
         from.getField(fieldName, required)?.let { field ->
             when {
-                field.kindCase.number == 1 -> return
+                field.kindCase.number == 1 -> {
+                    rootNode.set<ObjectNode>(fieldName, ObjectNode(mapper.nodeFactory))
+                    return
+                }
                 !field.hasMessageValue() -> error("$fieldName is not an message: ${field.kindCase}")
             }
             val message = field.getMessage()!!
@@ -75,7 +78,10 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val open
 
         from.getField(fieldName, required)?.let { field ->
             when {
-                field.kindCase.number == 1 -> return
+                field.kindCase.number == 1 -> {
+                    rootNode.putArray(fieldName)
+                    return
+                }
                 !field.hasListValue() -> error("$fieldName is not an list: ${field.kindCase}")
             }
             val listOfValues = field.getList()!!
