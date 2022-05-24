@@ -138,6 +138,9 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val open
 
     private inline fun <reified T> visitPrimitive(fieldName: String, fieldValue: Value?, fldStruct: Schema<T>, convert: (Value) -> T, put: (T) -> Unit) {
         fieldValue?.let { value ->
+            if (value.kindCase.number == 1) {
+                return
+            }
             val converted = checkNotNull(convert(value)) { "Cannot convert field $fieldName to ${T::class.simpleName}" }
             fldStruct.checkEnum(converted, fieldName)
             put(converted)
