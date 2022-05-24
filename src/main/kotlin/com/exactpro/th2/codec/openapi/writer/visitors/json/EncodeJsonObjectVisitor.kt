@@ -47,12 +47,10 @@ import io.swagger.v3.oas.models.media.FileSchema
 import io.swagger.v3.oas.models.media.IntegerSchema
 import io.swagger.v3.oas.models.media.MapSchema
 import io.swagger.v3.oas.models.media.NumberSchema
-import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.PasswordSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
 import io.swagger.v3.oas.models.media.UUIDSchema
-import java.lang.IllegalStateException
 import java.math.BigDecimal
 
 open class EncodeJsonObjectVisitor(override val from: Message, override val openAPI: OpenAPI) : SchemaVisitor.EncodeVisitor<Message>() {
@@ -134,7 +132,9 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val open
         rootNode.put(fieldName, it)
     }
 
-    override fun checkAgainst(fldStruct: ObjectSchema): Boolean = fldStruct.required.isNullOrEmpty() || from.fieldsMap.keys.containsAll(fldStruct.required)
+    override fun getFieldNames(): Collection<String> = from.fieldsMap.keys
+    override fun getResult(): ByteString = ByteString.copyFrom(rootNode.toString().toByteArray())
+
 
     private inline fun <reified T> visitPrimitive(fieldName: String, fieldValue: Value?, fldStruct: Schema<T>, convert: (Value) -> T, put: (T) -> Unit) {
         fieldValue?.let { value ->
@@ -144,19 +144,10 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val open
         } ?: fldStruct.default?.run(put)
     }
 
-    override fun getResult(): ByteString = ByteString.copyFrom(rootNode.toString().toByteArray())
 
     private companion object {
         val mapper = ObjectMapper().apply {
             nodeFactory = JsonNodeFactory.withExactBigDecimals(true)
-        }
-    }
-
-    override fun checkUndefined(objectSchema: Schema<*>) {
-        val names = objectSchema.properties.keys
-        val undefined = from.fieldsMap.keys.filter { !names.contains(it) }
-        if (undefined.isNotEmpty()) {
-            throw IllegalStateException("Message have undefined fields: ${undefined.joinToString(", ")}")
         }
     }
 

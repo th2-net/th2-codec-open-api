@@ -76,6 +76,11 @@ fun Content.containingFormatOrNull(httpHeader: String) = when {
     else -> null
 }
 
+fun Schema<*>.getExclusiveProperties(against: List<Schema<*>>): List<String> = mutableListOf<String>().apply {
+    addAll(properties.keys)
+    removeAll { name -> against.find { it.properties.keys.contains(name) } != null }
+}
+
 fun Schema<*>.isComposed() = this is ComposedSchema
 fun Schema<*>.isObject() = this is ObjectSchema
 fun Schema<*>.isArray() = this is ArraySchema

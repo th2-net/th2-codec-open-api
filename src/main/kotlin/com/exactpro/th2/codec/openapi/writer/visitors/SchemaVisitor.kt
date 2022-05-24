@@ -16,6 +16,7 @@
 
 package com.exactpro.th2.codec.openapi.writer.visitors
 
+import com.exactpro.th2.codec.openapi.utils.getExclusiveProperties
 import com.exactpro.th2.common.grpc.Message
 import com.google.protobuf.ByteString
 import io.swagger.v3.oas.models.OpenAPI
@@ -24,7 +25,6 @@ import io.swagger.v3.oas.models.media.BooleanSchema
 import io.swagger.v3.oas.models.media.ComposedSchema
 import io.swagger.v3.oas.models.media.IntegerSchema
 import io.swagger.v3.oas.models.media.NumberSchema
-import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
 import java.lang.IllegalStateException
@@ -33,6 +33,7 @@ sealed class SchemaVisitor<FromType, ToType> {
     abstract val openAPI: OpenAPI
     abstract val from: FromType
     abstract fun getResult(): ToType
+    abstract fun getFieldNames(): Collection<String>
     abstract fun visit(fieldName: String, fldStruct: Schema<*>, required: Boolean, throwUndefined: Boolean = true)
     abstract fun visit(fieldName: String, fldStruct: ArraySchema, required: Boolean, throwUndefined: Boolean = true)
     abstract fun visit(fieldName: String, fldStruct: ComposedSchema, required: Boolean)
@@ -40,24 +41,40 @@ sealed class SchemaVisitor<FromType, ToType> {
     abstract fun visit(fieldName: String, fldStruct: IntegerSchema, required: Boolean)
     abstract fun visit(fieldName: String, fldStruct: StringSchema, required: Boolean)
     abstract fun visit(fieldName: String, fldStruct: BooleanSchema, required: Boolean)
-    abstract fun checkUndefined(objectSchema: Schema<*>)
-    abstract fun checkAgainst(fldStruct: ObjectSchema): Boolean
 
-    fun oneOf(list: List<ObjectSchema>): List<ObjectSchema> = list.filter(this::checkAgainst).also {
-        if (it.size != 1) {
-            throw IllegalStateException("OneOf statement have ${it.size} valid schemas")
-        }
-    }
+    fun oneOf(list: List<Schema<*>>): Schema<*> = chooseOneOf(list.filter(this::checkAgainst))
 
-    fun anyOf(list: List<ObjectSchema>): List<ObjectSchema> = list.filter(this::checkAgainst).also{
+    fun anyOf(list: List<Schema<*>>): List<Schema<*>> = list.filter(this::checkAgainst).also {
         if (it.isEmpty()) {
             throw IllegalStateException("AnyOf statement had zero valid schemas")
         }
     }
 
-    fun allOf(list: List<ObjectSchema>): List<ObjectSchema> =  list.filter(this::checkAgainst).also{
+    fun allOf(list: List<Schema<*>>): List<Schema<*>> = list.filter(this::checkAgainst).also {
         if (list.size != it.size) {
             throw IllegalStateException("AllOf statement have only ${it.size} valid schemas of ${list.size} available")
+        }
+    }
+
+    fun checkUndefined(objectSchema: Schema<*>) {
+        val names = objectSchema.properties.keys
+        val undefined = getFieldNames().filter { !names.contains(it) }
+        if (undefined.isNotEmpty()) {
+            throw IllegalStateException("Message have undefined fields: ${undefined.joinToString(", ")}")
+        }
+    }
+
+    private fun checkAgainst(fldStruct: Schema<*>): Boolean = fldStruct.required.isNullOrEmpty() || getFieldNames().containsAll(fldStruct.required)
+
+    private fun chooseOneOf(list: List<Schema<*>>): Schema<*> = when(list.size) {
+        0 -> throw IllegalStateException("OneOf statement have 0 valid schemas")
+        1 -> list[0]
+        else -> {
+            val objectFieldNames = getFieldNames()
+            list.find { schema ->
+                val exclusiveNames = schema.getExclusiveProperties(list.toMutableList().apply { remove(schema) })
+                objectFieldNames.find { exclusiveNames.contains(it) } != null
+            } ?: list[0]
         }
     }
 

@@ -33,7 +33,6 @@ import io.swagger.v3.oas.models.media.FileSchema
 import io.swagger.v3.oas.models.media.IntegerSchema
 import io.swagger.v3.oas.models.media.MapSchema
 import io.swagger.v3.oas.models.media.NumberSchema
-import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.PasswordSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
@@ -52,13 +51,13 @@ class SchemaWriter constructor(private val openApi: OpenAPI) {
             is ArraySchema -> visitor.visit(ARRAY_TYPE, msgStructure, true)
             is ComposedSchema -> {
                 when {
-                    !msgStructure.allOf.isNullOrEmpty() -> visitor.allOf(msgStructure.allOf.map { openApi.getEndPoint(it) } as List<ObjectSchema>).forEach {
+                    !msgStructure.allOf.isNullOrEmpty() -> visitor.allOf(msgStructure.allOf.map { openApi.getEndPoint(it) }).forEach {
                         traverse(visitor, it, false)
                     }
-                    !msgStructure.oneOf.isNullOrEmpty() -> visitor.oneOf(msgStructure.oneOf.map { openApi.getEndPoint(it) } as List<ObjectSchema>).forEach {
+                    !msgStructure.oneOf.isNullOrEmpty() -> visitor.oneOf(msgStructure.oneOf.map { openApi.getEndPoint(it) }).also {
                         traverse(visitor, it, false)
                     }
-                    !msgStructure.anyOf.isNullOrEmpty() -> visitor.anyOf(msgStructure.anyOf.map { openApi.getEndPoint(it) } as List<ObjectSchema>).forEach {
+                    !msgStructure.anyOf.isNullOrEmpty() -> visitor.anyOf(msgStructure.anyOf.map { openApi.getEndPoint(it) }).forEach {
                         traverse(visitor, it, false)
                     }
                     else -> throw IllegalStateException("Composed schema was empty at allOf, oneOf, anyOf lists")

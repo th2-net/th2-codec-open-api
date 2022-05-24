@@ -117,12 +117,8 @@ class JsonObjectDecodeTests {
                 "300",
                 "application/json",
                 """{
-                    "oneOfInteger" : 1234567,
-                    "oneOfEnabled" : true,
-                    "publicKey" : "1234567",
-                    "testEnabled" : true,
-                    "testStatus" : "FAILED"
-            }""".trimIndent())!!
+                    "onlyWrongOne" : 1234567,
+                }""".trimIndent())!!
         }
     }
 

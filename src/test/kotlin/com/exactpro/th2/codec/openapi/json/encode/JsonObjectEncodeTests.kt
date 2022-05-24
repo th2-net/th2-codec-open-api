@@ -93,10 +93,7 @@ class JsonObjectEncodeTests {
 
         Assertions.assertThrows(EncodeException::class.java) {
             codec.testEncode("/test", "get", "300", "application/json", "json") {
-                addField("oneOfInteger", "1234567")
-                addField("oneOfEnabled", false)
-                addField("publicKey", "1234567")
-                addField("testEnabled", true)
+                addField("onlyWrongOne", "1234567")
             }
         }
     }

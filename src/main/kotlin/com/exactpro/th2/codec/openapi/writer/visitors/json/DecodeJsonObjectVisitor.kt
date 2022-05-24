@@ -47,12 +47,10 @@ import io.swagger.v3.oas.models.media.FileSchema
 import io.swagger.v3.oas.models.media.IntegerSchema
 import io.swagger.v3.oas.models.media.MapSchema
 import io.swagger.v3.oas.models.media.NumberSchema
-import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.PasswordSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
 import io.swagger.v3.oas.models.media.UUIDSchema
-import java.lang.IllegalStateException
 
 open class DecodeJsonObjectVisitor(override val from: JsonNode, override val openAPI: OpenAPI) : SchemaVisitor.DecodeVisitor<JsonNode>() {
 
@@ -112,6 +110,7 @@ open class DecodeJsonObjectVisitor(override val from: JsonNode, override val ope
         }
     }
 
+    override fun getFieldNames(): Collection<String> = fromObject.fieldNames().asSequence().toList()
     override fun getResult(): Message.Builder = rootMessage
 
     private companion object {
@@ -120,13 +119,4 @@ open class DecodeJsonObjectVisitor(override val from: JsonNode, override val ope
         }
     }
 
-    override fun checkUndefined(objectSchema: Schema<*>) {
-        val names = objectSchema.properties.keys
-        val undefined = fromObject.fieldNames().asSequence().toList().filter { !names.contains(it) }
-        if (undefined.isNotEmpty()) {
-            throw IllegalStateException("Message have undefined fields: ${undefined.joinToString(", ")}")
-        }
-    }
-
-    override fun checkAgainst(fldStruct: ObjectSchema): Boolean = fldStruct.required.isNullOrEmpty() || fromObject.fieldNames().asSequence().toList().containsAll(fldStruct.required)
 }
