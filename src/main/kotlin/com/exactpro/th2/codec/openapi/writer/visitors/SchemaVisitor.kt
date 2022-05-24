@@ -23,17 +23,18 @@ import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.BooleanSchema
 import io.swagger.v3.oas.models.media.ComposedSchema
+import io.swagger.v3.oas.models.media.DateSchema
 import io.swagger.v3.oas.models.media.IntegerSchema
 import io.swagger.v3.oas.models.media.NumberSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
-import java.lang.IllegalStateException
+import java.text.SimpleDateFormat
 
 sealed class SchemaVisitor<FromType, ToType> {
-    abstract val openAPI: OpenAPI
+    protected abstract val settings: VisitorSettings
     abstract val from: FromType
     abstract fun getResult(): ToType
-    abstract fun getFieldNames(): Collection<String>
+    protected abstract fun getFieldNames(): Collection<String>
     abstract fun visit(fieldName: String, fldStruct: Schema<*>, required: Boolean, throwUndefined: Boolean = true)
     abstract fun visit(fieldName: String, fldStruct: ArraySchema, required: Boolean, throwUndefined: Boolean = true)
     abstract fun visit(fieldName: String, fldStruct: ComposedSchema, required: Boolean)
@@ -41,6 +42,7 @@ sealed class SchemaVisitor<FromType, ToType> {
     abstract fun visit(fieldName: String, fldStruct: IntegerSchema, required: Boolean)
     abstract fun visit(fieldName: String, fldStruct: StringSchema, required: Boolean)
     abstract fun visit(fieldName: String, fldStruct: BooleanSchema, required: Boolean)
+    abstract fun visit(fieldName: String, fldStruct: DateSchema, required: Boolean)
 
     fun oneOf(list: List<Schema<*>>): Schema<*> = chooseOneOf(list.filter(this::checkAgainst))
 
@@ -82,3 +84,6 @@ sealed class SchemaVisitor<FromType, ToType> {
 
     abstract class DecodeVisitor<T> : SchemaVisitor<T, Message.Builder>()
 }
+
+data class VisitorSettings(val openAPI: OpenAPI, val dateFormat: SimpleDateFormat)
+

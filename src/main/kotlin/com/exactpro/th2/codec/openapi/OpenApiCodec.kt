@@ -30,6 +30,7 @@ import com.exactpro.th2.codec.openapi.utils.getEndPoint
 import com.exactpro.th2.codec.openapi.utils.getMethods
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.codec.openapi.writer.visitors.VisitorFactory
+import com.exactpro.th2.codec.openapi.writer.visitors.VisitorSettings
 import com.exactpro.th2.common.grpc.MessageGroup
 import com.exactpro.th2.common.grpc.RawMessage
 import com.exactpro.th2.common.message.plusAssign
@@ -51,12 +52,14 @@ import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.parameters.Parameter
 import mu.KotlinLogging
 import java.lang.IllegalStateException
+import java.text.SimpleDateFormat
 
 class OpenApiCodec(private val dictionary: OpenAPI, val settings: OpenApiCodecSettings) : IPipelineCodec {
 
     private val typeToSchema: Map<String, HttpRouteContainer>
     private val patternToPathItem: List<Pair<UriPattern, PathItem>>
     private val schemaWriter = SchemaWriter(dictionary)
+    private val visitorSettings = VisitorSettings(openAPI = dictionary, SimpleDateFormat(settings.dateFormat))
 
     init {
         val mapForName = mutableMapOf<String, HttpRouteContainer>()
@@ -154,7 +157,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, val settings: OpenApiCodecSe
         LOGGER.debug { "Start of message encoding: ${message.messageType}" }
 
         val visitor = try {
-            VisitorFactory.createEncodeVisitor(container.bodyFormat!!, messageSchema, message, dictionary)
+            VisitorFactory.createEncodeVisitor(container.bodyFormat!!, messageSchema, message, visitorSettings)
         } catch (e: Exception) {
             throw IllegalStateException("Cannot create encode visitor for message: ${message.messageType} - ${container.body}", e)
         }
@@ -208,7 +211,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, val settings: OpenApiCodecSe
         val format = checkNotNull(container.bodyFormat) { "Container: $messageType did not contain schema bodyFormat" }
 
         val visitor = try {
-            VisitorFactory.createDecodeVisitor(format, schema, body, dictionary)
+            VisitorFactory.createDecodeVisitor(format, schema, body, visitorSettings)
         } catch (e: Exception) {
             throw IllegalStateException("Cannot create decode visitor for message: ${header.messageType} - ${container.body}", e)
         }

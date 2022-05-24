@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.exactpro.th2.codec.openapi.utils.createArrayTestSchema
 import com.exactpro.th2.codec.openapi.utils.getResourceAsText
+import com.exactpro.th2.codec.openapi.writer.visitors.VisitorSettings
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
@@ -39,6 +40,7 @@ import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.StringSchema
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import java.text.SimpleDateFormat
 
 class JsonArrayTest {
 
@@ -46,7 +48,7 @@ class JsonArrayTest {
     @Test
     fun `not supported decode`() {
         val node = mapper.createArrayNode()
-        val visitor = DecodeJsonArrayVisitor(node, openAPI)
+        val visitor = DecodeJsonArrayVisitor(node, VisitorSettings(openAPI, SimpleDateFormat()))
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
             visitor.visit("", StringSchema(), true)
         }
@@ -112,7 +114,7 @@ class JsonArrayTest {
             })
         }
 
-        val result = DecodeJsonArrayVisitor(jsonArrayNode, openAPI).apply {
+        val result = DecodeJsonArrayVisitor(jsonArrayNode, VisitorSettings(openAPI, SimpleDateFormat())).apply {
             visit(fieldName, openAPI.components.schemas["ArrayObjectTest"]!! as ArraySchema, true)
         }.getResult()
 
@@ -139,7 +141,7 @@ class JsonArrayTest {
         val jsonArrayNode = mapper.createArrayNode().apply {
             collection.forEach(this::add)
         }
-        val visitor = DecodeJsonArrayVisitor(jsonArrayNode, openAPI)
+        val visitor = DecodeJsonArrayVisitor(jsonArrayNode, VisitorSettings(openAPI, SimpleDateFormat()))
         visitor.visit(fieldName, createArrayTestSchema("string"), true)
         visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
     }
@@ -151,7 +153,7 @@ class JsonArrayTest {
         val jsonArrayNode = mapper.createArrayNode().apply {
             collection.forEach(this::add)
         }
-        val visitor = DecodeJsonArrayVisitor(jsonArrayNode, openAPI)
+        val visitor = DecodeJsonArrayVisitor(jsonArrayNode, VisitorSettings(openAPI, SimpleDateFormat()))
         visitor.visit(fieldName, createArrayTestSchema("boolean"), true)
         visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
     }
@@ -163,7 +165,7 @@ class JsonArrayTest {
         val jsonArrayNode = mapper.createArrayNode().apply {
             collection.forEach(this::add)
         }
-        val visitor = DecodeJsonArrayVisitor(jsonArrayNode, openAPI)
+        val visitor = DecodeJsonArrayVisitor(jsonArrayNode, VisitorSettings(openAPI, SimpleDateFormat()))
         visitor.visit(fieldName, createArrayTestSchema("integer"), true)
         visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
     }
@@ -175,7 +177,7 @@ class JsonArrayTest {
         val jsonArrayNode = mapper.createArrayNode().apply {
             collection.forEach(this::add)
         }
-        val visitor = DecodeJsonArrayVisitor(jsonArrayNode, openAPI)
+        val visitor = DecodeJsonArrayVisitor(jsonArrayNode, VisitorSettings(openAPI, SimpleDateFormat()))
         visitor.visit(fieldName, createArrayTestSchema("number", "double"), true)
         visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
     }
@@ -187,7 +189,7 @@ class JsonArrayTest {
         val jsonArrayNode = mapper.createArrayNode().apply {
             collection.forEach(this::add)
         }
-        val visitor = DecodeJsonArrayVisitor(jsonArrayNode, openAPI)
+        val visitor = DecodeJsonArrayVisitor(jsonArrayNode, VisitorSettings(openAPI, SimpleDateFormat()))
         visitor.visit(fieldName, createArrayTestSchema("number", "float"), true)
         visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
     }
@@ -199,7 +201,7 @@ class JsonArrayTest {
         val jsonArrayNode = mapper.createArrayNode().apply {
             collection.forEach(this::add)
         }
-        val visitor = DecodeJsonArrayVisitor(jsonArrayNode, openAPI)
+        val visitor = DecodeJsonArrayVisitor(jsonArrayNode, VisitorSettings(openAPI, SimpleDateFormat()))
         visitor.visit(fieldName, createArrayTestSchema("integer", "int64"), true)
         visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
     }
@@ -211,7 +213,7 @@ class JsonArrayTest {
         val jsonArrayNode = mapper.createArrayNode().apply {
             collection.forEach(this::add)
         }
-        val visitor = DecodeJsonArrayVisitor(jsonArrayNode, openAPI)
+        val visitor = DecodeJsonArrayVisitor(jsonArrayNode, VisitorSettings(openAPI, SimpleDateFormat()))
         visitor.visit(fieldName, createArrayTestSchema("integer", "int64"), true)
         visitor.getResult().build().assertList(fieldName, collection.map {it.toValue()})
     }

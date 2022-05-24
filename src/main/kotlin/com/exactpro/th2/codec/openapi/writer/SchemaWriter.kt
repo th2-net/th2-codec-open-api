@@ -70,12 +70,13 @@ class SchemaWriter constructor(private val openApi: OpenAPI) {
                 msgStructure.properties.forEach { (name, property) ->
                     when(property) {
                         is ArraySchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
-                        is StringSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
+                        is StringSchema -> visitor.visit(name, property , msgStructure.requiredContains(name))
                         is IntegerSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
                         is NumberSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
                         is BooleanSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
+                        is DateSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
                         is ComposedSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
-                        is BinarySchema, is ByteArraySchema, is DateSchema, is DateTimeSchema, is EmailSchema, is FileSchema, is MapSchema, is PasswordSchema, is UUIDSchema -> throw UnsupportedOperationException("${property::class.simpleName} isn't supported for now")
+                        is PasswordSchema, is EmailSchema, is BinarySchema, is ByteArraySchema, is DateTimeSchema, is FileSchema, is MapSchema, is UUIDSchema -> throw UnsupportedOperationException("${property::class.simpleName} isn't supported for now")
                         else -> visitor.visit(name, property, msgStructure.requiredContains(name), throwUndefined)
                     }
                 }

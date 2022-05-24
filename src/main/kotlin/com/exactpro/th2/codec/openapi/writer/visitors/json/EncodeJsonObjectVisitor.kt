@@ -23,6 +23,7 @@ import com.exactpro.th2.codec.openapi.utils.getField
 import com.exactpro.th2.codec.openapi.utils.putAll
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.codec.openapi.writer.visitors.SchemaVisitor
+import com.exactpro.th2.codec.openapi.writer.visitors.VisitorSettings
 import com.exactpro.th2.common.grpc.Message
 import com.exactpro.th2.common.grpc.Value
 import com.exactpro.th2.common.value.getBigDecimal
@@ -34,7 +35,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.google.protobuf.ByteString
-import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.BinarySchema
 import io.swagger.v3.oas.models.media.BooleanSchema
@@ -53,7 +53,7 @@ import io.swagger.v3.oas.models.media.StringSchema
 import io.swagger.v3.oas.models.media.UUIDSchema
 import java.math.BigDecimal
 
-open class EncodeJsonObjectVisitor(override val from: Message, override val openAPI: OpenAPI) : SchemaVisitor.EncodeVisitor<Message>() {
+open class EncodeJsonObjectVisitor(override val from: Message, override val settings: VisitorSettings) : SchemaVisitor.EncodeVisitor<Message>() {
     internal val rootNode: ObjectNode = mapper.createObjectNode()
 
     override fun visit(fieldName: String, fldStruct: Schema<*>, required: Boolean, throwUndefined: Boolean) {
@@ -66,15 +66,15 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val open
                 !field.hasMessageValue() -> error("$fieldName is not an message: ${field.kindCase}")
             }
             val message = field.getMessage()!!
-            val visitor = EncodeJsonObjectVisitor(message, openAPI)
-            val writer = SchemaWriter(openAPI)
+            val visitor = EncodeJsonObjectVisitor(message, settings)
+            val writer = SchemaWriter(settings.openAPI)
             writer.traverse(visitor, fldStruct, throwUndefined)
             rootNode.set<ObjectNode>(fieldName, visitor.rootNode)
         } ?: fldStruct.default?.let { error("Default values isn't supported for objects") }
     }
 
     override fun visit(fieldName: String, fldStruct: ArraySchema, required: Boolean, throwUndefined: Boolean) {
-        val itemSchema = openAPI.getEndPoint(fldStruct.items)
+        val itemSchema = settings.openAPI.getEndPoint(fldStruct.items)
 
         from.getField(fieldName, required)?.let { field ->
             when {
@@ -94,9 +94,9 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val open
                 is BinarySchema, is ByteArraySchema, is DateSchema, is DateTimeSchema, is EmailSchema, is FileSchema, is MapSchema, is PasswordSchema, is UUIDSchema -> throw UnsupportedOperationException("${itemSchema::class.simpleName} for json array isn't supported for now")
                 else -> rootNode.putArray(fieldName).apply {
                     val listOfNodes = mutableListOf<ObjectNode>()
-                    val writer = SchemaWriter(openAPI)
+                    val writer = SchemaWriter(settings.openAPI)
                     listOfValues.forEach {
-                        EncodeJsonObjectVisitor(checkNotNull(it.getMessage()) { " Value from list [$fieldName] must be message" }, openAPI).let { visitor ->
+                        EncodeJsonObjectVisitor(checkNotNull(it.getMessage()) { " Value from list [$fieldName] must be message" }, settings).let { visitor ->
                             writer.traverse(visitor, itemSchema, throwUndefined)
                             visitor.rootNode.run(listOfNodes::add)
                         }
@@ -115,8 +115,8 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val open
             }
             val message = field.getMessage()!!
 
-            val visitor = EncodeJsonObjectVisitor(message, openAPI)
-            val writer = SchemaWriter(openAPI)
+            val visitor = EncodeJsonObjectVisitor(message, settings)
+            val writer = SchemaWriter(settings.openAPI)
             writer.traverse(visitor, fldStruct, false)
             rootNode.set<ObjectNode>(fieldName, visitor.rootNode)
         } ?: fldStruct.default?.let { error("Default values isn't supported for objects") }
@@ -137,6 +137,11 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val open
     override fun visit(fieldName: String, fldStruct: BooleanSchema, required: Boolean) = visitPrimitive(fieldName, from.getField(fieldName, required), fldStruct, Value::getBoolean) {
         rootNode.put(fieldName, it)
     }
+
+    override fun visit(fieldName: String, fldStruct: DateSchema, required: Boolean) = visitPrimitive(fieldName, from.getField(fieldName, required), fldStruct, { value -> settings.dateFormat.parse(value.simpleValue) }) {
+        rootNode.put(fieldName, it.toString())
+    }
+
 
     override fun getFieldNames(): Collection<String> = from.fieldsMap.keys
     override fun getResult(): ByteString = ByteString.copyFrom(rootNode.toString().toByteArray())

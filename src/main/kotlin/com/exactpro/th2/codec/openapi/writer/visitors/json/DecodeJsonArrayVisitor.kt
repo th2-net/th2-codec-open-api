@@ -23,6 +23,7 @@ import com.exactpro.th2.codec.openapi.utils.validateAsLong
 import com.exactpro.th2.codec.openapi.utils.validateAsObject
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.codec.openapi.writer.visitors.SchemaVisitor
+import com.exactpro.th2.codec.openapi.writer.visitors.VisitorSettings
 import com.exactpro.th2.common.grpc.Message
 import com.exactpro.th2.common.message.addField
 import com.exactpro.th2.common.message.message
@@ -30,7 +31,6 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
-import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.BinarySchema
 import io.swagger.v3.oas.models.media.BooleanSchema
@@ -48,15 +48,15 @@ import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
 import io.swagger.v3.oas.models.media.UUIDSchema
 
-class DecodeJsonArrayVisitor(override val from: JsonNode, override val openAPI: OpenAPI) : SchemaVisitor.DecodeVisitor<JsonNode>() {
+class DecodeJsonArrayVisitor(override val from: JsonNode, override val settings: VisitorSettings) : SchemaVisitor.DecodeVisitor<JsonNode>() {
 
-    constructor(jsonString: String, openAPI: OpenAPI) : this(mapper.readTree(jsonString), openAPI)
+    constructor(jsonString: String, settings: VisitorSettings) : this(mapper.readTree(jsonString), settings)
 
     internal val rootMessage = message()
     private val fromArray = from as ArrayNode
 
     override fun visit(fieldName: String, fldStruct: ArraySchema, required: Boolean, throwUndefined: Boolean) {
-        when (val itemSchema = openAPI.getEndPoint(fldStruct.items)) {
+        when (val itemSchema = settings.openAPI.getEndPoint(fldStruct.items)) {
             is NumberSchema -> rootMessage.addField(fieldName, fromArray.map { it.validateAsBigDecimal() })
             is IntegerSchema -> rootMessage.addField(fieldName, fromArray.map { it.validateAsLong() })
             is BooleanSchema -> rootMessage.addField(fieldName, fromArray.map { it.validateAsBoolean() })
@@ -64,8 +64,8 @@ class DecodeJsonArrayVisitor(override val from: JsonNode, override val openAPI: 
             is BinarySchema, is ByteArraySchema, is DateSchema, is DateTimeSchema, is EmailSchema, is FileSchema, is MapSchema, is PasswordSchema, is UUIDSchema -> throw UnsupportedOperationException("${itemSchema::class.simpleName} for json array isn't supported for now")
             else -> rootMessage.addField(fieldName,  mutableListOf<Message>().apply {
                 fromArray.forEach {
-                    DecodeJsonObjectVisitor(checkNotNull(it.validateAsObject()) { " Value from list [$fieldName] must be message" }, openAPI).let { visitor ->
-                        SchemaWriter(openAPI).traverse(visitor, itemSchema, throwUndefined)
+                    DecodeJsonObjectVisitor(checkNotNull(it.validateAsObject()) { " Value from list [$fieldName] must be message" }, settings).let { visitor ->
+                        SchemaWriter(settings.openAPI).traverse(visitor, itemSchema, throwUndefined)
                         visitor.rootMessage.build().run(this::add)
                     }
                 }
@@ -79,6 +79,7 @@ class DecodeJsonArrayVisitor(override val from: JsonNode, override val openAPI: 
     override fun visit(fieldName: String, fldStruct: StringSchema, required: Boolean) = throw UnsupportedOperationException("Array visitor supports only collections")
     override fun visit(fieldName: String, fldStruct: ComposedSchema, required: Boolean) = throw UnsupportedOperationException("Array visitor supports only collections")
     override fun visit(fieldName: String, fldStruct: Schema<*>, required: Boolean, throwUndefined: Boolean) = throw UnsupportedOperationException("Array visitor supports only collections")
+    override fun visit(fieldName: String, fldStruct: DateSchema, required: Boolean) = throw UnsupportedOperationException("Array visitor supports only collections")
 
     override fun getFieldNames() = throw UnsupportedOperationException("Array visitor supports only collections")
     override fun getResult(): Message.Builder = rootMessage
@@ -89,5 +90,7 @@ class DecodeJsonArrayVisitor(override val from: JsonNode, override val openAPI: 
             nodeFactory = JsonNodeFactory.withExactBigDecimals(true)
         }
     }
+
+
 
 }

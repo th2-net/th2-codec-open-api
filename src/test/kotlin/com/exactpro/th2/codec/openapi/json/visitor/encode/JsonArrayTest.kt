@@ -30,6 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.exactpro.th2.codec.openapi.utils.createArrayTestSchema
 import com.exactpro.th2.codec.openapi.utils.getResourceAsText
+import com.exactpro.th2.codec.openapi.writer.visitors.VisitorSettings
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
@@ -37,6 +38,7 @@ import io.swagger.v3.oas.models.media.StringSchema
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.text.SimpleDateFormat
 
 class JsonArrayTest {
 
@@ -44,7 +46,7 @@ class JsonArrayTest {
     @Test
     fun `not supported encode`() {
         val message = message().build()
-        val visitor = EncodeJsonArrayVisitor(message, openAPI)
+        val visitor = EncodeJsonArrayVisitor(message, VisitorSettings(openAPI, SimpleDateFormat()))
         Assertions.assertThrows(UnsupportedOperationException::class.java) {
             visitor.visit("", StringSchema(), true)
         }
@@ -109,7 +111,7 @@ class JsonArrayTest {
 
         val message = message().addField(fieldName, listValue).build()
 
-        val result = EncodeJsonArrayVisitor(message, openAPI).apply {
+        val result = EncodeJsonArrayVisitor(message, VisitorSettings(openAPI, SimpleDateFormat())).apply {
             visit(fieldName, openAPI.components.schemas["ArrayObjectTest"]!! as ArraySchema, true)
         }.getResult()
 
@@ -132,7 +134,7 @@ class JsonArrayTest {
     fun `string array test encode`() {
         val fieldName = "stringField"
         val collection = listOf("stringValue1", "stringValue2", "stringValue3", "stringValue4")
-        val visitor = EncodeJsonArrayVisitor(message().addField(fieldName, collection).build(), openAPI)
+        val visitor = EncodeJsonArrayVisitor(message().addField(fieldName, collection).build(), VisitorSettings(openAPI, SimpleDateFormat()))
         val schema = createArrayTestSchema("string")
         visitor.visit(fieldName, schema, true)
         val result = (mapper.readTree(visitor.getResult().toStringUtf8()) as ArrayNode)
@@ -145,7 +147,7 @@ class JsonArrayTest {
     fun `boolean array test encode`() {
         val fieldName = "booleanField"
         val collection = listOf(true, false, false, true)
-        val visitor = EncodeJsonArrayVisitor(message().addField(fieldName, collection).build(), openAPI)
+        val visitor = EncodeJsonArrayVisitor(message().addField(fieldName, collection).build(), VisitorSettings(openAPI, SimpleDateFormat()))
         val schema = createArrayTestSchema("boolean")
         visitor.visit(fieldName, schema, true)
         val result = (mapper.readTree(visitor.getResult().toStringUtf8()) as ArrayNode)
@@ -158,7 +160,7 @@ class JsonArrayTest {
     fun `int array test encode`() {
         val fieldName = "intField"
         val collection = listOf(1, 2, 2, 4)
-        val visitor = EncodeJsonArrayVisitor(message().addField(fieldName, collection).build(), openAPI)
+        val visitor = EncodeJsonArrayVisitor(message().addField(fieldName, collection).build(), VisitorSettings(openAPI, SimpleDateFormat()))
         val schema = createArrayTestSchema("integer")
         visitor.visit(fieldName, schema, true)
         val result = (mapper.readTree(visitor.getResult().toStringUtf8()) as ArrayNode)
@@ -171,7 +173,7 @@ class JsonArrayTest {
     fun `float array test encode`() {
         val fieldName = "floatField"
         val collection = listOf(0.1f, 0.2f, 0.2f, 0.4f)
-        val visitor = EncodeJsonArrayVisitor(message().addField(fieldName, collection).build(), openAPI)
+        val visitor = EncodeJsonArrayVisitor(message().addField(fieldName, collection).build(), VisitorSettings(openAPI, SimpleDateFormat()))
         val schema = createArrayTestSchema("number","float")
         visitor.visit(fieldName, schema, true)
         val result = (mapper.readTree(visitor.getResult().toStringUtf8()) as ArrayNode)
@@ -184,7 +186,7 @@ class JsonArrayTest {
     fun `double array test encode`() {
         val fieldName = "doubleField"
         val collection = listOf(0.1, 0.2, 0.2, 0.4)
-        val visitor = EncodeJsonArrayVisitor(message().addField(fieldName, collection).build(), openAPI)
+        val visitor = EncodeJsonArrayVisitor(message().addField(fieldName, collection).build(), VisitorSettings(openAPI, SimpleDateFormat()))
         val schema = createArrayTestSchema("number", "double")
         visitor.visit(fieldName , schema, true)
         val result = (mapper.readTree(visitor.getResult().toStringUtf8()) as ArrayNode)
@@ -197,7 +199,7 @@ class JsonArrayTest {
     fun `long array test encode`() {
         val fieldName = "longField"
         val collection = listOf(111111111L, 222222222L, 222222222L, 444444444L)
-        val visitor = EncodeJsonArrayVisitor(message().addField(fieldName, collection).build(), openAPI)
+        val visitor = EncodeJsonArrayVisitor(message().addField(fieldName, collection).build(), VisitorSettings(openAPI, SimpleDateFormat()))
         val schema = createArrayTestSchema("integer", "int64")
         visitor.visit(fieldName, schema, true)
         val result = (mapper.readTree(visitor.getResult().toStringUtf8()) as ArrayNode)
@@ -210,7 +212,7 @@ class JsonArrayTest {
     fun `big decimal array test encode`() {
         val fieldName = "decimalField"
         val collection = listOf(BigDecimal(100044000000), BigDecimal(100000030000), BigDecimal(100000001000), BigDecimal(100000022000))
-        val visitor = EncodeJsonArrayVisitor(message().addField(fieldName, collection).build(), openAPI)
+        val visitor = EncodeJsonArrayVisitor(message().addField(fieldName, collection).build(), VisitorSettings(openAPI, SimpleDateFormat()))
         val schema = createArrayTestSchema("number", "-")
         visitor.visit(fieldName, schema, true)
         val result = (mapper.readTree(visitor.getResult().toStringUtf8()) as ArrayNode)

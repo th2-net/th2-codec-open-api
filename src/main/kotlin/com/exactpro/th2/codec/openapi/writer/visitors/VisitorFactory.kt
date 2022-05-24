@@ -32,25 +32,24 @@ import io.swagger.v3.oas.models.media.Schema
 object VisitorFactory {
     private const val JSON_FORMAT = "application/json"
 
-
-    fun createEncodeVisitor(format: String, schema: Schema<*>, message: Message, dictionary: OpenAPI): SchemaVisitor.EncodeVisitor<*> {
+    fun createEncodeVisitor(format: String, schema: Schema<*>, message: Message, visitorSettings: VisitorSettings): SchemaVisitor.EncodeVisitor<*> {
         when (format) {
             JSON_FORMAT -> {
-                return when (schema.defineType(dictionary)) {
-                    JsonSchemaTypes.ARRAY -> EncodeJsonArrayVisitor(message, dictionary)
-                    JsonSchemaTypes.OBJECT -> EncodeJsonObjectVisitor(message, dictionary)
+                return when (schema.defineType(visitorSettings.openAPI)) {
+                    JsonSchemaTypes.ARRAY -> EncodeJsonArrayVisitor(message, visitorSettings)
+                    JsonSchemaTypes.OBJECT -> EncodeJsonObjectVisitor(message, visitorSettings)
                 }
             }
             else -> error("Unsupported format of message $format for encode")
         }
     }
 
-    fun createDecodeVisitor(format: String, schema: Schema<*>, data: ByteString, dictionary: OpenAPI): SchemaVisitor.DecodeVisitor<*> {
+    fun createDecodeVisitor(format: String, schema: Schema<*>, data: ByteString, visitorSettings: VisitorSettings): SchemaVisitor.DecodeVisitor<*> {
         when (format) {
             JSON_FORMAT -> {
-                return when (schema.defineType(dictionary)) {
-                    JsonSchemaTypes.ARRAY -> DecodeJsonArrayVisitor(data.toStringUtf8(), dictionary)
-                    JsonSchemaTypes.OBJECT -> DecodeJsonObjectVisitor(data.toStringUtf8(), dictionary)
+                return when (schema.defineType(visitorSettings.openAPI)) {
+                    JsonSchemaTypes.ARRAY -> DecodeJsonArrayVisitor(data.toStringUtf8(), visitorSettings)
+                    JsonSchemaTypes.OBJECT -> DecodeJsonObjectVisitor(data.toStringUtf8(), visitorSettings)
                 }
             }
             else -> error("Unsupported format of message $format for decode")

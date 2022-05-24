@@ -26,6 +26,7 @@ import com.exactpro.th2.codec.openapi.utils.validateAsLong
 import com.exactpro.th2.codec.openapi.utils.validateAsObject
 import com.exactpro.th2.codec.openapi.writer.SchemaWriter
 import com.exactpro.th2.codec.openapi.writer.visitors.SchemaVisitor
+import com.exactpro.th2.codec.openapi.writer.visitors.VisitorSettings
 import com.exactpro.th2.common.grpc.Message
 import com.exactpro.th2.common.message.addField
 import com.exactpro.th2.common.message.addFields
@@ -34,7 +35,6 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
-import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.BinarySchema
 import io.swagger.v3.oas.models.media.BooleanSchema
@@ -52,24 +52,24 @@ import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
 import io.swagger.v3.oas.models.media.UUIDSchema
 
-open class DecodeJsonObjectVisitor(override val from: JsonNode, override val openAPI: OpenAPI) : SchemaVisitor.DecodeVisitor<JsonNode>() {
+open class DecodeJsonObjectVisitor(override val from: JsonNode, override val settings: VisitorSettings) : SchemaVisitor.DecodeVisitor<JsonNode>() {
 
-    constructor(jsonString: String, openAPI: OpenAPI) : this(mapper.readTree(jsonString), openAPI)
+    constructor(jsonString: String, settings: VisitorSettings) : this(mapper.readTree(jsonString), settings)
 
     internal val rootMessage = message()
     private val fromObject = from as ObjectNode
 
     override fun visit(fieldName: String, fldStruct: Schema<*>, required: Boolean, throwUndefined: Boolean) {
         fromObject.getField(fieldName, required)?.let { message ->
-            val visitor = DecodeJsonObjectVisitor(message.validateAsObject(), openAPI)
-            val writer = SchemaWriter(openAPI)
+            val visitor = DecodeJsonObjectVisitor(message.validateAsObject(), settings)
+            val writer = SchemaWriter(settings.openAPI)
             writer.traverse(visitor, fldStruct, throwUndefined)
             rootMessage.addField(fieldName, visitor.rootMessage)
         } ?: fldStruct.default?.let { error("Default values isn't supported for objects") }
     }
 
     override fun visit(fieldName: String, fldStruct: ArraySchema, required: Boolean, throwUndefined: Boolean) {
-        val itemSchema = openAPI.getEndPoint(fldStruct.items)
+        val itemSchema = settings.openAPI.getEndPoint(fldStruct.items)
 
         fromObject.getRequiredArray(fieldName, required)?.let { arrayNode ->
             when (itemSchema) {
@@ -80,8 +80,8 @@ open class DecodeJsonObjectVisitor(override val from: JsonNode, override val ope
                 is BinarySchema, is ByteArraySchema, is DateSchema, is DateTimeSchema, is EmailSchema, is FileSchema, is MapSchema, is PasswordSchema, is UUIDSchema -> throw UnsupportedOperationException("${itemSchema::class.simpleName} for json array isn't supported for now")
                 else -> rootMessage.addField(fieldName, mutableListOf<Message>().apply {
                     arrayNode.forEach {
-                        DecodeJsonObjectVisitor(checkNotNull(it.validateAsObject()) { " Value from list [$fieldName] must be message" }, openAPI).let { visitor ->
-                            SchemaWriter(openAPI).traverse(visitor, itemSchema, throwUndefined)
+                        DecodeJsonObjectVisitor(checkNotNull(it.validateAsObject()) { " Value from list [$fieldName] must be message" }, settings).let { visitor ->
+                            SchemaWriter(settings.openAPI).traverse(visitor, itemSchema, throwUndefined)
                             visitor.rootMessage.build().run(this::add)
                         }
                     }
@@ -92,8 +92,8 @@ open class DecodeJsonObjectVisitor(override val from: JsonNode, override val ope
 
     override fun visit(fieldName: String, fldStruct: ComposedSchema, required: Boolean) {
         fromObject.getField(fieldName, required)?.let { message ->
-            val visitor = DecodeJsonObjectVisitor(message.validateAsObject(), openAPI)
-            val writer = SchemaWriter(openAPI)
+            val visitor = DecodeJsonObjectVisitor(message.validateAsObject(), settings)
+            val writer = SchemaWriter(settings.openAPI)
             writer.traverse(visitor, fldStruct, false)
             rootMessage.addField(fieldName, visitor.rootMessage)
         } ?: fldStruct.default?.let { error("Default values isn't supported for objects") }
@@ -103,6 +103,7 @@ open class DecodeJsonObjectVisitor(override val from: JsonNode, override val ope
     override fun visit(fieldName: String, fldStruct: IntegerSchema, required: Boolean) = visitPrimitive(fieldName, fromObject.getField(fieldName, required)?.validateAsLong(), fldStruct)
     override fun visit(fieldName: String, fldStruct: StringSchema, required: Boolean) = visitPrimitive(fieldName, fromObject.getField(fieldName, required)?.asText(), fldStruct)
     override fun visit(fieldName: String, fldStruct: BooleanSchema, required: Boolean) = visitPrimitive(fieldName, fromObject.getField(fieldName, required)?.validateAsBoolean(), fldStruct)
+    override fun visit(fieldName: String, fldStruct: DateSchema, required: Boolean) = visitPrimitive(fieldName, settings.dateFormat.parse(fromObject.getField(fieldName, required)?.asText()), fldStruct)
 
     private fun <T> visitPrimitive(fieldName: String, value: T?, fldStruct: Schema<T>) {
         (value?.also { fldStruct.checkEnum(it, fieldName) } ?: fldStruct.default)?.let {
