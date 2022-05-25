@@ -61,7 +61,9 @@ class DecodeJsonArrayVisitor(override val from: JsonNode, override val settings:
             is IntegerSchema -> rootMessage.addField(fieldName, fromArray.map { it.validateAsLong() })
             is BooleanSchema -> rootMessage.addField(fieldName, fromArray.map { it.validateAsBoolean() })
             is StringSchema -> rootMessage.addField(fieldName, fromArray.map { it.asText() })
-            is BinarySchema, is ByteArraySchema, is DateSchema, is DateTimeSchema, is EmailSchema, is FileSchema, is MapSchema, is PasswordSchema, is UUIDSchema -> throw UnsupportedOperationException("${itemSchema::class.simpleName} for json array isn't supported for now")
+            is DateSchema -> rootMessage.addField(fieldName, fromArray.map { settings.dateFormat.parse(it.asText()) })
+            is DateTimeSchema -> rootMessage.addField(fieldName, fromArray.map { settings.dateTimeFormat.parse(it.asText()) })
+            is BinarySchema, is ByteArraySchema, is EmailSchema, is FileSchema, is MapSchema, is PasswordSchema, is UUIDSchema -> throw UnsupportedOperationException("${itemSchema::class.simpleName} for json array isn't supported for now")
             else -> rootMessage.addField(fieldName,  mutableListOf<Message>().apply {
                 fromArray.forEach {
                     DecodeJsonObjectVisitor(checkNotNull(it.validateAsObject()) { " Value from list [$fieldName] must be message" }, settings).let { visitor ->
@@ -80,6 +82,7 @@ class DecodeJsonArrayVisitor(override val from: JsonNode, override val settings:
     override fun visit(fieldName: String, fldStruct: ComposedSchema, required: Boolean) = throw UnsupportedOperationException("Array visitor supports only collections")
     override fun visit(fieldName: String, fldStruct: Schema<*>, required: Boolean, throwUndefined: Boolean) = throw UnsupportedOperationException("Array visitor supports only collections")
     override fun visit(fieldName: String, fldStruct: DateSchema, required: Boolean) = throw UnsupportedOperationException("Array visitor supports only collections")
+    override fun visit(fieldName: String, fldStruct: DateTimeSchema, required: Boolean) = throw UnsupportedOperationException("Array visitor supports only collections")
 
     override fun getFieldNames() = throw UnsupportedOperationException("Array visitor supports only collections")
     override fun getResult(): Message.Builder = rootMessage

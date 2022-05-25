@@ -24,11 +24,13 @@ import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.BooleanSchema
 import io.swagger.v3.oas.models.media.ComposedSchema
 import io.swagger.v3.oas.models.media.DateSchema
+import io.swagger.v3.oas.models.media.DateTimeSchema
 import io.swagger.v3.oas.models.media.IntegerSchema
 import io.swagger.v3.oas.models.media.NumberSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
 import java.text.SimpleDateFormat
+import java.time.format.DateTimeFormatter
 
 sealed class SchemaVisitor<FromType, ToType> {
     protected abstract val settings: VisitorSettings
@@ -43,6 +45,7 @@ sealed class SchemaVisitor<FromType, ToType> {
     abstract fun visit(fieldName: String, fldStruct: StringSchema, required: Boolean)
     abstract fun visit(fieldName: String, fldStruct: BooleanSchema, required: Boolean)
     abstract fun visit(fieldName: String, fldStruct: DateSchema, required: Boolean)
+    abstract fun visit(fieldName: String, fldStruct: DateTimeSchema, required: Boolean)
 
     fun oneOf(list: List<Schema<*>>): Schema<*> = chooseOneOf(list.filter(this::checkAgainst))
 
@@ -84,5 +87,5 @@ sealed class SchemaVisitor<FromType, ToType> {
     abstract class DecodeVisitor<T> : SchemaVisitor<T, Message.Builder>()
 }
 
-data class VisitorSettings(val openAPI: OpenAPI, val dateFormat: SimpleDateFormat)
+data class VisitorSettings(val openAPI: OpenAPI, val dateFormat: SimpleDateFormat, val dateTimeFormat: DateTimeFormatter)
 

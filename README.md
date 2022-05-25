@@ -142,6 +142,8 @@ Result of decode:
 
 * checkUndefinedFields - Enable or Disable warnings for all undefined fields inside object structures, (`true` by default).
 * dateFormat - setup format of processed date (`yyyy-MM-dd Z` by default)
+* dateTimeFormat - setup format of processed date-time (`yyyy/MM/dd HH:mm:ss` by default)
+
 
 **validationSettings (open api dictionary)**
 * enableRecommendations - Enable or Disable recommendations, `true` by default.
@@ -180,6 +182,7 @@ May be empty due to missing required fields
 
 + Feature: anyOf, allOf, oneOf support for objects and arrays
 + Feature: Date format support
++ Feature: DateTime format support
 + Fix: Reworked visitor interface
 
 ### 0.2.0

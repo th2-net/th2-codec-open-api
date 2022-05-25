@@ -51,6 +51,7 @@ import io.swagger.v3.oas.models.media.PasswordSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
 import io.swagger.v3.oas.models.media.UUIDSchema
+import java.time.OffsetDateTime
 
 open class DecodeJsonObjectVisitor(override val from: JsonNode, override val settings: VisitorSettings) : SchemaVisitor.DecodeVisitor<JsonNode>() {
 
@@ -77,7 +78,9 @@ open class DecodeJsonObjectVisitor(override val from: JsonNode, override val set
                 is IntegerSchema -> rootMessage.addField(fieldName, arrayNode.map { it.validateAsLong() })
                 is BooleanSchema -> rootMessage.addField(fieldName, arrayNode.map { it.validateAsBoolean() })
                 is StringSchema -> rootMessage.addField(fieldName, arrayNode.map { it.asText() })
-                is BinarySchema, is ByteArraySchema, is DateSchema, is DateTimeSchema, is EmailSchema, is FileSchema, is MapSchema, is PasswordSchema, is UUIDSchema -> throw UnsupportedOperationException("${itemSchema::class.simpleName} for json array isn't supported for now")
+                is DateSchema -> rootMessage.addField(fieldName, arrayNode.map { settings.dateFormat.parse(it.asText()).toString() })
+                is DateTimeSchema -> rootMessage.addField(fieldName, arrayNode.map { settings.dateTimeFormat.parse(it.asText()).toString() })
+                is BinarySchema, is ByteArraySchema, is EmailSchema, is FileSchema, is MapSchema, is PasswordSchema, is UUIDSchema -> throw UnsupportedOperationException("${itemSchema::class.simpleName} for json array isn't supported for now")
                 else -> rootMessage.addField(fieldName, mutableListOf<Message>().apply {
                     arrayNode.forEach {
                         DecodeJsonObjectVisitor(checkNotNull(it.validateAsObject()) { " Value from list [$fieldName] must be message" }, settings).let { visitor ->
@@ -104,6 +107,7 @@ open class DecodeJsonObjectVisitor(override val from: JsonNode, override val set
     override fun visit(fieldName: String, fldStruct: StringSchema, required: Boolean) = visitPrimitive(fieldName, fromObject.getField(fieldName, required)?.asText(), fldStruct)
     override fun visit(fieldName: String, fldStruct: BooleanSchema, required: Boolean) = visitPrimitive(fieldName, fromObject.getField(fieldName, required)?.validateAsBoolean(), fldStruct)
     override fun visit(fieldName: String, fldStruct: DateSchema, required: Boolean) = visitPrimitive(fieldName, fromObject.getField(fieldName, required)?.asText()?.let(settings.dateFormat::parse), fldStruct)
+    override fun visit(fieldName: String, fldStruct: DateTimeSchema, required: Boolean) = visitPrimitive(fieldName, fromObject.getField(fieldName, required)?.asText()?.let { settings.dateTimeFormat.parse(it) as OffsetDateTime }, fldStruct)
 
     private fun <T> visitPrimitive(fieldName: String, value: T?, fldStruct: Schema<T>) {
         (value?.also { fldStruct.checkEnum(it, fieldName) } ?: fldStruct.default)?.let {

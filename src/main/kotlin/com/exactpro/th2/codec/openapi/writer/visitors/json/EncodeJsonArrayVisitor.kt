@@ -22,6 +22,7 @@ import com.google.protobuf.ByteString
 import io.swagger.v3.oas.models.media.BooleanSchema
 import io.swagger.v3.oas.models.media.ComposedSchema
 import io.swagger.v3.oas.models.media.DateSchema
+import io.swagger.v3.oas.models.media.DateTimeSchema
 import io.swagger.v3.oas.models.media.IntegerSchema
 import io.swagger.v3.oas.models.media.NumberSchema
 import io.swagger.v3.oas.models.media.Schema
@@ -35,6 +36,7 @@ class EncodeJsonArrayVisitor(from: Message, visitorSettings: VisitorSettings) : 
     override fun visit(fieldName: String, fldStruct: ComposedSchema, required: Boolean) = throw UnsupportedOperationException("Array visitor supports only collections")
     override fun visit(fieldName: String, fldStruct: Schema<*>, required: Boolean, throwUndefined: Boolean) = throw UnsupportedOperationException("Array visitor supports only collections")
     override fun visit(fieldName: String, fldStruct: DateSchema, required: Boolean) = throw UnsupportedOperationException("Array visitor supports only collections")
+    override fun visit(fieldName: String, fldStruct: DateTimeSchema, required: Boolean) = throw UnsupportedOperationException("Array visitor supports only collections")
 
     override fun getFieldNames() = throw UnsupportedOperationException("Array visitor supports only collections")
     override fun getResult(): ByteString = ByteString.copyFrom(rootNode.first().toString().toByteArray())

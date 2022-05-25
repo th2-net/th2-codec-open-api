@@ -53,13 +53,14 @@ import io.swagger.v3.oas.models.parameters.Parameter
 import mu.KotlinLogging
 import java.lang.IllegalStateException
 import java.text.SimpleDateFormat
+import java.time.format.DateTimeFormatter
 
 class OpenApiCodec(private val dictionary: OpenAPI, val settings: OpenApiCodecSettings) : IPipelineCodec {
 
     private val typeToSchema: Map<String, HttpRouteContainer>
     private val patternToPathItem: List<Pair<UriPattern, PathItem>>
     private val schemaWriter = SchemaWriter(dictionary)
-    private val visitorSettings = VisitorSettings(openAPI = dictionary, SimpleDateFormat(settings.dateFormat))
+    private val visitorSettings = VisitorSettings(dictionary, SimpleDateFormat(settings.dateFormat), DateTimeFormatter.ofPattern(settings.dateTimeFormat))
 
     init {
         val mapForName = mutableMapOf<String, HttpRouteContainer>()

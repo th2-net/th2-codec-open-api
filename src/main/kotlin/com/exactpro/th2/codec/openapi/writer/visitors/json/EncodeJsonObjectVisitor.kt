@@ -52,6 +52,7 @@ import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
 import io.swagger.v3.oas.models.media.UUIDSchema
 import java.math.BigDecimal
+import java.time.OffsetDateTime
 
 open class EncodeJsonObjectVisitor(override val from: Message, override val settings: VisitorSettings) : SchemaVisitor.EncodeVisitor<Message>() {
     internal val rootNode: ObjectNode = mapper.createObjectNode()
@@ -91,7 +92,13 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val sett
                 is IntegerSchema -> rootNode.putArray(fieldName).putAll<Long>(listOfValues)
                 is BooleanSchema -> rootNode.putArray(fieldName).putAll<Boolean>(listOfValues)
                 is StringSchema -> rootNode.putArray(fieldName).putAll<String>(listOfValues)
-                is BinarySchema, is ByteArraySchema, is DateSchema, is DateTimeSchema, is EmailSchema, is FileSchema, is MapSchema, is PasswordSchema, is UUIDSchema -> throw UnsupportedOperationException("${itemSchema::class.simpleName} for json array isn't supported for now")
+                is DateSchema -> rootNode.putArray(fieldName).run {
+                    listOfValues.forEach { add(settings.dateFormat.parse(it.simpleValue).toString()) }
+                }
+                is DateTimeSchema -> rootNode.putArray(fieldName).run {
+                    listOfValues.forEach { add(settings.dateTimeFormat.parse(it.simpleValue).toString()) }
+                }
+                is BinarySchema, is ByteArraySchema, is EmailSchema, is FileSchema, is MapSchema, is PasswordSchema, is UUIDSchema -> throw UnsupportedOperationException("${itemSchema::class.simpleName} for json array isn't supported for now")
                 else -> rootNode.putArray(fieldName).apply {
                     val listOfNodes = mutableListOf<ObjectNode>()
                     val writer = SchemaWriter(settings.openAPI)
@@ -141,6 +148,11 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val sett
     override fun visit(fieldName: String, fldStruct: DateSchema, required: Boolean) = visitPrimitive(fieldName, from.getField(fieldName, required), fldStruct, { value -> settings.dateFormat.parse(value.simpleValue) }) {
         rootNode.put(fieldName, it.toString())
     }
+
+    override fun visit(fieldName: String, fldStruct: DateTimeSchema, required: Boolean) = visitPrimitive(fieldName, from.getField(fieldName, required), fldStruct, { value -> settings.dateTimeFormat.parse(value.simpleValue) as OffsetDateTime }) {
+        rootNode.put(fieldName, it.toString())
+    }
+
 
 
     override fun getFieldNames(): Collection<String> = from.fieldsMap.keys

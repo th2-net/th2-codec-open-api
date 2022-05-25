@@ -31,4 +31,5 @@ class OpenApiCodecSettings : IPipelineCodecSettings {
     }
     val checkUndefinedFields: Boolean = true
     val dateFormat: String = "yyyy-MM-dd Z"
+    val dateTimeFormat: String = "yyyy/MM/dd HH:mm:ss"
 }
