@@ -159,42 +159,41 @@ fun OpenApiCodec.testEncode(path: String, method: String, code: String?, type: S
 
     val resultGroup =  encode(messageGroup.build())
 
-    Assertions.assertTrue(resultGroup.messagesList[0].hasMessage())
+    Assertions.assertEquals(1, resultGroup.messagesList.size)
 
-    val header = resultGroup.messagesList[0].message
+    if (fillMessage == null) {
+        Assertions.assertTrue(resultGroup.messagesList[0].hasMessage())
+        val header = resultGroup.messagesList[0].message
 
-    val headerType = if (code == null) REQUEST_MESSAGE_TYPE else RESPONSE_MESSAGE_TYPE
+        val headerType = if (code == null) REQUEST_MESSAGE_TYPE else RESPONSE_MESSAGE_TYPE
 
-    header.run {
-        Assertions.assertEquals(rawParentID, parentEventId) {"Decode process shouldn't lose parent event id inside of header"}
-        Assertions.assertEquals(headerType, this.messageType)
-        messageToEncode.metadata.propertiesMap.forEach {
-            Assertions.assertEquals(it.value, this.metadata.propertiesMap[it.key]) {"Property ${it.key} must be the same as in input message"}
-        }
-        when (headerType) {
-            REQUEST_MESSAGE_TYPE -> {
-                assertString(OpenApiCodec.URI_FIELD, path)
-                assertString(OpenApiCodec.METHOD_FIELD, method)
-                type?.let {
-                    this.getList(OpenApiCodec.HEADERS_FIELD)!![0].messageValue.assertString("value", type)
-                } ?: Assertions.assertNull(this.getList(OpenApiCodec.HEADERS_FIELD)?.find { it.messageValue.getString("name") == FORMAT_HEADER_NAME })
+        header.run {
+            Assertions.assertEquals(rawParentID, parentEventId) {"Decode process shouldn't lose parent event id inside of header"}
+            Assertions.assertEquals(headerType, this.messageType)
+            messageToEncode.metadata.propertiesMap.forEach {
+                Assertions.assertEquals(it.value, this.metadata.propertiesMap[it.key]) {"Property ${it.key} must be the same as in input message"}
             }
-            RESPONSE_MESSAGE_TYPE -> {
-                assertString(OpenApiCodec.CODE_FIELD, code)
-                type?.let {
-                    this.getList(OpenApiCodec.HEADERS_FIELD)!![0].messageValue.assertString("value", type)
-                } ?: Assertions.assertNull(this.getList(OpenApiCodec.HEADERS_FIELD)?.find { it.messageValue.getString("name") == FORMAT_HEADER_NAME })
+            when (headerType) {
+                REQUEST_MESSAGE_TYPE -> {
+                    assertString(OpenApiCodec.URI_FIELD, path)
+                    assertString(OpenApiCodec.METHOD_FIELD, method)
+                    type?.let {
+                        this.getList(OpenApiCodec.HEADERS_FIELD)!![0].messageValue.assertString("value", type)
+                    } ?: Assertions.assertNull(this.getList(OpenApiCodec.HEADERS_FIELD)?.find { it.messageValue.getString("name") == FORMAT_HEADER_NAME })
+                }
+                RESPONSE_MESSAGE_TYPE -> {
+                    assertString(OpenApiCodec.CODE_FIELD, code)
+                    type?.let {
+                        this.getList(OpenApiCodec.HEADERS_FIELD)!![0].messageValue.assertString("value", type)
+                    } ?: Assertions.assertNull(this.getList(OpenApiCodec.HEADERS_FIELD)?.find { it.messageValue.getString("name") == FORMAT_HEADER_NAME })
+                }
+                else -> error("Wrong type of header message: $headerType")
             }
-            else -> error("Wrong type of header message: $headerType")
         }
-    }
+    } else {
+        val body = resultGroup.messagesList.getOrNull(0)?.rawMessage
 
-    val body = resultGroup.messagesList.getOrNull(1)?.rawMessage
-
-    if (fillMessage != null) {
         Assertions.assertNotNull(body) {"Encode must have body in result of filling incoming message"}
-        Assertions.assertEquals(2, resultGroup.messagesList.size)
-        Assertions.assertTrue(resultGroup.messagesList[1].hasRawMessage())
 
         body!!.let { rawMessage ->
             messageToEncode.metadata.propertiesMap.forEach {
@@ -207,11 +206,10 @@ fun OpenApiCodec.testEncode(path: String, method: String, code: String?, type: S
             Assertions.assertEquals(method.lowercase(), rawMessage.metadata.propertiesMap[OpenApiCodec.METHOD_PROPERTY]?.lowercase())
             Assertions.assertEquals(path, rawMessage.metadata.propertiesMap[OpenApiCodec.URI_PROPERTY])
         }
-    } else {
-        Assertions.assertEquals(1, resultGroup.messagesList.size)
+        return body
     }
 
-    return body
+    return null
 }
 
 fun OpenApiCodec.encode(message: Message) = encode(MessageGroup.newBuilder().addMessages(AnyMessage.newBuilder().setMessage(message).build()).build())

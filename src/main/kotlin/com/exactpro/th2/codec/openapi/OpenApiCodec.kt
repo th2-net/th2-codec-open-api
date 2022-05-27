@@ -131,7 +131,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, val settings: OpenApiCodecSe
 
             val container = checkNotNull(typeToSchema[messageType]) { "There no message $messageType in dictionary" }
 
-            if (container.headers.isNotEmpty()) {
+            if (container.headers.isNotEmpty() || container.body == null) {
                 builder += createHeaderMessage(container, parsedMessage).apply {
                     if (parsedMessage.hasParentEventId()) parentEventId = parsedMessage.parentEventId
                     sessionAlias = parsedMessage.sessionAlias
@@ -181,14 +181,14 @@ class OpenApiCodec(private val dictionary: OpenAPI, val settings: OpenApiCodecSe
                     protocol = message.metadata.protocol
 
                     when (container) {
-                        is ResponseContainer -> this.propertiesMap[CODE_FIELD] = container.code
+                        is ResponseContainer -> this.putProperties(CODE_FIELD, container.code)
                         is RequestContainer -> {
-                            this.propertiesMap[URI_FIELD] = if (container.params.isNotEmpty()) {
+                            this.putProperties(URI_FIELD, if (container.params.isNotEmpty()) {
                                 container.uriPattern.resolve(container.params, message.getMessage(URI_PARAMS_FIELD).orEmpty().fieldsMap.mapValues { it.value.simpleValue })
                             } else {
                                 container.uriPattern.pattern
-                            }
-                            this.propertiesMap[METHOD_FIELD] = container.method
+                            })
+                            this.putProperties(METHOD_FIELD, container.method)
                         }
                         else -> error("Wrong type of Http Route Container")
                     }
