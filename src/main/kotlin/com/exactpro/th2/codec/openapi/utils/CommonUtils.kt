@@ -18,6 +18,7 @@ package com.exactpro.th2.codec.openapi.utils
 
 import com.exactpro.th2.common.grpc.Message
 import com.exactpro.th2.common.grpc.Value
+import com.exactpro.th2.common.grpc.Value.KindCase.NULL_VALUE
 import com.exactpro.th2.common.message.get
 import com.exactpro.th2.common.message.messageType
 import com.exactpro.th2.common.value.getString
@@ -28,7 +29,7 @@ import com.exactpro.th2.common.value.getString
  */
 fun Message.getField(fieldName: String, required: Boolean): Value? = this[fieldName].apply {
     if (required) {
-        check(this != null && this.kindCase.number != 1) { "Field [$fieldName] is required for message [$messageType]" }
+        check(this != null && this.kindCase != NULL_VALUE) { "Field [$fieldName] is required for message [$messageType]" }
     }
 }
 

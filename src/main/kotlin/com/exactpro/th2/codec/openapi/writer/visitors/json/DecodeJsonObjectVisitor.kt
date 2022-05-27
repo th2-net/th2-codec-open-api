@@ -31,6 +31,7 @@ import com.exactpro.th2.common.grpc.Message
 import com.exactpro.th2.common.message.addField
 import com.exactpro.th2.common.message.addFields
 import com.exactpro.th2.common.message.message
+import com.exactpro.th2.common.message.set
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
@@ -74,21 +75,20 @@ open class DecodeJsonObjectVisitor(override val from: JsonNode, override val set
 
         fromObject.getRequiredArray(fieldName, required)?.let { arrayNode ->
             when (itemSchema) {
-                is NumberSchema -> rootMessage.addField(fieldName, arrayNode.map { it.validateAsBigDecimal() })
-                is IntegerSchema -> rootMessage.addField(fieldName, arrayNode.map { it.validateAsLong() })
-                is BooleanSchema -> rootMessage.addField(fieldName, arrayNode.map { it.validateAsBoolean() })
-                is StringSchema -> rootMessage.addField(fieldName, arrayNode.map { it.asText() })
-                is DateSchema -> rootMessage.addField(fieldName, arrayNode.map { settings.dateFormat.parse(it.asText()).toString() })
-                is DateTimeSchema -> rootMessage.addField(fieldName, arrayNode.map { settings.dateTimeFormat.parse(it.asText()).toString() })
+                is NumberSchema -> rootMessage[fieldName] = arrayNode.asSequence().map(JsonNode::validateAsBigDecimal).iterator()
+                is IntegerSchema -> rootMessage[fieldName] = arrayNode.asSequence().map(JsonNode::validateAsLong).iterator()
+                is BooleanSchema -> rootMessage[fieldName] = arrayNode.asSequence().map(JsonNode::validateAsBoolean).iterator()
+                is StringSchema -> rootMessage[fieldName] = arrayNode.asSequence().map(JsonNode::asText).iterator()
+                is DateSchema -> rootMessage[fieldName] = arrayNode.asSequence().map { settings.dateFormat.parse(it.asText()).toString() }.iterator()
+                is DateTimeSchema -> rootMessage[fieldName] = arrayNode.map { settings.dateTimeFormat.parse(it.asText()).toString() }.iterator()
                 is BinarySchema, is ByteArraySchema, is EmailSchema, is FileSchema, is MapSchema, is PasswordSchema, is UUIDSchema -> throw UnsupportedOperationException("${itemSchema::class.simpleName} for json array isn't supported for now")
-                else -> rootMessage.addField(fieldName, mutableListOf<Message>().apply {
-                    arrayNode.forEach {
-                        DecodeJsonObjectVisitor(checkNotNull(it.validateAsObject()) { " Value from list [$fieldName] must be message" }, settings).let { visitor ->
-                            SchemaWriter(settings.openAPI).traverse(visitor, itemSchema, throwUndefined)
-                            visitor.rootMessage.build().run(this::add)
-                        }
+                else -> rootMessage[fieldName] = arrayNode.map {
+                    val message = checkNotNull(it.validateAsObject()) { "'$fieldName' field element is not a message: $it" }
+                    DecodeJsonObjectVisitor(message, settings).let { visitor ->
+                        SchemaWriter(settings.openAPI).traverse(visitor, itemSchema, throwUndefined)
+                        visitor.rootMessage
                     }
-                })
+                }
             }
         } ?: fldStruct.default?.let { error("Default values isn't supported for arrays") }
     }
@@ -99,7 +99,7 @@ open class DecodeJsonObjectVisitor(override val from: JsonNode, override val set
             val writer = SchemaWriter(settings.openAPI)
             writer.traverse(visitor, fldStruct, false)
             rootMessage.addField(fieldName, visitor.rootMessage)
-        } ?: fldStruct.default?.let { error("Default values isn't supported for objects") }
+        } ?: fldStruct.default?.let { error("Default values isn't supported for composed objects") }
     }
 
     override fun visit(fieldName: String, fldStruct: NumberSchema, required: Boolean) = visitPrimitive(fieldName, fromObject.getField(fieldName, required)?.validateAsBigDecimal(), fldStruct)

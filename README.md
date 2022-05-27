@@ -140,7 +140,7 @@ Result of decode:
 
 ### Codec configs:
 
-* checkUndefinedFields - Enable or Disable warnings for all undefined fields inside object structures, (`true` by default).
+* failOnUndefinedFields - fail on undefined fields inside object structures, (`true` by default).
 * dateFormat - setup format of processed date (`yyyy-MM-dd Z` by default)
 * dateTimeFormat - setup format of processed date-time (`yyyy/MM/dd HH:mm:ss` by default)
 

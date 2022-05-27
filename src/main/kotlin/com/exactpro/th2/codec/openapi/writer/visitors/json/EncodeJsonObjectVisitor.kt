@@ -26,8 +26,8 @@ import com.exactpro.th2.codec.openapi.writer.visitors.SchemaVisitor
 import com.exactpro.th2.codec.openapi.writer.visitors.VisitorSettings
 import com.exactpro.th2.common.grpc.Message
 import com.exactpro.th2.common.grpc.Value
+import com.exactpro.th2.common.grpc.Value.KindCase.NULL_VALUE
 import com.exactpro.th2.common.value.getBigDecimal
-import com.exactpro.th2.common.value.getList
 import com.exactpro.th2.common.value.getLong
 import com.exactpro.th2.common.value.getMessage
 import com.exactpro.th2.common.value.getString
@@ -59,15 +59,13 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val sett
 
     override fun visit(fieldName: String, fldStruct: Schema<*>, required: Boolean, throwUndefined: Boolean) {
         from.getField(fieldName, required)?.let { field ->
-            when {
-                field.kindCase.number == 1 -> {
-                    rootNode.set<ObjectNode>(fieldName, ObjectNode(mapper.nodeFactory))
-                    return
-                }
-                !field.hasMessageValue() -> error("$fieldName is not an message: ${field.kindCase}")
+            if (field.kindCase == NULL_VALUE) {
+                rootNode.putObject(fieldName)
+                return
             }
-            val message = field.getMessage()!!
-            val visitor = EncodeJsonObjectVisitor(message, settings)
+            check(field.hasMessageValue()) { "$fieldName is not an message: ${field.kindCase}" }
+
+            val visitor = EncodeJsonObjectVisitor(field.messageValue, settings)
             val writer = SchemaWriter(settings.openAPI)
             writer.traverse(visitor, fldStruct, throwUndefined)
             rootNode.set<ObjectNode>(fieldName, visitor.rootNode)
@@ -78,14 +76,13 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val sett
         val itemSchema = settings.openAPI.getEndPoint(fldStruct.items)
 
         from.getField(fieldName, required)?.let { field ->
-            when {
-                field.kindCase.number == 1 -> {
-                    rootNode.putArray(fieldName)
-                    return
-                }
-                !field.hasListValue() -> error("$fieldName is not an list: ${field.kindCase}")
+            if (field.kindCase == NULL_VALUE) {
+                rootNode.putArray(fieldName)
+                return
             }
-            val listOfValues = field.getList()!!
+            check(field.hasListValue()) { "$fieldName is not an list: ${field.kindCase}" }
+
+            val listOfValues = field.listValue.valuesList
 
             when (itemSchema) {
                 is NumberSchema -> rootNode.putArray(fieldName).putAll<BigDecimal>(listOfValues)
@@ -100,15 +97,13 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val sett
                 }
                 is BinarySchema, is ByteArraySchema, is EmailSchema, is FileSchema, is MapSchema, is PasswordSchema, is UUIDSchema -> throw UnsupportedOperationException("${itemSchema::class.simpleName} for json array isn't supported for now")
                 else -> rootNode.putArray(fieldName).apply {
-                    val listOfNodes = mutableListOf<ObjectNode>()
                     val writer = SchemaWriter(settings.openAPI)
                     listOfValues.forEach {
                         EncodeJsonObjectVisitor(checkNotNull(it.getMessage()) { " Value from list [$fieldName] must be message" }, settings).let { visitor ->
                             writer.traverse(visitor, itemSchema, throwUndefined)
-                            visitor.rootNode.run(listOfNodes::add)
+                            add(visitor.rootNode)
                         }
                     }
-                    listOfNodes.forEach { add(it) }
                 }
             }
         } ?: fldStruct.default?.let { error("Default values isn't supported for arrays") }
@@ -126,7 +121,7 @@ open class EncodeJsonObjectVisitor(override val from: Message, override val sett
             val writer = SchemaWriter(settings.openAPI)
             writer.traverse(visitor, fldStruct, false)
             rootNode.set<ObjectNode>(fieldName, visitor.rootNode)
-        } ?: fldStruct.default?.let { error("Default values isn't supported for objects") }
+        } ?: fldStruct.default?.let { error("Default values isn't supported for composed objects") }
     }
 
     override fun visit(fieldName: String, fldStruct: NumberSchema, required: Boolean) = visitPrimitive(fieldName, from.getField(fieldName, required), fldStruct, Value::getBigDecimal) {

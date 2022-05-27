@@ -19,10 +19,7 @@ package com.exactpro.th2.codec.openapi.utils
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.oas.models.PathItem
-import io.swagger.v3.oas.models.media.ArraySchema
-import io.swagger.v3.oas.models.media.ComposedSchema
 import io.swagger.v3.oas.models.media.Content
-import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.parser.models.RefType
 
@@ -71,18 +68,13 @@ fun <T> Schema<*>.checkEnum(value: T?, name: String) {
 fun String.extractType() = substringBefore(';').trim()
 
 fun Content.containingFormatOrNull(httpHeader: String) = when {
-    httpHeader == JSON_FORMAT && this.contains(ANY_FORMAT) -> ANY_FORMAT
-    this.contains(httpHeader) -> httpHeader
+    httpHeader == JSON_FORMAT && ANY_FORMAT in this -> ANY_FORMAT
+    httpHeader in this -> httpHeader
     else -> null
 }
 
-fun Schema<*>.getExclusiveProperties(against: List<Schema<*>>): List<String> = mutableListOf<String>().apply {
-    addAll(properties.keys)
-    removeAll { name -> against.find { it.properties.keys.contains(name) } != null }
+fun Schema<*>.getExclusiveProperties(against: List<Schema<*>>): List<String> = properties.keys.filter { field ->
+    against.none { field in it.properties }
 }
-
-fun Schema<*>.isComposed() = this is ComposedSchema
-fun Schema<*>.isObject() = this is ObjectSchema
-fun Schema<*>.isArray() = this is ArraySchema
 
 fun Schema<*>.requiredContains(name: String) = this.required?.contains(name) ?: false

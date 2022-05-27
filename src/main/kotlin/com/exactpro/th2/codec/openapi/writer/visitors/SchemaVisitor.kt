@@ -50,36 +50,30 @@ sealed class SchemaVisitor<FromType, ToType> {
     fun oneOf(list: List<Schema<*>>): Schema<*> = chooseOneOf(list.filter(this::checkAgainst))
 
     fun anyOf(list: List<Schema<*>>): List<Schema<*>> = list.filter(this::checkAgainst).also {
-        if (it.isEmpty()) {
-            throw IllegalStateException("AnyOf statement had zero valid schemas")
-        }
+        check(it.isNotEmpty()) { "AnyOf statement had zero valid schemas" }
     }
 
     fun allOf(list: List<Schema<*>>): List<Schema<*>> = list.filter(this::checkAgainst).also {
-        if (list.size != it.size) {
-            throw IllegalStateException("AllOf statement have only ${it.size} valid schemas of ${list.size} available")
-        }
+        check(list.size != it.size) { "AllOf statement have only ${it.size} valid schemas of ${list.size} available" }
     }
 
     fun checkUndefined(objectSchema: Schema<*>) {
-        val names = objectSchema.properties.keys
-        val undefined = getFieldNames().filter { !names.contains(it) }
-        if (undefined.isNotEmpty()) {
-            throw IllegalStateException("Message have undefined fields: ${undefined.joinToString(", ")}")
-        }
+        val undefined = getFieldNames() - objectSchema.properties.keys
+        check(undefined.isEmpty()) { "Message have undefined fields: ${undefined.joinToString(", ")}" }
     }
 
     private fun checkAgainst(fldStruct: Schema<*>): Boolean = fldStruct.required.isNullOrEmpty() || getFieldNames().containsAll(fldStruct.required)
 
-    private fun chooseOneOf(list: List<Schema<*>>): Schema<*> = when(list.size) {
-        0 -> throw IllegalStateException("OneOf statement have 0 valid schemas")
-        1 -> list[0]
-        else -> {
-            val objectFieldNames = getFieldNames()
-            list.find { schema ->
-                val exclusiveNames = schema.getExclusiveProperties(list.toMutableList().apply { remove(schema) })
-                objectFieldNames.find { exclusiveNames.contains(it) } != null
-            } ?: list[0]
+    private fun chooseOneOf(schemas: List<Schema<*>>): Schema<*> = when(schemas.size) {
+        0 -> error("OneOf statement have 0 valid schemas")
+        1 -> schemas[0]
+        else -> getFieldNames().let { names ->
+             getFieldNames()
+            schemas.find { schema ->
+                schema.getExclusiveProperties(schemas - schema).run {
+                    names.any(this::contains)
+                }
+            } ?: schemas[0]
         }
     }
 

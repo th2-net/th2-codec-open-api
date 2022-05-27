@@ -37,7 +37,6 @@ import io.swagger.v3.oas.models.media.PasswordSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
 import io.swagger.v3.oas.models.media.UUIDSchema
-import java.lang.IllegalStateException
 
 
 class SchemaWriter constructor(private val openApi: OpenAPI) {
@@ -45,26 +44,26 @@ class SchemaWriter constructor(private val openApi: OpenAPI) {
     fun traverse(
         visitor: SchemaVisitor<*, *>,
         msgStructure: Schema<*>,
-        throwUndefined: Boolean = true
+        checkForUndefinedFields: Boolean = true
     ) {
         when (msgStructure) {
             is ArraySchema -> visitor.visit(ARRAY_TYPE, msgStructure, true)
             is ComposedSchema -> {
                 when {
-                    !msgStructure.allOf.isNullOrEmpty() -> visitor.allOf(msgStructure.allOf.map { openApi.getEndPoint(it) }).forEach {
+                    !msgStructure.allOf.isNullOrEmpty() -> visitor.allOf(msgStructure.allOf.map(openApi::getEndPoint)).forEach {
                         traverse(visitor, it, false)
                     }
-                    !msgStructure.oneOf.isNullOrEmpty() -> visitor.oneOf(msgStructure.oneOf.map { openApi.getEndPoint(it) }).also {
+                    !msgStructure.oneOf.isNullOrEmpty() -> visitor.oneOf(msgStructure.oneOf.map(openApi::getEndPoint)).also {
                         traverse(visitor, it, false)
                     }
-                    !msgStructure.anyOf.isNullOrEmpty() -> visitor.anyOf(msgStructure.anyOf.map { openApi.getEndPoint(it) }).forEach {
+                    !msgStructure.anyOf.isNullOrEmpty() -> visitor.anyOf(msgStructure.anyOf.map(openApi::getEndPoint)).forEach {
                         traverse(visitor, it, false)
                     }
-                    else -> throw IllegalStateException("Composed schema was empty at allOf, oneOf, anyOf lists")
+                    else -> error("Composed schema has no allOf, oneOf, anyOf definitions")
                 }
             }
             else -> {
-                if (throwUndefined) {
+                if (checkForUndefinedFields) {
                     visitor.checkUndefined(msgStructure)
                 }
                 msgStructure.properties.forEach { (name, property) ->
@@ -78,7 +77,7 @@ class SchemaWriter constructor(private val openApi: OpenAPI) {
                         is DateTimeSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
                         is ComposedSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
                         is PasswordSchema, is EmailSchema, is BinarySchema, is ByteArraySchema, is FileSchema, is MapSchema, is UUIDSchema -> throw UnsupportedOperationException("${property::class.simpleName} isn't supported for now")
-                        else -> visitor.visit(name, property, msgStructure.requiredContains(name), throwUndefined)
+                        else -> visitor.visit(name, property, msgStructure.requiredContains(name), checkForUndefinedFields)
                     }
                 }
             }
