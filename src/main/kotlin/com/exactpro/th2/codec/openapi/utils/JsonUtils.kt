@@ -78,21 +78,6 @@ fun JsonNode.validateAsBigDecimal(): BigDecimal = when {
     else -> error("Cannot convert $this to BigDecimal")
 }
 
-fun JsonNode.validateAsInteger(): Int = when {
-    isNumber -> asInt()
-    else -> error("Cannot convert $this to Int")
-}
-
-fun JsonNode.validateAsDouble(): Double = when {
-    isNumber -> asDouble()
-    else -> error("Cannot convert $this to Double")
-}
-
-fun JsonNode.validateAsFloat(): Float = when {
-    isNumber -> asText().toFloat()
-    else -> error("Cannot convert $this to Float")
-}
-
 fun JsonNode.validateAsObject(): ObjectNode = when {
     isObject -> this as ObjectNode
     else -> error("Cannot convert $this to Object")

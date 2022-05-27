@@ -176,8 +176,8 @@ class OpenApiCodec(private val dictionary: OpenAPI, val settings: OpenApiCodecSe
                 container.fillHttpMetadata(metadataBuilder)
                 metadataBuilder.apply {
                     putAllProperties(message.metadata.propertiesMap)
-                    this.id = metadata.id
-                    this.timestamp = metadata.timestamp
+                    this.id = message.metadata.id
+                    this.timestamp = message.metadata.timestamp
                     protocol = message.metadata.protocol
 
                     when (container) {
@@ -239,7 +239,7 @@ class OpenApiCodec(private val dictionary: OpenAPI, val settings: OpenApiCodecSe
             this.messageType = messageType
             metadataBuilder.apply {
                 id = rawMessage.metadata.id
-                timestamp = metadata.timestamp
+                timestamp = rawMessage.metadata.timestamp
                 protocol = rawMessage.metadata.protocol
                 putAllProperties(rawMessage.metadata.propertiesMap)
             }
