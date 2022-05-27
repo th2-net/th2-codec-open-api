@@ -131,11 +131,13 @@ class OpenApiCodec(private val dictionary: OpenAPI, val settings: OpenApiCodecSe
 
             val container = checkNotNull(typeToSchema[messageType]) { "There no message $messageType in dictionary" }
 
-            builder += createHeaderMessage(container, parsedMessage).apply {
-                if (parsedMessage.hasParentEventId()) parentEventId = parsedMessage.parentEventId
-                sessionAlias = parsedMessage.sessionAlias
-                metadataBuilder.putAllProperties(parsedMessage.metadata.propertiesMap)
-                LOGGER.trace { "Created header message for ${parsedMessage.messageType}: ${this.messageType}" }
+            if (container.headers.isNotEmpty()) {
+                builder += createHeaderMessage(container, parsedMessage).apply {
+                    if (parsedMessage.hasParentEventId()) parentEventId = parsedMessage.parentEventId
+                    sessionAlias = parsedMessage.sessionAlias
+                    metadataBuilder.putAllProperties(parsedMessage.metadata.propertiesMap)
+                    LOGGER.trace { "Created header message for ${parsedMessage.messageType}: ${this.messageType}" }
+                }
             }
 
             try {
@@ -177,6 +179,19 @@ class OpenApiCodec(private val dictionary: OpenAPI, val settings: OpenApiCodecSe
                     this.id = metadata.id
                     this.timestamp = metadata.timestamp
                     protocol = message.metadata.protocol
+
+                    when (container) {
+                        is ResponseContainer -> this.propertiesMap[CODE_FIELD] = container.code
+                        is RequestContainer -> {
+                            this.propertiesMap[URI_FIELD] = if (container.params.isNotEmpty()) {
+                                container.uriPattern.resolve(container.params, message.getMessage(URI_PARAMS_FIELD).orEmpty().fieldsMap.mapValues { it.value.simpleValue })
+                            } else {
+                                container.uriPattern.pattern
+                            }
+                            this.propertiesMap[METHOD_FIELD] = container.method
+                        }
+                        else -> error("Wrong type of Http Route Container")
+                    }
                 }
                 body = result
             }.build()
@@ -320,16 +335,14 @@ class OpenApiCodec(private val dictionary: OpenAPI, val settings: OpenApiCodecSe
                 })
             }
 
-            if (container.headers.isNotEmpty()) {
-                val headerMessage = message.getMessage(HEADER_PARAMS_FIELD).orEmpty()
-                container.headers.forEach { (name, value) ->
-                    headerMessage[name]?.let { header ->
-                        headers.add(message().apply {
-                            addField("name", name)
-                            addField("value", header.simpleValue)
-                        })
-                    } ?: run { if (value.required) error("Header param [$name] is required for ${message.messageType} message") }
-                }
+            val headerMessage = message.getMessage(HEADER_PARAMS_FIELD).orEmpty()
+            container.headers.forEach { (name, value) ->
+                headerMessage[name]?.let { header ->
+                    headers.add(message().apply {
+                        addField("name", name)
+                        addField("value", header.simpleValue)
+                    })
+                } ?: run { if (value.required) error("Header param [$name] is required for ${message.messageType} message") }
             }
 
             addField(HEADERS_FIELD, headers)
