@@ -54,7 +54,7 @@ class SchemaWriter constructor(private val openApi: OpenAPI) {
                         traverse(visitor, it, false)
                     }
                     !msgStructure.oneOf.isNullOrEmpty() -> visitor.oneOf(msgStructure.oneOf.map(openApi::getEndPoint)).also {
-                        traverse(visitor, it, false)
+                        traverse(visitor, it, true)
                     }
                     !msgStructure.anyOf.isNullOrEmpty() -> visitor.anyOf(msgStructure.anyOf.map(openApi::getEndPoint)).forEach {
                         traverse(visitor, it, false)
