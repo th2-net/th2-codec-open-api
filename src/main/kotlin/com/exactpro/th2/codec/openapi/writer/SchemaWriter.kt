@@ -66,19 +66,21 @@ class SchemaWriter constructor(private val openApi: OpenAPI) {
                 if (checkForUndefinedFields) {
                     visitor.checkUndefined(msgStructure)
                 }
-                msgStructure.properties.forEach { (name, property) ->
-                    when(property) {
-                        is ArraySchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
-                        is StringSchema -> visitor.visit(name, property , msgStructure.requiredContains(name))
-                        is IntegerSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
-                        is NumberSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
-                        is BooleanSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
-                        is DateSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
-                        is DateTimeSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
-                        is ComposedSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
-                        is PasswordSchema, is EmailSchema, is BinarySchema, is ByteArraySchema, is FileSchema, is MapSchema, is UUIDSchema -> throw UnsupportedOperationException("${property::class.simpleName} isn't supported for now")
-                        else -> visitor.visit(name, property, msgStructure.requiredContains(name), checkForUndefinedFields)
-                    }
+                openApi.getEndPoint(msgStructure).let {
+                    it.properties?.forEach { (name, property) ->
+                        when(property) {
+                            is ArraySchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
+                            is StringSchema -> visitor.visit(name, property , msgStructure.requiredContains(name))
+                            is IntegerSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
+                            is NumberSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
+                            is BooleanSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
+                            is DateSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
+                            is DateTimeSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
+                            is ComposedSchema -> visitor.visit(name, property, msgStructure.requiredContains(name))
+                            is PasswordSchema, is EmailSchema, is BinarySchema, is ByteArraySchema, is FileSchema, is MapSchema, is UUIDSchema -> throw UnsupportedOperationException("${property::class.simpleName} isn't supported for now")
+                            else -> visitor.visit(name, property, msgStructure.requiredContains(name), checkForUndefinedFields)
+                        }
+                    } ?: error("Schema ${it.name}:${it.type} have no properties to process")
                 }
             }
         }
