@@ -2,6 +2,12 @@ plugins {
     id 'com.palantir.docker' version '0.25.0' apply false
     id 'org.jetbrains.kotlin.jvm' version "${kotlin_version}"
     id 'com.github.harbby.gradle.serviceloader' version '1.1.5'
+    id "org.owasp.dependencycheck" version "7.2.0"
+}
+
+dependencyCheck {
+    format='HTML'
+    failBuildOnCVSS=5
 }
 
 apply plugin: 'kotlin'
@@ -10,7 +16,7 @@ apply plugin: 'com.palantir.docker'
 
 ext {
     sharedDir = file("${project.rootDir}/shared")
-    common_version = '3.32.0'
+    common_version = '3.41.0'
 }
 
 group = 'com.exactpro.th2'
@@ -57,13 +63,13 @@ jar {
 }
 
 dependencies {
-    api platform('com.exactpro.th2:bom:3.0.0')
+    api platform('com.exactpro.th2:bom:4.0.1')
 
     implementation "com.exactpro.th2:common:$common_version"
-    implementation 'com.exactpro.th2:codec:4.6.1'
+    implementation 'com.exactpro.th2:codec:4.7.4'
 
-    implementation 'org.slf4j:slf4j-log4j12'
-    implementation 'org.slf4j:slf4j-api'
+    implementation "org.apache.logging.log4j:log4j-slf4j-impl"
+    implementation "org.apache.logging.log4j:log4j-1.2-api"
 
     implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jdk8', version: kotlin_version
     implementation group: 'org.jetbrains.kotlin', name: 'kotlin-reflect', version: kotlin_version
