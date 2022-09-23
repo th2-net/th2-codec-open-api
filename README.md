@@ -1,5 +1,5 @@
 # OpenApi Codec 
-![version](https://img.shields.io/badge/version-0.2.0-blue.svg) 
+![version](https://img.shields.io/badge/version-0.2.1-blue.svg) 
 
 This microservice can validate open api dictionary, encode th2 messages or decode http body.
 
@@ -190,6 +190,11 @@ May be empty due to missing required fields
 + Any number format will be treated as BigDecimal
 + Fix: removed all trailing zeros for double, float, bigDecimal
 
+### 0.2.1
+
++ Migrated to kotlin v1.6.21
++ Updated common and BOM version
++ Removed dependencies with vulnerabilities
 
 ### 0.2.0
 
