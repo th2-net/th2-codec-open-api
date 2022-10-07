@@ -57,7 +57,7 @@ jar {
 }
 
 dependencies {
-    api platform('com.exactpro.th2:bom:3.0.0')
+    api platform('com.exactpro.th2:bom:4.0.2')
 
     implementation "com.exactpro.th2:common:$common_version"
     implementation 'com.exactpro.th2:codec:4.6.1'
