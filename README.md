@@ -175,6 +175,11 @@ May be empty due to missing required fields
 
 ## Release notes
 
+### 0.3.0
++ Vulnerabilities check pipeline step
++ common upgrade to `3.44.0`
++ bom upgrade to `4.1.0`
+
 ### 0.2.0
 
 + Feature: check for undefined fields and throw errors if they are found
