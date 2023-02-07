@@ -10,7 +10,7 @@ apply plugin: 'com.palantir.docker'
 
 ext {
     sharedDir = file("${project.rootDir}/shared")
-    common_version = '3.32.0'
+    common_version = '3.44.0'
 }
 
 group = 'com.exactpro.th2'
@@ -57,12 +57,11 @@ jar {
 }
 
 dependencies {
-    api platform('com.exactpro.th2:bom:3.0.0')
+    api platform('com.exactpro.th2:bom:4.1.0')
 
     implementation "com.exactpro.th2:common:$common_version"
-    implementation 'com.exactpro.th2:codec:4.6.1'
+    implementation 'com.exactpro.th2:codec:4.7.5'
 
-    implementation 'org.slf4j:slf4j-log4j12'
     implementation 'org.slf4j:slf4j-api'
 
     implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jdk8', version: kotlin_version
